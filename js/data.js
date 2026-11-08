@@ -11,7 +11,7 @@ SR.C = { maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, bossHp: 1.5,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true,
     boss: { single: [20, 56], aoe: [24, 86], aoeAlways: [18, 60], big: [55, 120] }, mob: { single: [24, 60], aoe: [16, 48], big: [90, 170] } },
 };
 
@@ -83,20 +83,20 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blin
 // 技が付ける状態 [状態, ターン数] と、活かす状態 [状態, 倍率]
 (function () {
   function s(id, inflict, exploit) { var a = SR.skills[id]; if (inflict) a.inflict = inflict; if (exploit) a.exploit = exploit; }
-  // ナハト（斬撃＝裂傷）
-  s('崩し斬り', ['bleed', 2]); s('返し斬り', ['bleed', 2]); s('誘い斬り', ['bleed', 1]); s('踏み込み斬り', ['bleed', 3]);
+  // 2026-11-08「付与が多すぎる」→ 付けるのは各キャラの付与専用技（下の SR.statusSkill）だけ。
+  // 今ある技は付与なし。活かす技（〇〇中に〜倍）は残す。例外：コモンの衝撃で暗闇。
   s('断ち込み', null, ['bleed', 1.6]); s('捨て身斬り', null, ['freeze', 1.6]);
-  // ヴォルト（雷＝感電）
-  s('連射', ['shock', 1]); s('分散連射', ['shock', 1]); s('術式妨害', ['blind', 2], ['shock', 1.5]);
-  // フレア（炎＝燃焼）
-  s('火槍', ['burn', 3]); s('火の粉', ['burn', 2]); s('炎撃', ['burn', 2], ['burn', 1.6]); s('集中火力', ['burn', 2]);
-  s('炎圧', ['burn', 2]); s('収束火槍', ['burn', 3]); s('灰燼', null, ['burn', 1.7]);
-  // セレナ（氷＝凍結）
-  s('連弾', ['freeze', 1]);
-  // リヒト（光＝目眩）
-  s('破陣剣', ['daze', 2]); s('決着の一閃', null, ['daze', 1.6]);
-  // コモン
-  s('衝撃', ['daze', 1]); s('衝撃波', ['bleed', 1]);
+  s('連射', null, ['shock', 1.5]);
+  s('炎撃', null, ['burn', 1.6]); s('灰燼', null, ['burn', 1.7]);
+  s('決着の一閃', null, ['daze', 1.6]);
+  s('衝撃', ['blind', 2]);
+  // 付与専用技（試作で追加・数値は仮）。緊張感ありのとき、編成コストなしで各キャラが使える
+  skill('裂き払い', 'N', 0, 12, { kind: 'attack', kd: 10, hp: 22, inflict: ['bleed', 3] });
+  skill('放電弾', 'V', 0, 14, { kind: 'attack', kd: 12, hp: 16, inflict: ['shock', 3] });
+  skill('焼き付け', 'F', 0, 14, { kind: 'attack', kd: 8, hp: 18, fire: true, inflict: ['burn', 4] });
+  skill('氷結弾', 'S', 0, 14, { kind: 'attack', kd: 10, hp: 16, inflict: ['freeze', 3] });
+  skill('閃光', 'L', 0, 14, { kind: 'attack', kd: 8, hp: 14, inflict: ['daze', 3] });
+  SR.statusSkill = { N: '裂き払い', V: '放電弾', F: '焼き付け', S: '氷結弾', L: '閃光' };
 })();
 
 SR.passives = {

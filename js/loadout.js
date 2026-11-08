@@ -9,6 +9,7 @@ SR.loadout = (function () {
   function pool(id) {
     var act = Object.keys(SR.skills).filter(function (s) {
       var o = SR.skills[s].owner;
+      if (SR.statusSkill && SR.statusSkill[id] === s) return false; // 付与専用技は編成なしで使える
       return o === id || (id !== 'N' && o === 'common');
     });
     var pas = Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === id; });

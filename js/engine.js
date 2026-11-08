@@ -153,13 +153,15 @@ SR.Battle = function (opts) {
     if (u.discount) v *= 0.7;
     return Math.max(0, Math.ceil(v) - (u.supportEconomy || 0));
   }
-  function available(u, id) { return (id === 'basic' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id)) && u.k >= price(u, skills[id]); }
+  function statusSkillOf(u) { return statusOn && SR.statusSkill ? SR.statusSkill[u.id] : null; }
+  function available(u, id) { return (id === 'basic' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.k >= price(u, skills[id]); }
   this.price = function (u, id) { return price(u, skills[id]); };
   this.available = available;
 
   // 使える技の一覧（UI用）
   this.options = function (u) {
-    var ids = ['basic'].concat(u.abilities.filter(function (s) { return skills[s]; }), ['defend']);
+    var ss = statusSkillOf(u);
+    var ids = ['basic'].concat(ss ? [ss] : [], u.abilities.filter(function (s) { return skills[s]; }), ['defend']);
     return ids.map(function (id) { return { id: id, skill: skills[id], cost: price(u, skills[id]), ok: available(u, id) }; });
   };
   this.passivesOf = function (u) { return u.abilities.filter(function (s) { return SR.passives[s]; }); };
