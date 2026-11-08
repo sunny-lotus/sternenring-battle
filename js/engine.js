@@ -42,6 +42,7 @@ SR.Battle = function (opts) {
     if (enc.weaks) e.weak = enc.weaks[i];
     // 状態コンボのぶん、ボス級だけ体力を増やして長さと緊張感を保つ
     if (tune.status && tune.bossHp && (isBoss || e.type === 'twin')) { e.hp *= tune.bossHp; e.maxHp *= tune.bossHp; }
+    if (tune.bossKMul && (isBoss || e.type === 'twin')) { e.k *= tune.bossKMul; e.maxK *= tune.bossKMul; }   // ボス級の気力（ブレイクまでの長さ）
   });
   var S = SR.hpScale || 1;
   heroes.concat(enemies).forEach(function (u) { u.hp *= S; u.maxHp *= S; if (u.heal) u.heal *= S; });

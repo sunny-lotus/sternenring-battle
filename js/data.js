@@ -11,7 +11,7 @@ SR.C = { maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4, bossKMul: 3,
     boss: { single: [20, 86], aoe: [25, 131], aoeAlways: [19, 73], big: [86, 281] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
@@ -195,16 +195,16 @@ SR.enemyTypes = {
 SR.encounters = {
   normal: { era: 1, imgs: ['enemy002a', 'enemy002', 'enemy002b'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { era: 1, img: 'boss004', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
-  aoe: { era: 3, img: 'boss002', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+  boss: { era: 1, img: 'boss004', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250・気力3倍の720）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
+  aoe: { era: 3, img: 'boss002', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000・気力3倍の780）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
     config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze' } },
-  fireResist: { era: 2, img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+  fireResist: { era: 2, img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250・気力3倍）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
   elements: { era: 2, name: '炎と氷', note: '炎に強い炎獣と、炎に弱い氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
   swarm: { era: 1, name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
-  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
+  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000・気力3倍の各600）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
 };
 
