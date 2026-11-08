@@ -316,6 +316,7 @@ SR.Battle = function (opts) {
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
+        if (tune.hpCap && hp > a.hp * tune.hpCap) hp = a.hp * tune.hpCap;   // 倍率の重ねすぎ（凍結＋捨て身斬り＋ブースト等）を抑える
         var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
