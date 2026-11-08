@@ -12,7 +12,7 @@ SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
   tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 },
-    boss: { single: [20, 56], aoe: [24, 86], aoeAlways: [18, 60], big: [55, 120] }, mob: { single: [24, 60], aoe: [16, 48], big: [90, 170] } },
+    boss: { single: [20, 76], aoe: [24, 116], aoeAlways: [18, 72], big: [55, 162] }, mob: { single: [24, 81], aoe: [16, 65], big: [90, 230] } },
 };
 
 SR.names = { N: 'ナハト', V: 'ヴォルト', F: 'フレア', S: 'セレナ', L: 'リヒト' };
@@ -161,14 +161,14 @@ SR.supportText = {
 
 // 敵の種類（試作で追加。数値は仮）。fire は炎の効き方（1より小さいと炎に強い）。atk は攻撃の強さの倍率。
 SR.enemyTypes = {
-  shell: { img: 'enemy028', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, fire: 1, atk: 0.8, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
-  beast: { img: 'enemy002', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, fire: 1, atk: 1, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
-  swift: { img: 'enemy022', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, fire: 1.2, atk: 0.75, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
-  ember: { img: 'enemy023', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, fire: 0.5, atk: 1.1, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
-  frost: { img: 'enemy044e', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, fire: 1.6, atk: 1, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
-  caster: { img: 'enemy025', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.75, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
-  healer: { img: 'enemy008', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.7, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
-  pup: { img: 'enemy034', imgs: ['enemy034', 'enemy034a', 'enemy034b', 'enemy034', 'enemy034a'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.55, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
+  shell: { img: 'enemy028', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, fire: 1, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
+  beast: { img: 'enemy002', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, fire: 1, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
+  swift: { img: 'enemy022', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, fire: 1.2, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
+  ember: { img: 'enemy023', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, fire: 0.5, atk: 1.2, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
+  frost: { img: 'enemy044e', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, fire: 1.6, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
+  caster: { img: 'enemy025', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.9, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
+  healer: { img: 'enemy008', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
+  pup: { img: 'enemy034', imgs: ['enemy034', 'enemy034a', 'enemy034b', 'enemy034', 'enemy034a'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
   twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 120, regen: 16, speed: 60, brave: true, fire: 1, atk: 1.0, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
