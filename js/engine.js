@@ -106,6 +106,7 @@ SR.Battle = function (opts) {
     var wasBroken = broken(dst), previous = dst.k, brokeNow = false;
     if (src.hero && fire) { kd *= dst.fire; hp *= dst.fire; }
     if (!dst.hero && dst.weak && hasSt(dst, dst.weak)) kd *= SR.statusFx.weakK;
+    else if (!dst.hero && tune.bossK && (isBoss || dst.type === 'twin')) kd *= tune.bossK;   // ボス級は弱点の状態が付いていないと気力が減りにくい
     if (!wasBroken) {
       if (dst.hero && dst.id === 'N' && dst.form === 'brave') kd *= 1.25;
       if (dst.kProtect >= t) kd *= 0.65;
