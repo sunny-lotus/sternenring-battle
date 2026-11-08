@@ -470,6 +470,12 @@ SR.Battle = function (opts) {
       ac.execute();
     }
     enemies.forEach(function (e) { if (e.charge === 2) e.charge = 0; });
+    // ターンの終わり：控えで休んでいる人は体力が少し回復（緊張感ありのみ）
+    if (tune.reserveRegen) heroes.forEach(function (u) {
+      if (u.pos < 3 || u.hp <= 0 || broken(u) || u.hp >= u.maxHp) return;
+      var b = u.hp; u.hp = Math.min(u.maxHp, u.hp + u.maxHp * tune.reserveRegen);
+      emit(u.name + '（控えで休む）　体力+' + Math.round(u.hp - b), { target: u.id, heal: Math.round(u.hp - b), rest: true }, 300);
+    });
     // ターンの終わり：燃焼で体力が減り、すべての状態が1ターン減る
     if (statusOn) heroes.concat(enemies).forEach(function (u) {
       if (u.hp > 0 && hasSt(u, 'burn')) hurtBy(u, SR.statusFx.burn, '燃焼');

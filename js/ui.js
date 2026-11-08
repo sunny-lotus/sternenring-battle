@@ -207,7 +207,7 @@
     });
 
     var pa = $('partyArea'), ra = $('reserveArea');
-    pa.innerHTML = ''; ra.innerHTML = '<div class="lbl">控え（支援）</div>';
+    pa.innerHTML = ''; ra.innerHTML = '<div class="lbl">控え（支援' + (B.tune.reserveRegen ? '・回復' : '') + '）</div>';
     B.heroes.slice().sort(function (a, b) { return a.pos - b.pos; }).forEach(function (u) {
       var v = val(u, snap), res = u.pos >= 3, d = document.createElement('div');
       d.className = 'unit ' + (res ? 'reserve' : 'hero') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '');
