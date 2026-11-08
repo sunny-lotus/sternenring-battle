@@ -12,7 +12,7 @@ SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
   tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 },
-    boss: { single: [20, 85], aoe: [24, 129], aoeAlways: [18, 72], big: [55, 180] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
+    boss: { single: [24, 102], aoe: [29, 155], aoeAlways: [22, 86], big: [66, 216] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
 SR.names = { N: 'ナハト', V: 'ヴォルト', F: 'フレア', S: 'セレナ', L: 'リヒト' };
@@ -26,6 +26,13 @@ skill('wait', 'all', 0, 0, { kind: 'wait', label: '待機' });
 // 見やすさ版で足したコマンド（試算にはない。数値は仮）
 skill('light', 'all', 0, 4, { kind: 'attack', kd: 12, hp: 28, label: '基本攻撃' });
 skill('defend', 'all', 0, 0, { kind: 'defend', label: '防御' });
+skill('scan', 'all', 0, 4, { kind: 'scan', label: '調べる' });   // 2026-11-08 弱点は調べるまで分からない
+// 見つけた弱点はこの端末に覚えておき、次の戦いからは最初からアイコンで見える
+SR.weakMemo = (function () {
+  var KEY = 'sr-battle-weak-v1', set = {};
+  try { set = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return { has: function (k) { return !!set[k]; }, add: function (k) { set[k] = 1; try { localStorage.setItem(KEY, JSON.stringify(set)); } catch (e) {} } };
+})();
 SR.defendRate = 0.5;
 skill('崩し斬り', 'N', 4, 18, { kind: 'attack', kd: 30, hp: 32, form: 'brave' });
 skill('かばう', 'N', 4, 14, { kind: 'cover', form: 'revenge' });
@@ -62,6 +69,8 @@ skill('集中付与', 'common', 4, 14, { kind: 'power' });
 skill('連弾', 'S', 5, 22, { kind: 'attack', kd: 12, hp: 14, hits: 3 });
 skill('深癒', 'S', 6, 30, { kind: 'heal', amount: 300 });
 skill('癒しの波', 'S', 7, 40, { kind: 'heal', amount: 150, allies: true });
+skill('蘇生', 'S', 5, 36, { kind: 'revive', amount: 0.4 });         // 2026-11-08 ボスを強くした分、倒れても立て直せるように
+skill('気付け', 'common', 6, 46, { kind: 'revive', amount: 0.25 });   // だれでも持てるが重い蘇生
 skill('破陣剣', 'L', 5, 30, { kind: 'attack', kd: 52, hp: 52, brave: true });
 skill('守勢の号令', 'L', 6, 28, { kind: 'teamKProtect' });
 skill('決着の一閃', 'L', 6, 32, { kind: 'attack', kd: 10, hp: 90, finisher: 1.65 });
@@ -134,19 +143,19 @@ SR.kits = {
     N: ['崩し斬り', 'かばう', '断ち込み', '返し斬り', '追撃の冴え'],
     V: ['連射', '導機照準', '照準共有', '中回復', '気力支援'],
     F: ['火槍', '炎撃', '炎圧', '中回復', '気力支援'],
-    S: ['連弾', '深癒', '癒しの波', '気力支援'],
+    S: ['連弾', '深癒', '癒しの波', '蘇生'],
     L: ['破陣剣', '守勢の号令', '決着の一閃', '中回復'] },
   counter: { name: '反撃', mode: 'counter',
     N: ['誘い斬り', 'かばう', '返し崩し', '反攻の冴え'],
     V: ['連射', '中回復', '気力防護', '気力支援', '重圧'],
     F: ['火槍', '炎撃', '中回復', '気力防護', '気力支援'],
-    S: ['連弾', '深癒', '癒しの波', '気力支援'],
+    S: ['連弾', '深癒', '癒しの波', '蘇生'],
     L: ['破陣剣', '守勢の号令', '決着の一閃', '中回復'] },
   chase: { name: '追撃', mode: 'chase',
     N: ['崩し斬り', '断ち込み', '追撃の冴え', '追撃の極意'],
     V: ['連射', '蓄積照準', '連撃継続', '中回復'],
     F: ['炎圧', '火槍', '炎撃', '気力支援', '中回復'],
-    S: ['連弾', '深癒', '癒しの波', '気力支援'],
+    S: ['連弾', '深癒', '癒しの波', '蘇生'],
     L: ['破陣剣', '守勢の号令', '決着の一閃', '中回復'] },
 };
 
@@ -169,7 +178,7 @@ SR.enemyTypes = {
   caster: { img: 'enemy025', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
   healer: { img: 'enemy008', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
   pup: { img: 'enemy034', imgs: ['enemy034', 'enemy034a', 'enemy034b', 'enemy034', 'enemy034a'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
-  twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.25, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
+  twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
@@ -195,6 +204,7 @@ SR.category = function (id) {
   if (id === 'light') return 'light';
   if (id === 'basic') return 'brave';
   if (id === 'defend') return 'defend';
+  if (id === 'scan') return 'scan';
   if (id === 'wait') return 'wait';
   if (['cover', 'guard', 'kProtect', 'teamKProtect', 'protect', 'kBarrier'].indexOf(a.kind) >= 0) return 'skillDef';
   return a.kind === 'attack' ? 'skillAtk' : 'skillSup';
@@ -212,6 +222,7 @@ SR.describe = function (a) {
   if (!a) return '';
   if (a.kind === 'wait') return '何もしない。気力を温存する';
   if (a.kind === 'defend') return 'このターン、受けるダメージと気力ダメージが半分';
+  if (a.kind === 'scan') return '敵一体の弱点を調べる。分かった弱点は次の戦いからも見える';
   if (a.kind === 'attack') {
     var p = [];
     p.push(a.all ? '敵全体' : a.scatter ? '敵にばらまく' : '敵一体');
@@ -231,6 +242,7 @@ SR.describe = function (a) {
     cover: '前線の仲間一人をかばう（このターン）',
     guard: '自分への気力ダメージを0.65倍（このターン）',
     heal: a.allies ? '前線全員の体力を' + a.amount + '回復' : '仲間一人の体力を' + a.amount + '回復',
+    revive: '倒れた前線の仲間一人を、体力' + Math.round(a.amount * 100) + '%で起こす',
     energy: '仲間一人の気力を' + a.amount + '回復',
     protect: '仲間一人の被ダメージを0.7倍（2ターン）',
     kProtect: '仲間一人への気力ダメージを0.65倍（2ターン）',

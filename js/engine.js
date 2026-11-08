@@ -76,6 +76,7 @@ SR.Battle = function (opts) {
     var before = u.st[s] || 0;
     u.st[s] = Math.min(SR.statusMax, before + n);
     emit(u.name + '：' + SR.statuses[s].name + (before ? 'が延びた' : '') + '（残り' + u.st[s] + 'ターン）', { target: u.id, status: s }, 380);
+    if (!u.hero && u.weak === s && !weakKnown(u)) { SR.weakMemo.add(weakKey(u)); emit('弱点だ！ ' + u.name + 'は' + SR.statuses[s].name + 'で崩れやすい', { target: u.id, weak: true }, 900); }
   }
   function hurtBy(u, ratio, why) {
     if (u.hp <= 0) return;
@@ -156,14 +157,19 @@ SR.Battle = function (opts) {
     return Math.max(0, Math.ceil(v) - (u.supportEconomy || 0));
   }
   function statusSkillOf() { return null; } // 付与専用技は編成で選ぶ（自動では付かない）
-  function available(u, id) { return (id === 'basic' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.k >= price(u, skills[id]); }
+  function weakKey(e) { return e.type || (opts.encounter + ':' + e.id); }
+  function weakKnown(e) { return !!e.weak && SR.weakMemo.has(weakKey(e)); }
+  this.weakKnown = weakKnown;
+  function downFront() { return front().filter(function (v) { return v.hp <= 0; }); }
+  this.downFront = downFront;
+  function available(u, id) { if (skills[id] && skills[id].kind === 'revive' && !downFront().length) return false; return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.k >= price(u, skills[id]); }
   this.price = function (u, id) { return price(u, skills[id]); };
   this.available = available;
 
   // 使える技の一覧（UI用）
   this.options = function (u) {
     var ss = statusSkillOf(u);
-    var ids = ['basic'].concat(ss ? [ss] : [], u.abilities.filter(function (s) { return skills[s]; }), ['defend']);
+    var ids = ['basic'].concat(ss ? [ss] : [], u.abilities.filter(function (s) { return skills[s]; }), ['defend'], statusOn ? ['scan'] : []);
     return ids.map(function (id) { return { id: id, skill: skills[id], cost: price(u, skills[id]), ok: available(u, id) }; });
   };
   this.passivesOf = function (u) { return u.abilities.filter(function (s) { return SR.passives[s]; }); };
@@ -172,10 +178,11 @@ SR.Battle = function (opts) {
   this.targetKind = function (u, id) {
     var a = skills[id];
     if (a.kind === 'attack') return a.all || a.scatter ? 'none' : 'enemy';
-    if (a.kind === 'analyze' || a.kind === 'pressure') return 'enemy';
+    if (a.kind === 'analyze' || a.kind === 'pressure' || a.kind === 'scan') return 'enemy';
     if (a.kind === 'cover') return 'allyOther';
     if (a.kind === 'aim') return has(u, '照準共有') ? 'ally' : 'none';
     if (a.kind === 'heal') return a.allies ? 'none' : 'ally';
+    if (a.kind === 'revive') return 'allyDown';
     if (['energy', 'protect', 'kProtect', 'kBarrier', 'power', 'haste'].indexOf(a.kind) >= 0) return 'ally';
     return 'none';
   };
@@ -235,7 +242,8 @@ SR.Battle = function (opts) {
   // おまかせのブースト：ブレイク中の相手への攻撃は全部使う。たまり切っているときは1つ使う。
   var basePick = this.autoPick;
   this.autoPick = function (u) {
-    var r = basePick(u); r.boost = 0;
+    var down = downFront(), rv = down.length && u.abilities.find(function (s) { return skills[s] && skills[s].kind === 'revive' && available(u, s); });
+    var r = rv ? { skill: rv, target: down[0] } : basePick(u); r.boost = 0;
     if (tune.boost && u.bp > 0 && skills[r.skill] && ['attack', 'heal', 'energy'].indexOf(skills[r.skill].kind) >= 0) {
       if (skills[r.skill].kind === 'attack' && r.target && !r.target.hero && broken(r.target)) r.boost = u.bp;
       else if (u.bp >= tune.boost.max) r.boost = 1;
@@ -245,7 +253,7 @@ SR.Battle = function (opts) {
 
   function perform(u, a, target) {
     var tname = target ? target.name : '';
-    emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + '・威力×' + u.boostMul + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
+    emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + (a.id === 'basic' ? '・' + (1 + u.boostN) + '回攻撃' : '・威力×' + u.boostMul) + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
     if (a.kind !== 'attack' && u.id === 'F') u.fireStreak = 0;
     if (a.kind === 'wait' || a.kind === 'defend') return;
     bleedOnAct(u);
@@ -256,6 +264,20 @@ SR.Battle = function (opts) {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
         if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * u.boostMul); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
+      return;
+    }
+    if (a.kind === 'scan') {
+      if (!target || target.hero || target.hp <= 0) return;
+      if (!target.weak) { emit(target.name + 'に弱点は見つからなかった', { target: target.id }, 700); return; }
+      var first = !weakKnown(target); SR.weakMemo.add(weakKey(target));
+      emit((first ? '弱点を見つけた！ ' : '') + target.name + 'は' + SR.statuses[target.weak].name + 'で崩れやすい', { target: target.id, weak: true }, 1000);
+      return;
+    }
+    if (a.kind === 'revive') {
+      if (!target || target.hp > 0 || target.pos >= 3) target = downFront()[0];
+      if (!target) { emit('起こす相手がいなかった', null, 500); return; }
+      target.hp = Math.min(target.maxHp, Math.round(target.maxHp * a.amount * u.boostMul)); target.k = Math.max(target.k, 40); target.st = {};
+      emit(target.name + ' が起き上がった！　体力' + target.hp, { target: target.id, heal: target.hp, revive: true }, 900);
       return;
     }
     if (a.kind === 'energy') { var b = target.k; recover(target, a.amount * u.boostMul); emit(target.name + '　気力+' + Math.round(target.k - b), { target: target.id, kheal: Math.round(target.k - b) }, 380); return; }
@@ -272,7 +294,7 @@ SR.Battle = function (opts) {
     if (a.taunt) taunt = { u: u, target: target };
     var aimed = u.aim > 0;
     if (a.fire) u.fireStreak = (u.fireStreak || 0) + 1; else if (u.id === 'F') u.fireStreak = 0;
-    var targets = a.all ? living() : [target], hits = a.hits || 1;
+    var targets = a.all ? living() : [target], hits = (a.hits || 1) + (a.id === 'basic' ? (u.boostN || 0) : 0);
     var targetHits = new Map(), brokeInSeq = new Set();
     for (var h = 0; h < hits; h++) {
       var set = a.scatter ? [living()[h % Math.max(1, living().length)]] : targets;
@@ -293,7 +315,7 @@ SR.Battle = function (opts) {
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
-        if (u.boostMul > 1) { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
+        if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
         var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
@@ -308,7 +330,7 @@ SR.Battle = function (opts) {
   // ---- ブースト：1ターンに1たまる（最大2）。使ったターンの次はたまらない。威力だけ上がり、回数は増えない ----
   var boostCfg = tune.boost || null;
   this.boostCfg = boostCfg;
-  function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy'); }
+  function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy' || a.kind === 'revive'); }
   this.boostable = boostable;
 
   function SR_TARGETED(a) { return !(a.all || a.scatter || a.kind === 'wait' || a.kind === 'defend' || a.kind === 'guard' || a.kind === 'teamKProtect' || (a.kind === 'heal' && a.allies)); }
@@ -427,7 +449,7 @@ SR.Battle = function (opts) {
       var a = skills[c.skill];
       if (!available(u, c.skill)) a = skills.wait;
       var target = c.target ? (typeof c.target === 'string' ? unit(c.target) : c.target) : null;
-      if (!target) target = a.kind === 'attack' || a.kind === 'analyze' || a.kind === 'pressure' ? living().slice().sort(function (x, y) { return x.k - y.k; })[0] : u;
+      if (!target) target = a.kind === 'attack' || a.kind === 'analyze' || a.kind === 'pressure' || a.kind === 'scan' ? living().slice().sort(function (x, y) { return x.k - y.k; })[0] : a.kind === 'revive' ? downFront()[0] : u;
       var cost = price(u, a); u.k -= cost; u.discount = false;
       if (a.form) u.form = a.form;
       if (a.kind === 'defend') u.defend = t;

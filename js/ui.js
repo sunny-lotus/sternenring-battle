@@ -141,7 +141,10 @@
   // ================= 盤面の描画 =================
   function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form, st: u.st, bp: u.bp || 0 }; }
   function stIcons(st) { var h = ''; if (!B.statusOn || !st) return h; SR.statusOrder.forEach(function (s) { if (st[s] > 0) h += SR.statusIcon(s, st[s]); }); return h; }
-  function weakTag(e) { return B.statusOn && e.weak ? '<span class="badge b-weak">' + SR.statusIcon(e.weak) + SR.statuses[e.weak].name + 'で崩れやすい</span>' : ''; }
+  function weakTag(e) {
+    if (!B.statusOn || !e.weak) return '';
+    return B.weakKnown(e) ? '<span class="badge b-weak" title="' + SR.statuses[e.weak].name + 'で崩れやすい">弱点' + SR.statusIcon(e.weak) + '</span>' : '<span class="badge b-weak unk">弱点？</span>';
+  }
   function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
   function catClass(id) { var c = SR.category(id); return c === 'skillAtk' || c === 'brave' ? ' t-atk' : c === 'skillDef' || c === 'defend' || c === 'guard' ? ' t-def' : c === 'skillSup' ? ' t-sup' : ''; }
   function pct(a, b) { return Math.max(0, Math.min(100, a / b * 100)); }
@@ -299,6 +302,7 @@
   function targetCands() {
     var u = st.actor, tk = B.targetKind(u, st.skill);
     if (tk === 'enemy') return B.living();
+    if (tk === 'allyDown') return B.downFront();
     return B.front().filter(function (v) { return v.hp > 0 && (tk !== 'allyOther' || v !== u); });
   }
   function byPos(a, b) { return a.pos - b.pos; }
@@ -330,7 +334,7 @@
     var left = B.actors().filter(function (u) { return !cmds[u.id]; }).length;
     return '<div class="row">' + s +
       '<button class="btn" data-nav data-act="autoAll">全員おまかせ</button>' +
-      '<button class="btn primary" data-nav' + (left ? '' : ' data-first') + ' data-act="go">行動開始' + (left ? '（未入力' + left + '人は防御）' : '') + '</button></div>';
+      '<button class="btn primary" data-nav' + (left ? '' : ' data-first') + ' data-act="go">行動開始' + (left ? '（未入力' + left + '人はブレイブ攻撃）' : '') + '</button></div>';
   }
   function idleHTML() {
     var h = '<div class="phead"><h3>コマンドを入れる人を選ぶ</h3>' + commonButtons() + '</div><div class="who">';
@@ -348,12 +352,14 @@
     var brave = opts.find(function (o) { return o.id === 'basic'; });
     var nSkill = opts.filter(function (o) { return SR.isSkill(o.id); }).length;
     var defend = opts.find(function (o) { return o.id === 'defend'; });
+    var scan = opts.find(function (o) { return o.id === 'scan'; });
     var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>';
     h += boostRow(u);
     h += '<div class="menu4">' +
       '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
       '<button class="big" data-nav data-act="list" data-id="skill"' + (nSkill ? '' : ' disabled') + '>スキル<span class="c">' + nSkill + '</span><span class="d">ユニーク' + (u.id === 'N' ? '' : '・コモン') + '</span></button>' +
       '<button class="big t-def" data-nav data-act="skill" data-id="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">このターン受けるダメージ半分</span></button>' +
+      (scan ? '<button class="big" data-nav data-act="skill" data-id="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">気力' + scan.cost + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
       '</div>';
     var pas = B.passivesOf(u);
     if (pas.length) h += '<div class="hint">常時：' + pas.map(function (s) { return s + '（' + SR.passives[s][2] + '）'; }).join('　') + '</div>';
@@ -370,13 +376,14 @@
     if (!B.boostCfg) return '';
     var h = '<div class="boostrow"><span class="bl">ブースト ' + bpPips(u.bp, st.boost) + '</span>';
     [0, 1, 2].forEach(function (n) {
-      var lab = n === 0 ? 'なし' : n + '（威力×' + B.boostCfg.mult[n] + '）';
+      var lab = n === 0 ? 'なし' : String(n);
       h += '<button class="btn bbtn' + (st.boost === n ? ' on' : '') + '" data-nav data-act="boost" data-id="' + n + '"' + (n > u.bp ? ' disabled' : '') + '>' + lab + '</button>';
     });
-    return h + '<span class="small">攻撃・回復に効く。回数は増えない</span></div>';
+    return h + '<span class="small">' + boostHelp() + '</span></div>';
   }
+  function boostHelp() { var m = B.boostCfg.mult; return 'ブレイブ攻撃は回数+1・+2。技は威力×' + m[1] + '・×' + m[2] + '（攻撃・回復・蘇生）'; }
   function boostNote() {
-    return B.boostCfg && st.boost ? '　<span class="bnote">ブースト' + st.boost + '（威力×' + B.boostCfg.mult[st.boost] + '）</span>' : '';
+    return B.boostCfg && st.boost ? '　<span class="bnote">ブースト' + st.boost + '</span>' : '';
   }
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
@@ -399,7 +406,7 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span>' + boostNote() + '</h3>' +
+    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + boostRow(u) +
       '<div class="catlegend"><span><i style="background:var(--catAtk)"></i>攻撃</span><span><i style="background:var(--catDef)"></i>守備</span><span><i style="background:var(--catSup)"></i>回復・補助</span></div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id); }).sort(function (a, b) { return rank(a) - rank(b); });
@@ -411,7 +418,7 @@
   }
   function targetHTML() {
     var u = st.actor, a = SR.skills[st.skill], tk = B.targetKind(u, st.skill);
-    var h = '<h3>' + u.name + '：' + (a.label || a.id) + (B.boostable(st.skill) ? boostNote() : '') + '　' + (tk === 'enemy' ? '相手を選ぶ' : '仲間を選ぶ') + '</h3><div class="who">';
+    var h = '<h3>' + u.name + '：' + (a.label || a.id) + '　' + (tk === 'enemy' ? '相手を選ぶ' : '仲間を選ぶ') + '</h3>' + (B.boostable(st.skill) ? boostRow(u) : '') + '<div class="who">';
     targetCands().forEach(function (v) {
       var extra = v.hero ? '' : (v.charge === 1 ? '・溜め中' : v.charge === 2 ? '・大技' : '') + (B.broken(v) ? '・ブレイク中' : '');
       h += '<button class="btn" data-nav data-act="target" data-id="' + v.id + '"><span>' + v.name + '</span><small>体力' + Math.round(v.hp) + '・気力' + Math.round(v.k) + extra + '</small></button>';
@@ -515,7 +522,7 @@
   // ================= 実行と再生 =================
   var speed = 1;
   function run() {
-    B.actors().forEach(function (u) { if (!cmds[u.id]) cmds[u.id] = { skill: 'defend', target: null }; });
+    B.actors().forEach(function (u) { if (!cmds[u.id]) cmds[u.id] = { skill: B.available(u, 'basic') ? 'basic' : 'defend', target: null }; });
     B.actors().forEach(function (u) { logLine(u.name + '：' + cmdText(u, cmds[u.id]), 'g'); });
     st.mode = 'play'; st.actor = null; speed = 1; draw();
     playOrder = B.previewOrder(cmds); playActor = null;
