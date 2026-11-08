@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星環バトル試作</title>
+<style>
+:root{
+  --bg:#0d1020; --panel:#1a2042; --panel2:#242c58; --line:#3a4479;
+  --ink:#f1f2fb; --sub:#b4bbdf; --gold:#f2c86b; --hp:#5fd38a; --hpLow:#e8a33c; --hpCrit:#e65a5a;
+  --k:#5aa8f0; --brk:#ff6a8a; --pow:#ff9a52;
+  --front:#2f6fd0; --mid:#2a9a8a; --back:#8a5ad0; --res:#4b5275;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.small{font-size:13px;color:var(--sub)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:15px}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:linear-gradient(#e9b955,#c4902f);color:#231a05;border-color:#f3d48b;font-weight:700}
+.btn.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
+.btn:disabled{opacity:.4;cursor:default}
+body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
+
+/* タイトル */
+#title{max-width:980px;margin:0 auto;padding:12px 16px 24px}
+#title h1{font-size:24px;margin:8px 0 2px;letter-spacing:.08em}
+#title h3{margin:16px 0 6px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.choice{text-align:left;padding:10px 12px}
+.choice b{display:block;margin-bottom:2px}
+#loadout{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.lo-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.lo-tabs .btn{display:flex;flex-direction:column;align-items:center;min-width:84px}
+.lo-tabs small{font-size:12px;color:var(--k)}
+.lo-head{margin:10px 0 6px;font-size:15px}
+.lo-eq{display:flex;flex-wrap:wrap;gap:6px}
+.lo-eq .btn{font-size:14px;padding:6px 10px;border-color:var(--gold)}
+.lo-eq small{color:var(--k)}
+.sk.on{border-color:var(--gold);background:#3a3420}
+.rules{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px 10px 30px;font-size:14px;line-height:1.75}
+
+/* バトル */
+#battle{max-width:1280px;margin:0 auto;padding:8px 12px;display:flex;flex-direction:column;gap:8px;height:100vh;height:100dvh}
+#field{position:relative;flex:1 1 auto;min-height:330px;border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:radial-gradient(ellipse at 30% 110%,#2b2350 0%,#121630 55%,#0a0c1a 100%)}
+#field::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff8 50%,transparent),radial-gradient(1px 1px at 33% 9%,#fff6 50%,transparent),
+  radial-gradient(1.5px 1.5px at 71% 14%,#fff9 50%,transparent),radial-gradient(1px 1px at 88% 30%,#fff6 50%,transparent),
+  radial-gradient(1px 1px at 52% 26%,#fff5 50%,transparent),radial-gradient(1px 1px at 6% 40%,#fff5 50%,transparent)}
+.topline{position:absolute;left:10px;top:8px;right:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:3;font-size:14px}
+.turn{font-weight:800;color:var(--gold);font-size:18px}
+.chip{font-size:13px;padding:3px 9px;border-radius:999px;background:#0008;border:1px solid var(--line)}
+.chip.warn{background:#7a1f1f;border-color:#ff8a8a;color:#fff;font-weight:700}
+.chip.hot{animation:blink .8s infinite}
+@keyframes blink{50%{opacity:.55}}
+
+#enemyArea{position:absolute;left:2%;top:44px;bottom:8px;width:40%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;align-content:center}
+#partyArea{position:absolute;left:41%;top:40px;bottom:8px;width:43%}
+#reserveArea{position:absolute;right:8px;top:44px;bottom:8px;width:14%;min-width:120px;border:2px dashed var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px;background:#0005}
+#reserveArea .lbl{font-size:13px;color:var(--sub);text-align:center}
+
+.unit{position:relative;border-radius:12px;border:2px solid transparent;transition:transform .2s,border-color .2s,opacity .3s}
+.enemy{width:31%;max-width:220px;text-align:center;padding:4px}
+.enemy.boss{width:100%;max-width:380px}
+.enemy svg{width:100%;height:auto;display:block}
+.enemy .nm{font-size:16px;font-weight:700}
+.enemy.down{opacity:.15}
+.enemy img.mon{display:block;width:100%;max-width:170px;aspect-ratio:1/1;object-fit:contain;margin:0 auto;filter:drop-shadow(0 6px 6px #0009)}
+.enemy.boss img.mon{max-width:250px}
+.enemy.many img.mon{max-width:90px}
+.enemy.charging img.mon{filter:drop-shadow(0 0 10px #ffcc55) drop-shadow(0 0 22px #ff7a3a);animation:pulse 1.2s infinite}
+.oi img.mon{width:100%;height:100%;object-fit:contain;background:#1b2140}
+.enemy.many{width:30%}
+.enemy.many svg{max-height:70px}
+.enemy.many .nm{font-size:14px}
+.enemy.charging svg{filter:drop-shadow(0 0 10px #ffcc55) drop-shadow(0 0 22px #ff7a3a);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
+
+.hero{position:absolute;width:31.5%;background:#1a2042e8;border-color:var(--line);padding:6px 8px}
+.hero[data-pos="0"]{left:0;top:2%}
+.hero[data-pos="1"]{left:34%;top:11%}
+.hero[data-pos="2"]{left:68%;top:20%}
+.hero .pic{height:110px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.hero .pic img{height:100%;object-fit:contain}
+.hero .nm{font-weight:800;font-size:17px}
+.role{display:inline-block;font-size:13px;font-weight:800;padding:1px 8px;border-radius:6px;color:#fff;margin-right:4px}
+.role.r0{background:var(--front)} .role.r1{background:var(--mid)} .role.r2{background:var(--back)} .role.r3{background:var(--res)}
+.reserve{background:#141936;border-color:var(--line);padding:5px 6px}
+.reserve .pic{height:70px;display:flex;justify-content:center;overflow:hidden}
+.reserve .pic img{height:100%;object-fit:contain}
+.reserve .nm{font-weight:700;font-size:15px}
+.unit.down .pic img{filter:grayscale(1) brightness(.45)}
+.pic .fc{display:none}
+.unit.brk{border-color:var(--brk)}
+.unit.active{border-color:var(--gold);box-shadow:0 0 16px #f2c86b66;z-index:2}
+.unit.pickable{border-color:#7fd4ff;cursor:pointer;box-shadow:0 0 0 2px #7fd4ff55}
+.unit.pickable:hover{background:#2c3a60}
+.unit.acting{box-shadow:0 0 22px #fffa;border-color:#fff;z-index:3}
+.cmd{font-size:13px;min-height:18px;margin-top:2px}
+.cmd.done{color:var(--gold)} .cmd.todo{color:var(--sub)}
+
+.bar{height:10px;border-radius:5px;background:#0007;overflow:hidden;margin-top:3px}
+.bar>i{display:block;height:100%;transition:width .25s}
+.bar.k>i{background:var(--k)}
+.bar.k{height:7px}
+.nums{display:flex;justify-content:space-between;font-size:13px;color:#dfe3ff;margin-top:1px}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:1px 6px;border-radius:6px;margin:1px 1px 0 0}
+.b-brk{background:var(--brk);color:#200}
+.b-form{background:#3c3f73;color:#dfe2ff}
+.b-buff{background:#28454f;color:#bff}
+.b-fire{background:#5a2a12;color:#ffc8a5}
+.b-charge{background:#6b4a0c;color:#ffe08a}
+.b-charge.hot{background:#c23a2a;color:#fff;animation:blink .8s infinite}
+
+#banner{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;background:#000c;border:1px solid var(--gold);
+  border-radius:12px;padding:10px 18px;font-size:19px;font-weight:700;max-width:90%;text-align:center;pointer-events:none}
+
+.btn.snd{font-size:13px;padding:5px 10px}
+.btn.snd.off{opacity:.5;text-decoration:line-through}
+.sndbox{position:absolute;right:8px;top:6px;z-index:5;display:flex;gap:4px}
+.sndbox .btn.snd{font-size:11px;padding:3px 8px;background:#000a}
+/* 行動順バー：顔が左から行動する順に並ぶ */
+#order{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+#order .ol{font-size:13px;font-weight:800;white-space:nowrap;color:var(--gold)}
+#order .ol.slow{color:var(--sub)}
+.otrack{flex:1;display:flex;align-items:flex-start;gap:6px;overflow-x:auto;padding:4px 2px 2px;position:relative;scrollbar-width:thin}
+.otrack::before{content:"";position:absolute;left:0;right:0;top:33px;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold),#f2c86b33)}
+.oc{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;width:64px}
+.oi{width:58px;height:58px;border-radius:50%;overflow:hidden;border:3px solid #5aa8f0;background:#0d1020;display:flex;align-items:center;justify-content:center}
+.oi img{width:100%;height:100%;object-fit:cover}
+.oi svg{width:150%;height:auto;margin-top:6px}
+.oc.o-enemy .oi{border-color:#ff7a7a;border-radius:10px}
+.oc.o-support .oi{width:42px;height:42px;margin-top:8px;border-color:#6b7397;opacity:.8}
+.oc.cur .oi{border-color:var(--gold);box-shadow:0 0 0 3px #f2c86b88;transform:scale(1.12)}
+.oc.todo .oi{border-style:dashed}
+.ot{font-size:12px;font-weight:700;line-height:1.2;margin-top:2px;white-space:nowrap;color:var(--sub)}
+.oc.o-enemy .ot{color:#ffb4b4}
+.ot.hot{background:#c23a2a;color:#fff;border-radius:5px;padding:0 4px}
+.ot.warm{background:#6b4a0c;color:#ffe08a;border-radius:5px;padding:0 4px}
+.shake{animation:shake .3s}
+@keyframes shake{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}
+.pop{position:absolute;left:50%;top:28%;transform:translateX(-50%);font-weight:900;font-size:24px;pointer-events:none;
+  text-shadow:0 2px 0 #000,0 0 6px #000;animation:pop .9s forwards;white-space:nowrap;z-index:5}
+.pop.dmg{color:#fff} .pop.kd{color:#8cc8ff;font-size:16px;top:48%} .pop.heal{color:#7dffa8} .pop.brk{color:var(--brk);font-size:28px}
+@keyframes pop{0%{opacity:0;margin-top:8px}15%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-26px}}
+
+#bottom{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px;height:265px}
+#panel,#log{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;overflow:auto}
+#panel h3{margin:0 0 8px;font-size:17px}
+.phead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.phead h3{margin:0}
+.phead .row{margin-top:0}
+#log{font-size:14px;line-height:1.6}
+#log .t{color:var(--gold);font-weight:700;margin-top:4px}
+#log .e{color:#ffb4b4} #log .b{color:var(--brk);font-weight:700} #log .g{color:#9fe8b4} #log .s{color:var(--sub)}
+
+.menu4{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.big{font-size:18px;font-weight:700;padding:12px 14px;text-align:left;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.big .c{float:right;font-size:14px;color:var(--k);font-weight:700;margin-top:3px}
+.big .d{display:block;font-size:12px;font-weight:400;color:var(--sub)}
+.big:disabled{opacity:.4}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.grp{font-size:13px;color:var(--sub);margin:6px 0 4px}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
+.sk{text-align:left;padding:7px 10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.sk b{font-size:16px}
+.sk .c{float:right;color:var(--k);font-weight:700;font-size:14px}
+.sk .d{display:block;font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4}
+.sk:disabled{opacity:.4}
+.meter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);margin-top:3px}
+.meter span{width:3.2em}
+.meter .m{flex:1;height:7px;border-radius:4px;background:#0007;overflow:hidden}
+.meter .m i{display:block;height:100%}
+.who{display:flex;gap:6px;flex-wrap:wrap}
+.who .btn{display:flex;flex-direction:column;align-items:flex-start;min-width:120px}
+.who .btn small{font-size:12px;color:var(--sub)}
+.plan{font-size:13px;color:#bfe7ff;margin-top:6px}
+.hint{font-size:12px;color:var(--sub);margin-top:8px}
+.result{text-align:center;padding:6px}
+.result h2{font-size:30px;margin:0 0 6px;color:var(--gold)}
+
+/* スマホ・縦長 */
+@media (max-width:820px), (orientation:portrait) and (max-width:1000px){
+  #battle{height:auto;min-height:100dvh;padding:6px 8px}
+  #field{flex:none;min-height:0;display:flex;flex-direction:column;padding:38px 6px 6px;gap:4px}
+  #enemyArea,#partyArea,#reserveArea{position:static;width:auto;min-width:0}
+  #enemyArea{flex-wrap:nowrap;gap:2px}
+  .enemy{width:33%}.enemy.boss{width:62%}.enemy.many{width:20%}
+  .enemy.many .nums span:last-child{display:none}
+  .enemy img.mon{max-width:90px}
+  .enemy.boss img.mon{max-width:150px}
+  .enemy.many img.mon{max-width:60px}
+  .enemy .nm{font-size:14px}
+  #partyArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .hero{position:relative;width:auto;max-width:none;padding:4px 5px}
+  .hero[data-pos]{left:auto;top:auto}
+  .pic .st{display:none}
+  .pic .fc{display:block;width:100%;height:100%;object-fit:cover;border-radius:8px}
+  .hero .pic{height:auto;aspect-ratio:1/1;max-height:120px;max-width:120px;margin:0 auto 2px}
+  .hero .nm{font-size:15px}
+  .role{font-size:12px;padding:1px 5px}
+  #reserveArea{flex-direction:row;padding:4px;align-items:stretch}
+  #reserveArea .lbl{writing-mode:vertical-rl;align-self:center}
+  .reserve{flex:1;display:grid;grid-template-columns:48px 1fr;gap:6px;align-items:center}
+  .reserve .pic{height:48px;width:48px}
+  .nums{font-size:12px}
+  #bottom{grid-template-columns:1fr;height:auto}
+  #log{max-height:130px}
+  .big{font-size:17px;padding:14px 12px}
+  .list{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  #order{padding:4px 6px;gap:4px}
+  #order .ol{font-size:11px}
+  .oc{width:40px}
+  .oi{width:38px;height:38px;border-width:2px}
+  .otrack::before{top:22px}
+  .oc.o-support .oi{width:28px;height:28px;margin-top:5px}
+  #field{padding-top:34px}
+  .topline{font-size:12px}.turn{font-size:16px}.chip{font-size:12px;padding:2px 7px}
+  .enemy svg{max-height:56px}
+  .enemy .badge{font-size:11px}
+  .hero .pic{max-width:64px;max-height:64px}
+  .hero .badge{font-size:11px}
+  .cmd{font-size:12px;min-height:16px}
+  .phead .btn{padding:7px 10px;font-size:14px}
+  .big{padding:10px 10px;font-size:16px}
+  .big .d{font-size:11px}
+  #bottom{gap:6px}
+}
+</style>
+</head>
+<body>
+<section id="title">
+  <h1>星環バトル試作</h1>
+  <div class="small">バトル相談の試算モデル（sr-battle-sandbox、2026-11-07）をもとにした試作。数値はすべて仮の値です。</div>
+  <h3>相手</h3>
+  <div class="choices" id="encChoices"></div>
+  <h3>持ち込み構成</h3>
+  <div class="choices" id="kitChoices"></div>
+  <div id="loadout" class="hidden"></div>
+  <h3>難しさ</h3>
+  <div class="choices" id="tuneChoices"></div>
+  <div class="row"><button class="btn primary" id="startBtn" data-nav>たたかう</button><button class="btn snd" data-snd="bgm" data-nav></button><button class="btn snd" data-snd="se" data-nav></button></div>
+  <h3>ルール</h3>
+  <ul class="rules">
+    <li><b>体力</b>が0になると倒れる。<b>気力</b>は技を使うと先に払い、毎ターン回復する。</li>
+    <li>相手の気力を削るほど体力へのダメージが大きい。<b>ブレイブ攻撃</b>などで気力を0にすると<b>ブレイク</b>：次のターンの終わりまで動けず、ダメージ1.5倍。</li>
+    <li><b>前衛・中衛・後衛</b>の3人が行動する。敵に近い前衛ほど先に動く。<b>控え</b>の2人は小さな支援を自動で行う。</li>
+    <li>コマンドは好きな人から入れられる。<b>交代</b>は1ターンに1組（前線の一人と控えの一人）。入った人はそのターンから動ける。ブレイク中の人は交代できない。</li>
+    <li>コマンド：<b>ブレイブ攻撃</b>（気力8・ブレイクさせられる）／<b>スキル</b>（<b>ユニーク</b>＝そのキャラだけの技、<b>コモン</b>＝みんなが使える技。ナハトはコモンなし）／<b>防御</b>（消費なし・そのターン受けるダメージと気力ダメージが半分）。</li>
+    <li>ターンの最初に1回だけ、<b>控えとの交代</b>か<b>前線同士の並べ替え</b>のどちらかができる。</li>
+    <li><b>ナハト</b>は技でフォームが変わる。ブレイブ：仲間が気力を0にした相手へ無料追撃。リベンジ：被ダメージ0.6倍、殴られたら無料反撃。アサルト：威力1.3倍。</li>
+    <li><b>緊張感あり</b>：相手は力を溜め、次のターンに大技を撃つ。溜め中か大技の前にブレイクさせれば止まる。</li>
+    <li>操作：マウス・タッチ・キーボード（矢印で選ぶ、Enterで決定、Escで戻る、Q/Eでキャラ切替、Cで交代）・コントローラー（十字キー、A決定、B戻る、L/Rキャラ切替、X交代、STARTで行動開始）。</li>
+  </ul>
+</section>
+
+<section id="battle" class="hidden">
+  <div id="order" class="hidden"></div>
+  <div id="field">
+    <div class="topline" id="topline"></div>
+    <div id="enemyArea"></div>
+    <div id="partyArea"></div>
+    <div id="reserveArea"></div>
+
+    <div class="sndbox"><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
+    <div id="banner" class="hidden"></div>
+  </div>
+  <div id="bottom">
+    <div id="panel"></div>
+    <div id="log"></div>
+  </div>
+</section>
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/loadout.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
