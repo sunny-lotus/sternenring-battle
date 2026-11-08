@@ -218,6 +218,7 @@
       if (!res) d.setAttribute('data-pos', u.pos);
       var tags = '';
       if (u.id === 'N') tags += '<span class="badge b-form">' + SR.formNames[v.form] + '</span>';
+      if (u.exposed >= B.t) tags += '<span class="badge b-charge">無防備</span>';
       if (v.brk) tags += '<span class="badge b-brk">ブレイク</span>';
       if (u.aim > 0) tags += '<span class="badge b-buff">照準</span>';
       if (u.kProtect >= B.t) tags += '<span class="badge b-buff">気力防護</span>';

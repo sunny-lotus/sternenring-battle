@@ -125,6 +125,7 @@ SR.Battle = function (opts) {
     var amount = hp * (broken(dst) ? dc.broken : dc.base + dc.slope * (1 - dst.k / dst.maxK));
     if (!src.hero && aoe) amount *= [1.2, 1, 0.8][pos];
     if (dst.hero && dst.id === 'N' && dst.form === 'revenge' && !broken(dst)) amount *= 0.6;
+    if (dst.exposed >= t) amount *= 2;
     if (dst.protect >= t) amount *= 0.7;
     if (dst.defend === t) amount *= SR.defendRate;
     if (dst.supportGuard) amount *= 0.96;
@@ -329,6 +330,10 @@ SR.Battle = function (opts) {
         targetHits.set(e, (targetHits.get(e) || 0) + 1);
         if (a.id === '炎撃' && has(u, '残り火')) e.pressure = t + 1;
       });
+    }
+    if (a.desperate && statusOn) {   // 捨て身：反動で体力が減り、次のターンの終わりまで無防備（受けるダメージ2倍）
+      var cost = Math.round(u.maxHp * 0.15); u.hp = Math.max(1, u.hp - cost); u.exposed = t + 1;
+      emit(u.name + '　捨て身の反動　体力-' + cost + '（次のターンの終わりまで無防備：受けるダメージ2倍）', { target: u.id, dmg: cost }, 700);
     }
     if (aimed) u.aim--; u.power = false;
   }
