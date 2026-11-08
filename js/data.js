@@ -185,16 +185,16 @@ SR.enemyTypes = {
 SR.encounters = {
   normal: { imgs: ['enemy002a', 'enemy002', 'enemy002b'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP150・気力45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { img: 'boss004', name: '加入期ボス', note: 'HP1450・気力240。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
-  aoe: { img: 'boss002', name: '全体攻撃ボス', note: 'HP1600・気力260。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+  boss: { img: 'boss004', name: '加入期ボス', note: 'HP1450・気力240（緊張感ありは体力2.5倍の3625）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
+  aoe: { img: 'boss002', name: '全体攻撃ボス', note: 'HP1600・気力260（緊張感ありは体力2.5倍の4000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
     config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze' } },
-  fireResist: { img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+  fireResist: { img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の3625）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
   elements: { name: '炎と氷', note: '炎に強い炎獣と、炎に弱い氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
   swarm: { name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
-  twins: { name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
+  twins: { name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各1500）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
 };
 
