@@ -117,7 +117,8 @@ SR.Battle = function (opts) {
         if (!dst.hero && dst.charge) { dst.charge = 0; dst.stopped = true; }
       }
     }
-    var amount = hp * (broken(dst) ? 1.5 : 0.25 + 0.75 * (1 - dst.k / dst.maxK));
+    var dc = (!dst.hero && tune.dmg) || { base: 0.25, slope: 0.75, broken: 1.5 };
+    var amount = hp * (broken(dst) ? dc.broken : dc.base + dc.slope * (1 - dst.k / dst.maxK));
     if (!src.hero && aoe) amount *= [1.2, 1, 0.8][pos];
     if (dst.hero && dst.id === 'N' && dst.form === 'revenge' && !broken(dst)) amount *= 0.6;
     if (dst.protect >= t) amount *= 0.7;
