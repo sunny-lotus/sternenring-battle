@@ -168,6 +168,15 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
 .pop{position:absolute;left:50%;top:28%;transform:translateX(-50%);font-weight:900;font-size:24px;pointer-events:none;
   text-shadow:0 2px 0 #000,0 0 6px #000;animation:pop .9s forwards;white-space:nowrap;z-index:5}
 .pop.dmg{color:#fff} .pop.kd{color:#8cc8ff;font-size:16px;top:48%} .pop.heal{color:#7dffa8} .pop.brk{color:var(--brk);font-size:28px}
+.pop.boost{color:#ffd76a;font-size:20px;top:8%}
+.bp{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.bp i{width:10px;height:10px;transform:rotate(45deg);border:1.5px solid #ffd76a;background:transparent;display:inline-block}
+.bp i.on{background:#ffd76a;box-shadow:0 0 6px #ffcc33}
+.bp i.use{background:#ff8a3d;border-color:#ff8a3d}
+.boostrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 8px}
+.boostrow .bl{font-weight:bold;color:#ffd76a;margin-right:4px}
+.boostrow .bbtn.on{background:#5a4512;border-color:#ffd76a;color:#fff3c4}
+.bnote{color:#ffd76a;font-size:.85em}
 @keyframes pop{0%{opacity:0;margin-top:8px}15%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-26px}}
 
 #bottom{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px;height:265px}
@@ -273,6 +282,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
     <li><b>体力</b>が0になると倒れる。<b>気力</b>は技を使うと先に払い、毎ターン回復する。</li>
     <li>相手の気力を削るほど体力へのダメージが大きい。<b>ブレイブ攻撃</b>などで気力を0にすると<b>ブレイク</b>：次のターンの終わりまで動けず、ダメージ1.5倍。</li>
     <li><b>前衛・中衛・後衛</b>の3人が行動する。敵に近い前衛ほど先に動く。<b>控え</b>の2人は小さな支援を自動で行う（緊張感ありでは、控えにいる間ターンの終わりに体力が少し回復する）。</li>
+    <li><b>ブースト</b>（緊張感ありのみ）：ターンのはじめに1つたまる（最大2・最初は1）。行動のときに1つか2つ使うと、その攻撃・回復の威力が×1.5／×2になる。回数は増えない。使ったターンの次はたまらない。</li>
     <li>コマンドは好きな人から入れられる。<b>交代</b>は1ターンに1組（前線の一人と控えの一人）。入った人はそのターンから動ける。ブレイク中の人は交代できない。</li>
     <li>コマンド：<b>ブレイブ攻撃</b>（気力8・ブレイクさせられる）／<b>スキル</b>（<b>ユニーク</b>＝そのキャラだけの技、<b>コモン</b>＝みんなが使える技。ナハトはコモンなし）／<b>防御</b>（消費なし・そのターン受けるダメージと気力ダメージが半分）。</li>
     <li>ターンの最初に1回だけ、<b>控えとの交代</b>か<b>前線同士の並べ替え</b>のどちらかができる。</li>

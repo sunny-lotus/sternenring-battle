@@ -11,7 +11,7 @@ SR.C = { maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 },
     boss: { single: [20, 56], aoe: [24, 86], aoeAlways: [18, 60], big: [55, 120] }, mob: { single: [24, 60], aoe: [16, 48], big: [90, 170] } },
 };
 

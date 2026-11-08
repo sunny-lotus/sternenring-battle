@@ -139,7 +139,7 @@
   }
 
   // ================= 盤面の描画 =================
-  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form, st: u.st }; }
+  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form, st: u.st, bp: u.bp || 0 }; }
   function stIcons(st) { var h = ''; if (!B.statusOn || !st) return h; SR.statusOrder.forEach(function (s) { if (st[s] > 0) h += SR.statusIcon(s, st[s]); }); return h; }
   function weakTag(e) { return B.statusOn && e.weak ? '<span class="badge b-weak">' + SR.statusIcon(e.weak) + SR.statuses[e.weak].name + 'で崩れやすい</span>' : ''; }
   function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
@@ -221,6 +221,7 @@
       if (u.protect >= B.t) tags += '<span class="badge b-buff">防護</span>';
       if (u.defend === B.t) tags += '<span class="badge b-buff">防御</span>';
       tags += stIcons(v.st);
+      if (B.boostCfg) tags += bpPips(v.bp !== undefined ? v.bp : u.bp, !snap && cmds[u.id] ? cmds[u.id].boost || 0 : 0);
       var role = '<span class="role r' + (res ? 3 : u.pos) + '">' + (res ? '控え' : ROLE[u.pos]) + '</span>';
       var cmdLine = '';
       if (!res && !snap && st.mode !== 'result') {
@@ -247,7 +248,7 @@
   function cmdText(u, c) {
     var a = SR.skills[c.skill];
     var t = c.target ? B.unit(c.target) : null;
-    return (a.label || a.id) + (t && B.targetKind(u, c.skill) !== 'none' ? ' → ' + t.name : '');
+    return (a.label || a.id) + (c.boost ? '＋ブースト' + c.boost : '') + (t && B.targetKind(u, c.skill) !== 'none' ? ' → ' + t.name : '');
   }
 
   // ================= 行動順の帯 =================
@@ -348,6 +349,7 @@
     var nSkill = opts.filter(function (o) { return SR.isSkill(o.id); }).length;
     var defend = opts.find(function (o) { return o.id === 'defend'; });
     var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>';
+    h += boostRow(u);
     h += '<div class="menu4">' +
       '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
       '<button class="big" data-nav data-act="list" data-id="skill"' + (nSkill ? '' : ' disabled') + '>スキル<span class="c">' + nSkill + '</span><span class="d">ユニーク' + (u.id === 'N' ? '' : '・コモン') + '</span></button>' +
@@ -357,6 +359,24 @@
     if (pas.length) h += '<div class="hint">常時：' + pas.map(function (s) { return s + '（' + SR.passives[s][2] + '）'; }).join('　') + '</div>';
     h += '<div class="row"><button class="btn" data-nav data-act="auto">おまかせ</button><button class="btn" data-nav data-back data-act="toIdle">一覧へ戻る</button></div>';
     return h;
+  }
+  // ブースト：たまっている数（最大2）から、この行動で使う数を選ぶ。威力だけ上がり、回数は同じ。
+  function bpPips(n, use) {
+    var max = B.boostCfg ? B.boostCfg.max : 0, h = '';
+    for (var i = 0; i < max; i++) h += '<i class="' + (i < n - (use || 0) ? 'on' : i < n ? 'use' : '') + '"></i>';
+    return '<span class="bp" title="ブースト ' + n + '">' + h + '</span>';
+  }
+  function boostRow(u) {
+    if (!B.boostCfg) return '';
+    var h = '<div class="boostrow"><span class="bl">ブースト ' + bpPips(u.bp, st.boost) + '</span>';
+    [0, 1, 2].forEach(function (n) {
+      var lab = n === 0 ? 'なし' : n + '（威力×' + B.boostCfg.mult[n] + '）';
+      h += '<button class="btn bbtn' + (st.boost === n ? ' on' : '') + '" data-nav data-act="boost" data-id="' + n + '"' + (n > u.bp ? ' disabled' : '') + '>' + lab + '</button>';
+    });
+    return h + '<span class="small">攻撃・回復に効く。回数は増えない</span></div>';
+  }
+  function boostNote() {
+    return B.boostCfg && st.boost ? '　<span class="bnote">ブースト' + st.boost + '（威力×' + B.boostCfg.mult[st.boost] + '）</span>' : '';
   }
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
@@ -379,7 +399,7 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' +
+    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span>' + boostNote() + '</h3>' +
       '<div class="catlegend"><span><i style="background:var(--catAtk)"></i>攻撃</span><span><i style="background:var(--catDef)"></i>守備</span><span><i style="background:var(--catSup)"></i>回復・補助</span></div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id); }).sort(function (a, b) { return rank(a) - rank(b); });
@@ -391,7 +411,7 @@
   }
   function targetHTML() {
     var u = st.actor, a = SR.skills[st.skill], tk = B.targetKind(u, st.skill);
-    var h = '<h3>' + u.name + '：' + (a.label || a.id) + '　' + (tk === 'enemy' ? '相手を選ぶ' : '仲間を選ぶ') + '</h3><div class="who">';
+    var h = '<h3>' + u.name + '：' + (a.label || a.id) + (B.boostable(st.skill) ? boostNote() : '') + '　' + (tk === 'enemy' ? '相手を選ぶ' : '仲間を選ぶ') + '</h3><div class="who">';
     targetCands().forEach(function (v) {
       var extra = v.hero ? '' : (v.charge === 1 ? '・溜め中' : v.charge === 2 ? '・大技' : '') + (B.broken(v) ? '・ブレイク中' : '');
       h += '<button class="btn" data-nav data-act="target" data-id="' + v.id + '"><span>' + v.name + '</span><small>体力' + Math.round(v.hp) + '・気力' + Math.round(v.k) + extra + '</small></button>';
@@ -420,20 +440,21 @@
   }
 
   // ================= 操作 =================
-  function openMenu(u) { if (!u) return; st.actor = u; st.mode = 'menu'; st.list = null; st.skill = null; draw(); }
+  function openMenu(u) { if (!u) return; st.actor = u; st.mode = 'menu'; st.list = null; st.skill = null; st.boost = cmds[u.id] ? cmds[u.id].boost || 0 : 0; draw(); }
+  function boostFor(id) { return B.boostable(id) ? Math.min(st.boost || 0, st.actor.bp) : 0; }
   function nextActor() {
     var rest = B.actors().filter(function (u) { return !cmds[u.id]; });
     if (rest.length) openMenu(rest[0]); else { st.mode = 'idle'; st.actor = null; draw(); }
   }
   function chooseSkill(id) {
     var u = st.actor, tk = B.targetKind(u, id);
-    if (tk === 'none') { cmds[u.id] = { skill: id, target: SR.skills[id].kind === 'aim' ? u.id : null }; return nextActor(); }
+    if (tk === 'none') { cmds[u.id] = { skill: id, target: SR.skills[id].kind === 'aim' ? u.id : null, boost: boostFor(id) }; return nextActor(); }
     st.skill = id;
     var c = targetCands();
     if (c.length === 1) return chooseTarget(c[0].id);
     st.mode = 'target'; draw();
   }
-  function chooseTarget(id) { cmds[st.actor.id] = { skill: st.skill, target: id }; nextActor(); }
+  function chooseTarget(id) { cmds[st.actor.id] = { skill: st.skill, target: id, boost: boostFor(st.skill) }; nextActor(); }
   function doSwap(id2) {
     if (!B.swap(st.swapOut, id2)) { st.mode = 'idle'; return draw(); }
     var sw = B.swapped, out = B.unit(sw.out), inn = B.unit(sw.inn);
@@ -460,7 +481,7 @@
       if (!B.available(u, cmds[id].skill)) { delete cmds[id]; logLine(u.name + 'のコマンドは気力が足りなくなったので外した', 's'); }
     });
   }
-  function setAuto(u) { var r = B.autoPick(u); cmds[u.id] = { skill: r.skill, target: r.target ? r.target.id : null }; }
+  function setAuto(u) { var r = B.autoPick(u); cmds[u.id] = { skill: r.skill, target: r.target ? r.target.id : null, boost: r.boost || 0 }; }
   function cycleActor(dir) {
     var list = B.actors(); if (!list.length) return;
     var i = list.indexOf(st.actor);
@@ -477,6 +498,7 @@
     else if (act === 'skill') chooseSkill(id);
     else if (act === 'list') { st.list = id; st.mode = 'list'; draw(); }
     else if (act === 'target') chooseTarget(id);
+    else if (act === 'boost') { st.boost = +id; draw(); }
     else if (act === 'toMenu') { st.mode = 'menu'; draw(); }
     else if (act === 'toIdle') { st.mode = 'idle'; st.actor = null; draw(); }
     else if (act === 'auto') { setAuto(st.actor); nextActor(); }
@@ -520,7 +542,8 @@
     else if (f.down) snd('down');
     else if (f.dmg !== undefined) snd(B.unit(f.target).hero ? 'hurt' : 'hit');
     else if (f.heal || f.kheal) snd('heal');
-    if (f.actor) { var a = $('u-' + f.actor); if (a) a.classList.add('acting'); }
+    if (f.actor) { var a = $('u-' + f.actor); if (a) { a.classList.add('acting'); if (f.boost) popup(a, 'ブースト' + f.boost + '！', 'boost'); } }
+    if (f.boost) snd('charge');
     if (!f.target) return;
     var el = $('u-' + f.target); if (!el) return;
     if (f.dmg !== undefined) { el.classList.add('shake'); popup(el, '-' + f.dmg, 'dmg'); if (f.kdmg > 0) popup(el, '気力-' + f.kdmg, 'kd'); }

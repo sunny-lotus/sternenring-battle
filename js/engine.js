@@ -15,7 +15,8 @@ SR.Battle = function (opts) {
   var formation = opts.formation || roster;
   var heroes = roster.map(function (id) {
     return { id: id, name: SR.names[id], hero: true, hp: 560, maxHp: 560, k: 100, maxK: 100, until: 0, form: 'default',
-      abilities: kit[id], pos: formation.indexOf(id), aim: 0, analyzed: false, kProtect: 0, protect: 0 };
+      abilities: kit[id], pos: formation.indexOf(id), aim: 0, analyzed: false, kProtect: 0, protect: 0,
+      bp: tune.boost ? 1 : 0, boostUsed: 0, boostMul: 1 };
   });
   var isBoss = enc.engine !== '集団';
   var enemies = enc.party
@@ -60,7 +61,7 @@ SR.Battle = function (opts) {
 
   function snapshot() {
     var s = {};
-    heroes.concat(enemies).forEach(function (u) { s[u.id] = { hp: u.hp, k: u.k, brk: broken(u), form: u.form, st: Object.assign({}, u.st) }; });
+    heroes.concat(enemies).forEach(function (u) { s[u.id] = { hp: u.hp, k: u.k, brk: broken(u), form: u.form, st: Object.assign({}, u.st), bp: u.bp || 0 }; });
     return s;
   }
 
@@ -230,9 +231,20 @@ SR.Battle = function (opts) {
     return choose(['集中火力', '火槍', '衝撃', 'basic']);
   };
 
+  // おまかせのブースト：ブレイク中の相手への攻撃は全部使う。たまり切っているときは1つ使う。
+  var basePick = this.autoPick;
+  this.autoPick = function (u) {
+    var r = basePick(u); r.boost = 0;
+    if (tune.boost && u.bp > 0 && skills[r.skill] && ['attack', 'heal', 'energy'].indexOf(skills[r.skill].kind) >= 0) {
+      if (skills[r.skill].kind === 'attack' && r.target && !r.target.hero && broken(r.target)) r.boost = u.bp;
+      else if (u.bp >= tune.boost.max) r.boost = 1;
+    }
+    return r;
+  };
+
   function perform(u, a, target) {
     var tname = target ? target.name : '';
-    emit(u.name + '：' + (a.label || a.id) + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id }, 650);
+    emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + '・威力×' + u.boostMul + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
     if (a.kind !== 'attack' && u.id === 'F') u.fireStreak = 0;
     if (a.kind === 'wait' || a.kind === 'defend') return;
     bleedOnAct(u);
@@ -241,11 +253,11 @@ SR.Battle = function (opts) {
     if (a.kind === 'guard') { u.kProtect = t; return; }
     if (a.kind === 'heal') {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
-        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
+        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * u.boostMul); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
       return;
     }
-    if (a.kind === 'energy') { var b = target.k; recover(target, a.amount); emit(target.name + '　気力+' + Math.round(target.k - b), { target: target.id, kheal: Math.round(target.k - b) }, 380); return; }
+    if (a.kind === 'energy') { var b = target.k; recover(target, a.amount * u.boostMul); emit(target.name + '　気力+' + Math.round(target.k - b), { target: target.id, kheal: Math.round(target.k - b) }, 380); return; }
     if (a.kind === 'protect') { target.protect = t + 1; return; }
     if (a.kind === 'kProtect') { target.kProtect = t + 1; return; }
     if (a.kind === 'teamKProtect') { front().forEach(function (v) { if (v.hp > 0) v.kProtect = t + 1; }); return; }
@@ -280,6 +292,7 @@ SR.Battle = function (opts) {
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
+        if (u.boostMul > 1) { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
         var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
@@ -291,6 +304,12 @@ SR.Battle = function (opts) {
     }
     if (aimed) u.aim--; u.power = false;
   }
+  // ---- ブースト：1ターンに1たまる（最大2）。使ったターンの次はたまらない。威力だけ上がり、回数は増えない ----
+  var boostCfg = tune.boost || null;
+  this.boostCfg = boostCfg;
+  function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy'); }
+  this.boostable = boostable;
+
   function SR_TARGETED(a) { return !(a.all || a.scatter || a.kind === 'wait' || a.kind === 'defend' || a.kind === 'guard' || a.kind === 'teamKProtect' || (a.kind === 'heal' && a.allies)); }
 
   // ---- 1ターンの流れ ----
@@ -298,6 +317,7 @@ SR.Battle = function (opts) {
     t = ++self.t; cover = null; taunt = null; chaseCount = 0; counterCount = 0; outgoing = {}; supportActions = []; paid = []; self.swapped = null;
     if (t > 1) {
       heroes.forEach(function (u) { recover(u, tune.recovery); });
+      if (boostCfg) heroes.forEach(function (u) { if (u.hp > 0 && !broken(u) && u.boostUsed !== t - 1) u.bp = Math.min(boostCfg.max, u.bp + 1); });
       enemies.forEach(function (e) { if (e.hp > 0 && !broken(e)) e.k = Math.min(e.maxK, e.k + (e.pressure >= t ? e.regen * .4 : e.regen)); });
     }
     heroes.forEach(function (u) { u.supportEconomy = 0; u.supportPower = false; u.supportGuard = false; u.supportKGuard = 0; });
@@ -412,7 +432,13 @@ SR.Battle = function (opts) {
       if (a.kind === 'defend') u.defend = t;
       var speed = a.kind === 'cover' ? 100 : speedOf(u, 80 - u.pos * 20 + (u.haste ? 25 : 0)); u.haste = false;
       if (a.kind === 'aim') speed += 5;
-      actions.push({ u: u, speed: speed, execute: function () { perform(u, a, target); } });
+      var bn = boostable(c.skill) && a !== skills.wait ? Math.max(0, Math.min(c.boost || 0, u.bp)) : 0;
+      if (bn) { u.bp -= bn; u.boostUsed = t; }
+      actions.push({ u: u, speed: speed, execute: function () {
+        u.boostN = bn; u.boostMul = bn ? boostCfg.mult[bn] : 1;
+        perform(u, a, target);
+        u.boostN = 0; u.boostMul = 1;
+      } });
     });
     var nums = isBoss ? tune.boss : tune.mob;
     living().forEach(function (e) {
