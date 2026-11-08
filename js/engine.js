@@ -318,7 +318,7 @@ SR.Battle = function (opts) {
     if (t > 1) {
       heroes.forEach(function (u) { recover(u, tune.recovery); });
       if (boostCfg) heroes.forEach(function (u) { if (u.hp > 0 && !broken(u) && u.boostUsed !== t - 1) u.bp = Math.min(boostCfg.max, u.bp + 1); });
-      enemies.forEach(function (e) { if (e.hp > 0 && !broken(e)) e.k = Math.min(e.maxK, e.k + (e.pressure >= t ? e.regen * .4 : e.regen)); });
+      enemies.forEach(function (e) { if (e.hp > 0 && !broken(e) && !(SR.statusFx.weakNoRegen && e.weak && hasSt(e, e.weak))) e.k =Math.min(e.maxK, e.k + (e.pressure >= t ? e.regen * .4 : e.regen)); });
     }
     heroes.forEach(function (u) { u.supportEconomy = 0; u.supportPower = false; u.supportGuard = false; u.supportKGuard = 0; });
     self.aoe = !!enc.config.alwaysAoe || (!tune.charge && t % 3 === 0);
