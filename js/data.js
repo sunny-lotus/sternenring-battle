@@ -78,7 +78,7 @@ SR.statuses = {
 };
 SR.statusOrder = ['burn', 'bleed', 'freeze', 'daze', 'shock', 'blind'];
 SR.statusMax = 6;
-SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blind: 0.1, weakK: 2, weakNoRegen: true,
+SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blind: 0.1, weakK: 2, weakRegen: 0,
   cap: { '燃焼': 18, '裂傷が開いた': 12 } }; // 体力の多いボスで強くなりすぎないよう、1回の上限
 // 技が付ける状態 [状態, ターン数] と、活かす状態 [状態, 倍率]
 (function () {
@@ -169,7 +169,7 @@ SR.enemyTypes = {
   caster: { img: 'enemy025', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
   healer: { img: 'enemy008', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
   pup: { img: 'enemy034', imgs: ['enemy034', 'enemy034a', 'enemy034b', 'enemy034', 'enemy034a'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
-  twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 120, regen: 16, speed: 60, brave: true, fire: 1, atk: 1.1, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
+  twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.1, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
