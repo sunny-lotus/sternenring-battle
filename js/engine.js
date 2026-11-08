@@ -332,7 +332,7 @@ SR.Battle = function (opts) {
       });
     }
     if (a.desperate && statusOn) {   // 捨て身：反動で体力が減り、次のターンの終わりまで無防備（受けるダメージ2倍）
-      var cost = Math.round(u.maxHp * 0.15); u.hp = Math.max(1, u.hp - cost); u.exposed = t + 1;
+      var cost = Math.round(u.hp * 0.85); u.hp = Math.max(1, u.hp - cost); u.exposed = t + 1;   // 反動：今の体力の15%まで減る
       emit(u.name + '　捨て身の反動　体力-' + cost + '（次のターンの終わりまで無防備：受けるダメージ2倍）', { target: u.id, dmg: cost }, 700);
     }
     if (aimed) u.aim--; u.power = false;

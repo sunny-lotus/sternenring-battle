@@ -235,7 +235,7 @@ SR.describe = function (a) {
     if (a.fire) p.push('炎');
     if (a.finisher) p.push('ブレイク中の相手に' + a.finisher + '倍');
     if (a.breakBonus) p.push('この技でブレイクさせると威力' + a.breakBonus + '倍');
-    if (a.desperate) p.push('自分の気力が少ないほど強い・反動で体力15%減り、次のターンの終わりまで受けるダメージ2倍');
+    if (a.desperate) p.push('自分の気力が少ないほど強い・反動で体力が今の15%まで減り、次のターンの終わりまで受けるダメージ2倍');
     if (a.taunt) p.push('相手の攻撃を自分へ引きつける');
     if (a.antiSpell) p.push('術を使う相手に気力削り2倍');
     return p.join('・');
