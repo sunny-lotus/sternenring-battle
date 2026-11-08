@@ -90,12 +90,12 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blin
   s('炎撃', null, ['burn', 1.6]); s('灰燼', null, ['burn', 1.7]);
   s('決着の一閃', null, ['daze', 1.6]);
   s('衝撃', ['blind', 2]);
-  // 付与専用技（試作で追加・数値は仮）。緊張感ありのとき、編成コストなしで各キャラが使える
-  skill('裂き払い', 'N', 0, 12, { kind: 'attack', kd: 10, hp: 22, inflict: ['bleed', 3] });
-  skill('放電弾', 'V', 0, 14, { kind: 'attack', kd: 12, hp: 16, inflict: ['shock', 3] });
-  skill('焼き付け', 'F', 0, 14, { kind: 'attack', kd: 8, hp: 18, fire: true, inflict: ['burn', 4] });
-  skill('氷結弾', 'S', 0, 14, { kind: 'attack', kd: 10, hp: 16, inflict: ['freeze', 3] });
-  skill('閃光', 'L', 0, 14, { kind: 'attack', kd: 8, hp: 14, inflict: ['daze', 3] });
+  // 付与専用技（試作で追加・数値は仮）。編成で選ぶふつうのスキル（装備コスト3）
+  skill('裂き払い', 'N', 3, 12, { kind: 'attack', kd: 10, hp: 22, inflict: ['bleed', 3] });
+  skill('放電弾', 'V', 3, 14, { kind: 'attack', kd: 12, hp: 16, inflict: ['shock', 3] });
+  skill('焼き付け', 'F', 3, 14, { kind: 'attack', kd: 8, hp: 18, fire: true, inflict: ['burn', 4] });
+  skill('氷結弾', 'S', 3, 14, { kind: 'attack', kd: 10, hp: 16, inflict: ['freeze', 3] });
+  skill('閃光', 'L', 3, 14, { kind: 'attack', kd: 8, hp: 14, inflict: ['daze', 3] });
   SR.statusSkill = { N: '裂き払い', V: '放電弾', F: '焼き付け', S: '氷結弾', L: '閃光' };
 })();
 

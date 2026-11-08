@@ -49,13 +49,6 @@
     var order = function (a, b) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(a)) - ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(b)); };
     var uni = p.act.filter(function (s) { return !SR.isCommon(s); }).sort(order);
     var com = p.act.filter(function (s) { return SR.isCommon(s); }).sort(order);
-    var ssId = SR.statusSkill && SR.statusSkill[id];
-    if (ssId && SR.tunes[pick.tune].status) {
-      var ssA = SR.skills[ssId];
-      h += '<div class="grp">付与専用の技（いつでも使える・装備コストなし）</div><div class="list">' +
-        '<div class="sk fixed' + catClass(ssId) + '"><b>' + ssId + '</b><span class="c">気力' + ssA.cost + '</span>' +
-        '<div>' + SR.typeBadge(ssId) + '</div>' + stLine(ssA, true) + '<span class="d">' + SR.describe(ssA) + '</span></div></div>';
-    }
     h += '<div class="grp">ユニーク（' + SR.names[id] + 'だけの技）</div><div class="list">' + uni.map(function (s) { return item(s, false); }).join('') + '</div>';
     if (com.length) h += '<div class="grp">コモン（みんなが使える技）</div><div class="list">' + com.map(function (s) { return item(s, false); }).join('') + '</div>';
     else if (id === 'N') h += '<div class="grp">コモン</div><div class="small">ナハトはコモンを使わない。この枠には、のちに「リンク」が入る予定。</div>';

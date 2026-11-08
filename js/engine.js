@@ -153,7 +153,7 @@ SR.Battle = function (opts) {
     if (u.discount) v *= 0.7;
     return Math.max(0, Math.ceil(v) - (u.supportEconomy || 0));
   }
-  function statusSkillOf(u) { return statusOn && SR.statusSkill ? SR.statusSkill[u.id] : null; }
+  function statusSkillOf() { return null; } // 付与専用技は編成で選ぶ（自動では付かない）
   function available(u, id) { return (id === 'basic' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.k >= price(u, skills[id]); }
   this.price = function (u, id) { return price(u, skills[id]); };
   this.available = available;
