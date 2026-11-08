@@ -89,13 +89,24 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blin
   s('連射', null, ['shock', 1.5]);
   s('炎撃', null, ['burn', 1.6]); s('灰燼', null, ['burn', 1.7]);
   s('決着の一閃', null, ['daze', 1.6]);
+  s('破陣剣', null, ['freeze', 1.4]);   // セレナが凍らせて、リヒトが叩く連携
+  s('返し斬り', null, ['blind', 1.5]);  // 暗闇で外れた相手を返す
   s('衝撃', ['blind', 2]);
-  // 付与専用技（試作で追加・数値は仮）。編成で選ぶふつうのスキル（装備コスト3）
+  // 付与専用技（試作で追加・数値は仮）。編成で選ぶふつうのスキル。
+  // 2026-11-08「付与できるのは1個だけじゃない、バランスは任せる」→ 各キャラ2つ＋コモン2つ。
+  // 方針：威力は弱め。単体は装備コスト3、全体は5で付与ターン短め。付けるだけでは得をしにくく、活かす技・弱点と組んで効く。
   skill('裂き払い', 'N', 3, 12, { kind: 'attack', kd: 10, hp: 22, inflict: ['bleed', 3] });
+  skill('目潰し斬り', 'N', 3, 14, { kind: 'attack', kd: 12, hp: 18, inflict: ['blind', 2] });
   skill('放電弾', 'V', 3, 14, { kind: 'attack', kd: 12, hp: 16, inflict: ['shock', 3] });
+  skill('閃光弾', 'V', 4, 16, { kind: 'attack', kd: 8, hp: 10, all: true, inflict: ['daze', 1] });
   skill('焼き付け', 'F', 3, 14, { kind: 'attack', kd: 8, hp: 18, fire: true, inflict: ['burn', 4] });
+  skill('熱波', 'F', 5, 26, { kind: 'attack', kd: 10, hp: 12, all: true, fire: true, inflict: ['burn', 2] });
   skill('氷結弾', 'S', 3, 14, { kind: 'attack', kd: 10, hp: 16, inflict: ['freeze', 3] });
+  skill('氷霧', 'S', 5, 26, { kind: 'attack', kd: 6, hp: 8, all: true, inflict: ['freeze', 1] });
   skill('閃光', 'L', 3, 14, { kind: 'attack', kd: 8, hp: 14, inflict: ['daze', 3] });
+  skill('斬光', 'L', 3, 16, { kind: 'attack', kd: 14, hp: 20, inflict: ['bleed', 2] });
+  skill('目くらまし', 'common', 3, 12, { kind: 'attack', kd: 6, hp: 8, inflict: ['blind', 3] });
+  skill('痺れ針', 'common', 3, 14, { kind: 'attack', kd: 8, hp: 10, inflict: ['shock', 2] });
   SR.statusSkill = { N: '裂き払い', V: '放電弾', F: '焼き付け', S: '氷結弾', L: '閃光' };
 })();
 
