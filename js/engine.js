@@ -43,6 +43,8 @@ SR.Battle = function (opts) {
     // 状態コンボのぶん、ボス級だけ体力を増やして長さと緊張感を保つ
     if (tune.status && tune.bossHp && (isBoss || e.type === 'twin')) { e.hp *= tune.bossHp; e.maxHp *= tune.bossHp; }
   });
+  var S = SR.hpScale || 1;
+  heroes.concat(enemies).forEach(function (u) { u.hp *= S; u.maxHp *= S; if (u.heal) u.heal *= S; });
 
   this.heroes = heroes; this.enemies = enemies; this.kit = kit; this.enc = enc; this.isBoss = isBoss;
   this.t = 0; this.events = []; this.stat = { breaks: 0, allyBreaks: 0, chases: 0, counters: 0, swaps: 0 };
@@ -73,6 +75,7 @@ SR.Battle = function (opts) {
   this.hasSt = hasSt;
   function addStatus(u, s, n) {
     if (!statusOn || !s || u.hp <= 0) return;
+    if (!u.hero && (isBoss || u.type === 'twin')) n = Math.ceil(n / 2);   // ボス級は状態が早く解ける（付け直しのタイミングが勝負）
     var before = u.st[s] || 0;
     u.st[s] = Math.min(SR.statusMax, before + n);
     emit(u.name + '：' + SR.statuses[s].name + (before ? 'が延びた' : '') + '（残り' + u.st[s] + 'ターン）', { target: u.id, status: s }, 380);
@@ -80,7 +83,7 @@ SR.Battle = function (opts) {
   }
   function hurtBy(u, ratio, why) {
     if (u.hp <= 0) return;
-    var d = Math.max(1, Math.min(SR.statusFx.cap[why] || 999, Math.round(u.maxHp * ratio)));
+    var d = Math.max(1, Math.min((SR.statusFx.cap[why] || 999) * S, Math.round(u.maxHp * ratio)));
     u.hp = Math.max(0, u.hp - d);
     emit(u.name + '　' + why + '　体力-' + d, { target: u.id, dmg: d, kdmg: 0, statusTick: true }, 380);
     if (u.hp === 0) emit(u.name + ' は倒れた', { target: u.id, down: true }, 700);
@@ -127,6 +130,8 @@ SR.Battle = function (opts) {
     if (dst.supportGuard) amount *= 0.96;
     if (hasSt(dst, 'freeze')) amount *= SR.statusFx.freeze;
     if (hasSt(src, 'daze')) amount *= SR.statusFx.daze;
+    amount *= S;
+    if (src.hero && amount > (stat.maxHit || 0)) { stat.maxHit = amount; stat.maxHitBy = src.name; }
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
     emit((label ? label + '　' : '') + dst.name + '　体力-' + Math.round(amount) + (kLoss > 0 ? '　気力-' + Math.round(kLoss) : ''),
@@ -262,7 +267,7 @@ SR.Battle = function (opts) {
     if (a.kind === 'guard') { u.kProtect = t; return; }
     if (a.kind === 'heal') {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
-        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * u.boostMul); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
+        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * u.boostMul); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
       return;
     }
@@ -316,7 +321,6 @@ SR.Battle = function (opts) {
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
-        if (tune.hpCap && hp > a.hp * tune.hpCap) hp = a.hp * tune.hpCap;   // 倍率の重ねすぎ（凍結＋捨て身斬り＋ブースト等）を抑える
         var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
@@ -405,13 +409,13 @@ SR.Battle = function (opts) {
       var target = s.id === 'S' ? targets.slice().sort(function (a, b) { return a.hp - b.hp; })[0] : targets.slice().sort(function (a, b) { return a.k - b.k; })[0];
       s.k -= cost; paid.push({ u: s, cost: cost });
       if (s.id === 'V') target.supportEconomy = 2;
-      self.supportPlan.push(s.name + 'の支援 → ' + target.name + '（' + { N: '被ダメージ4%減', V: '技の消費-2', F: '攻撃4%強化', S: '体力20回復', L: '気力ダメージ-2' }[s.id] + '）');
+      self.supportPlan.push(s.name + 'の支援 → ' + target.name + '（' + { N: '被ダメージ4%減', V: '技の消費-2', F: '攻撃4%強化', S: '体力' + 20 * S + '回復', L: '気力ダメージ-2' }[s.id] + '）');
       supportActions.push({ u: s, speed: 90, execute: function () {
         emit(s.name + '（支援）→ ' + target.name, { actor: s.id, support: true }, 450);
         if (target.hp <= 0) return;
         if (s.id === 'N') target.supportGuard = true;
         if (s.id === 'F') target.supportPower = true;
-        if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20); if (target.hp - b >= 0.5) emit(target.name + '　体力+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
+        if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20 * S); if (target.hp - b >= 0.5) emit(target.name + '　体力+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
         if (s.id === 'L') target.supportKGuard = 2;
       } });
     });

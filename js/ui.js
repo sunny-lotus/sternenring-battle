@@ -145,7 +145,7 @@
     if (!B.statusOn || !e.weak) return '';
     return B.weakKnown(e) ? '<span class="badge b-weak" title="' + SR.statuses[e.weak].name + 'で崩れやすい">弱点' + SR.statusIcon(e.weak) + '</span>' : '<span class="badge b-weak unk">弱点？</span>';
   }
-  function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
+  function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍' + '</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
   function catClass(id) { var c = SR.category(id); return c === 'skillAtk' || c === 'brave' ? ' t-atk' : c === 'skillDef' || c === 'defend' || c === 'guard' ? ' t-def' : c === 'skillSup' ? ' t-sup' : ''; }
   function pct(a, b) { return Math.max(0, Math.min(100, a / b * 100)); }
   function hpColor(r) { return r > .5 ? 'var(--hp)' : r > .25 ? 'var(--hpLow)' : 'var(--hpCrit)'; }
@@ -439,7 +439,12 @@
   }
   function resultHTML() {
     var win = B.outcome === 'win', s = B.stat;
-    return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' +
+    if (B.bestNew === undefined) {
+      B.bestNew = false;
+      try { var best = JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {}, key = B.enc.name; if ((s.maxHit || 0) > (best[key] || 0)) { B.bestNew = !!best[key] || s.maxHit > 0; best[key] = Math.round(s.maxHit); localStorage.setItem('sr-battle-best-v1', JSON.stringify(best)); } B.best = best[key] || 0; } catch (e) { B.best = 0; }
+    }
+    var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">自己ベスト更新！</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
+    return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh +
       '<div>' + B.t + 'ターン　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
       '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
       '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
