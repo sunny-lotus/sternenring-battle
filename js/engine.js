@@ -35,7 +35,13 @@ SR.Battle = function (opts) {
     : [{ id: 'B', name: enc.engine === '炎耐性ボス' ? '炎耐性ボス' : enc.config.alwaysAoe ? '全体攻撃ボス' : '加入期ボス',
         hp: 1450, maxHp: 1450, k: 240, maxK: 240, regen: 18, speed: 62, brave: true,
         fire: enc.engine === '炎耐性ボス' ? 0.55 : 1, until: 0 }];
-  enemies.forEach(function (e, i) { Object.assign(e, enc.config); e.pressure = 0; if (!e.img) e.img = enc.imgs ? enc.imgs[i] : enc.img; });
+  enemies.forEach(function (e, i) {
+    Object.assign(e, enc.config); e.pressure = 0;
+    if (!e.img) e.img = enc.imgs ? enc.imgs[i] : enc.img;
+    if (enc.weaks) e.weak = enc.weaks[i];
+    // 状態コンボのぶん、ボス級だけ体力を増やして長さと緊張感を保つ
+    if (tune.status && tune.bossHp && (isBoss || e.type === 'twin')) { e.hp *= tune.bossHp; e.maxHp *= tune.bossHp; }
+  });
 
   this.heroes = heroes; this.enemies = enemies; this.kit = kit; this.enc = enc; this.isBoss = isBoss;
   this.t = 0; this.events = []; this.stat = { breaks: 0, allyBreaks: 0, chases: 0, counters: 0, swaps: 0 };
@@ -54,9 +60,31 @@ SR.Battle = function (opts) {
 
   function snapshot() {
     var s = {};
-    heroes.concat(enemies).forEach(function (u) { s[u.id] = { hp: u.hp, k: u.k, brk: broken(u), form: u.form }; });
+    heroes.concat(enemies).forEach(function (u) { s[u.id] = { hp: u.hp, k: u.k, brk: broken(u), form: u.form, st: Object.assign({}, u.st) }; });
     return s;
   }
+
+  // ---- 状態（燃焼・裂傷・凍結・目眩・感電・暗闇）。「緊張感あり」でだけ働く ----
+  var statusOn = !!tune.status;
+  this.statusOn = statusOn;
+  heroes.concat(enemies).forEach(function (u) { u.st = {}; });
+  function hasSt(u, s) { return statusOn && u.st && u.st[s] > 0; }
+  this.hasSt = hasSt;
+  function addStatus(u, s, n) {
+    if (!statusOn || !s || u.hp <= 0) return;
+    var before = u.st[s] || 0;
+    u.st[s] = Math.min(SR.statusMax, before + n);
+    emit(u.name + '：' + SR.statuses[s].name + (before ? 'が延びた' : '') + '（残り' + u.st[s] + 'ターン）', { target: u.id, status: s }, 380);
+  }
+  function hurtBy(u, ratio, why) {
+    if (u.hp <= 0) return;
+    var d = Math.max(1, Math.min(SR.statusFx.cap[why] || 999, Math.round(u.maxHp * ratio)));
+    u.hp = Math.max(0, u.hp - d);
+    emit(u.name + '　' + why + '　体力-' + d, { target: u.id, dmg: d, kdmg: 0, statusTick: true }, 380);
+    if (u.hp === 0) emit(u.name + ' は倒れた', { target: u.id, down: true }, 700);
+  }
+  function bleedOnAct(u) { if (hasSt(u, 'bleed')) hurtBy(u, SR.statusFx.bleed, '裂傷が開いた'); }
+  function speedOf(u, base) { return base - (hasSt(u, 'shock') ? SR.statusFx.shock : 0); }
   function emit(text, fx, dur) { self.events.push({ text: text, fx: fx || null, dur: dur || 650, snap: snapshot() }); }
   this.snapshot = snapshot;
 
@@ -66,8 +94,13 @@ SR.Battle = function (opts) {
     o = o || {};
     var fire = !!o.fire, aoe = !!o.aoe, pos = o.pos === undefined ? dst.pos : o.pos, label = o.label || '';
     if (dst.hp <= 0) return;
+    if (hasSt(src, 'blind') && !o.label && random() < SR.statusFx.blind) {
+      emit(src.name + 'の攻撃は外れた（暗闇）', { target: dst.id, miss: true }, 420);
+      return;
+    }
     var wasBroken = broken(dst), previous = dst.k, brokeNow = false;
     if (src.hero && fire) { kd *= dst.fire; hp *= dst.fire; }
+    if (!dst.hero && dst.weak && hasSt(dst, dst.weak)) kd *= SR.statusFx.weakK;
     if (!wasBroken) {
       if (dst.hero && dst.id === 'N' && dst.form === 'brave') kd *= 1.25;
       if (dst.kProtect >= t) kd *= 0.65;
@@ -89,6 +122,8 @@ SR.Battle = function (opts) {
     if (dst.protect >= t) amount *= 0.7;
     if (dst.defend === t) amount *= SR.defendRate;
     if (dst.supportGuard) amount *= 0.96;
+    if (hasSt(dst, 'freeze')) amount *= SR.statusFx.freeze;
+    if (hasSt(src, 'daze')) amount *= SR.statusFx.daze;
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
     emit((label ? label + '　' : '') + dst.name + '　体力-' + Math.round(amount) + (kLoss > 0 ? '　気力-' + Math.round(kLoss) : ''),
@@ -96,6 +131,7 @@ SR.Battle = function (opts) {
     if (brokeNow) emit(dst.name + ' ブレイク！（' + (t + 1) + 'ターン目の終わりまで動けない）', { target: dst.id, broke: true }, 900);
     if (dst.stopped) { dst.stopped = false; stat.stops = (stat.stops || 0) + 1; emit('溜めが崩れた！ ' + dst.name + 'の大技を止めた', { target: dst.id, stop: true }, 1000); }
     if (dst.hp === 0) emit(dst.name + ' は倒れた', { target: dst.id, down: true }, 700);
+    if (o.inflict && dst.hp > 0) addStatus(dst, o.inflict[0], o.inflict[1]);
     var n = heroes[0];
     if (src.hero && src !== n && !wasBroken && previous > 0 && dst.k === 0 && !broken(dst) && dst.hp > 0 && n.hp > 0 && n.pos < 3 &&
         !broken(n) && n.form === 'brave' && chaseCount < (has(n, '追撃の極意') ? 2 : 1)) {
@@ -197,6 +233,8 @@ SR.Battle = function (opts) {
     emit(u.name + '：' + (a.label || a.id) + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id }, 650);
     if (a.kind !== 'attack' && u.id === 'F') u.fireStreak = 0;
     if (a.kind === 'wait' || a.kind === 'defend') return;
+    bleedOnAct(u);
+    if (u.hp <= 0) return;
     if (a.kind === 'cover') { if (target.hp > 0) cover = { protector: u, target: target }; return; }
     if (a.kind === 'guard') { u.kProtect = t; return; }
     if (a.kind === 'heal') {
@@ -236,13 +274,14 @@ SR.Battle = function (opts) {
         if (a.fire && has(u, '過熱')) hp *= 1.4;
         if (a.fire && has(u, '火勢')) hp *= 1 + Math.min(3, u.fireStreak - 1) * .15;
         if (a.finisher && broken(e)) hp *= a.finisher;
+        if (a.exploit && hasSt(e, a.exploit[0])) hp *= a.exploit[1];
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
-        hit(u, e, kd, hp, !!a.brave, { fire: a.fire });
+        hit(u, e, kd, hp, !!a.brave, { fire: a.fire, inflict: a.inflict });
         if (!before && broken(e)) brokeInSeq.add(e);
         targetHits.set(e, (targetHits.get(e) || 0) + 1);
         if (a.id === '炎撃' && has(u, '残り火')) e.pressure = t + 1;
@@ -338,16 +377,16 @@ SR.Battle = function (opts) {
     supportActions.forEach(function (s) { list.push({ id: s.u.id, name: s.u.name, kind: 'support', speed: 90, label: '支援' }); });
     self.actors().forEach(function (u) {
       var c = commands[u.id], a = skills[c ? c.skill : 'defend'];
-      var speed = a.kind === 'cover' ? 100 : 80 - u.pos * 20 + (u.haste ? 25 : 0);
+      var speed = a.kind === 'cover' ? 100 : speedOf(u, 80 - u.pos * 20 + (u.haste ? 25 : 0));
       if (a.kind === 'aim') speed += 5;
       list.push({ id: u.id, name: u.name, kind: 'hero', speed: speed, label: c ? (a.label || a.id) : '未入力', todo: !c });
     });
     living().forEach(function (e) {
       if (broken(e)) return;
-      if (e.charge === 1) { list.push({ id: e.id, name: e.name, kind: 'enemy', speed: e.speed, label: '溜め' }); return; }
+      if (e.charge === 1) { list.push({ id: e.id, name: e.name, kind: 'enemy', speed: speedOf(e, e.speed), label: '溜め' }); return; }
       if (e.k < 6) return;
       var counts = e.released ? 2 : 1;
-      for (var c = 0; c < counts; c++) list.push({ id: e.id, name: e.name, kind: 'enemy', speed: e.speed - c * 2,
+      for (var c = 0; c < counts; c++) list.push({ id: e.id, name: e.name, kind: 'enemy', speed: speedOf(e, e.speed) - c * 2,
         label: c === 0 && e.charge === 2 ? '大技' : e.heal ? '攻撃か回復' : (self.aoe || e.aoeAll) ? '全体攻撃' : '攻撃' });
     });
     list.sort(function (a, b) { return b.speed - a.speed; });
@@ -369,7 +408,7 @@ SR.Battle = function (opts) {
       var cost = price(u, a); u.k -= cost; u.discount = false;
       if (a.form) u.form = a.form;
       if (a.kind === 'defend') u.defend = t;
-      var speed = a.kind === 'cover' ? 100 : 80 - u.pos * 20 + (u.haste ? 25 : 0); u.haste = false;
+      var speed = a.kind === 'cover' ? 100 : speedOf(u, 80 - u.pos * 20 + (u.haste ? 25 : 0)); u.haste = false;
       if (a.kind === 'aim') speed += 5;
       actions.push({ u: u, speed: speed, execute: function () { perform(u, a, target); } });
     });
@@ -377,7 +416,7 @@ SR.Battle = function (opts) {
     living().forEach(function (e) {
       if (broken(e)) return;
       if (e.charge === 1) {
-        actions.push({ u: e, speed: e.speed, execute: function () {
+        actions.push({ u: e, speed: speedOf(e, e.speed), execute: function () {
           emit(e.name + 'は力を溜めている…（次のターンに大技。ブレイクさせれば止まる）', { actor: e.id, enemy: true, charge: true }, 900);
         } });
         return;
@@ -388,7 +427,7 @@ SR.Battle = function (opts) {
       var roll = random(), idx = roll < .5 ? 0 : roll < .8 ? 1 : 2;
       if (!alive.length) return;
       var chosen = alive[Math.min(idx, alive.length - 1)];
-      for (var c = 0; c < counts; c++) (function (c) { actions.push({ u: e, speed: e.speed - c * 2, execute: function () {
+      for (var c = 0; c < counts; c++) (function (c) { actions.push({ u: e, speed: speedOf(e, e.speed) - c * 2, execute: function () {
         var big = c === 0 && e.charge === 2;
         if (big) e.charge = 0;
         // 癒し手：傷ついた仲間がいれば攻撃の代わりに回復
@@ -400,6 +439,8 @@ SR.Battle = function (opts) {
             return;
           }
         }
+        bleedOnAct(e);
+        if (e.hp <= 0) return;
         var aoe = big ? isBoss : (self.aoe || !!e.aoeAll);
         var victim = taunt && taunt.target === e && taunt.u.hp > 0 && !broken(taunt.u) ? taunt.u : chosen;
         var targets = aoe ? front().filter(function (u) { return u.hp > 0; }) : [victim];
@@ -414,7 +455,7 @@ SR.Battle = function (opts) {
           for (var h = 0; h < hits; h++) {
             if (rec.hp <= 0 || e.hp <= 0) break;
             var m = e.atk || 1;
-            hit(e, rec, n[0] * m, n[1] * m, big || e.brave, { aoe: aoe, pos: v.pos });
+            hit(e, rec, n[0] * m, n[1] * m, big || e.brave, { aoe: aoe, pos: v.pos, inflict: e.inflict });
           }
         });
       } }); })(c);
@@ -427,6 +468,11 @@ SR.Battle = function (opts) {
       ac.execute();
     }
     enemies.forEach(function (e) { if (e.charge === 2) e.charge = 0; });
+    // ターンの終わり：燃焼で体力が減り、すべての状態が1ターン減る
+    if (statusOn) heroes.concat(enemies).forEach(function (u) {
+      if (u.hp > 0 && hasSt(u, 'burn')) hurtBy(u, SR.statusFx.burn, '燃焼');
+      Object.keys(u.st).forEach(function (s) { u.st[s]--; if (u.st[s] <= 0 || u.hp <= 0) delete u.st[s]; });
+    });
     heroes.concat(enemies).forEach(function (u) {
       if (u.until === t) { u.until = 0; u.k = u.maxK; u.released = true; if (u.hp > 0) emit(u.name + 'のブレイクが解けた（気力全回復' + (u.hero ? '' : '・次のターン2回行動') + '）', { target: u.id, recover: true }, 700); }
     });

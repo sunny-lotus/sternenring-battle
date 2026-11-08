@@ -42,9 +42,9 @@
       var a = SR.skills[s], tags = a ? SR.typeBadge(s) : '';
       if (a && a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
       if (a && a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
-      return '<button class="sk' + (on ? ' on' : '') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' +
+      return '<button class="sk' + (on ? ' on' : '') + (a ? catClass(s) : ' t-pas') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' +
         '<b>' + s + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／気力' + a.cost : '') + '</span>' +
-        (tags ? '<div>' + tags + '</div>' : '') + '<span class="d">' + desc + '</span></button>';
+        (tags ? '<div>' + tags + '</div>' : '') + (a ? stLine(a, !!SR.tunes[pick.tune].status) : '') + '<span class="d">' + desc + '</span></button>';
     }
     var order = function (a, b) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(a)) - ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(b)); };
     var uni = p.act.filter(function (s) { return !SR.isCommon(s); }).sort(order);
@@ -139,7 +139,11 @@
   }
 
   // ================= 盤面の描画 =================
-  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form }; }
+  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form, st: u.st }; }
+  function stIcons(st) { var h = ''; if (!B.statusOn || !st) return h; SR.statusOrder.forEach(function (s) { if (st[s] > 0) h += SR.statusIcon(s, st[s]); }); return h; }
+  function weakTag(e) { return B.statusOn && e.weak ? '<span class="badge b-weak">' + SR.statusIcon(e.weak) + SR.statuses[e.weak].name + 'で崩れやすい</span>' : ''; }
+  function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
+  function catClass(id) { var c = SR.category(id); return c === 'skillAtk' || c === 'brave' ? ' t-atk' : c === 'skillDef' || c === 'defend' || c === 'guard' ? ' t-def' : c === 'skillSup' ? ' t-sup' : ''; }
   function pct(a, b) { return Math.max(0, Math.min(100, a / b * 100)); }
   function hpColor(r) { return r > .5 ? 'var(--hp)' : r > .25 ? 'var(--hpLow)' : 'var(--hpCrit)'; }
   function bars(u, v) {
@@ -195,7 +199,9 @@
       if (e.fire > 1) tags += '<span class="badge b-fire">炎に弱い</span>';
       if (e.pressure >= B.t) tags += '<span class="badge b-buff">重圧</span>';
       (e.tags || []).forEach(function (tg) { tags += '<span class="badge b-form">' + tg + '</span>'; });
-      d.innerHTML = beastSVG(e) + '<div class="nm">' + e.name + '</div><div>' + tags + '</div>' + bars(e, v);
+      tags += weakTag(e);
+      var sti = stIcons(v.st);
+      d.innerHTML = beastSVG(e) + '<div class="nm">' + e.name + '</div>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + '<div>' + tags + '</div>' + bars(e, v);
       if (can.indexOf(e.id) >= 0) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(e.id); }; }
       addOrd(d, e.id); ea.appendChild(d);
     });
@@ -214,6 +220,7 @@
       if (u.kProtect >= B.t) tags += '<span class="badge b-buff">気力防護</span>';
       if (u.protect >= B.t) tags += '<span class="badge b-buff">防護</span>';
       if (u.defend === B.t) tags += '<span class="badge b-buff">防御</span>';
+      tags += stIcons(v.st);
       var role = '<span class="role r' + (res ? 3 : u.pos) + '">' + (res ? '控え' : ROLE[u.pos]) + '</span>';
       var cmdLine = '';
       if (!res && !snap && st.mode !== 'result') {
@@ -342,9 +349,9 @@
     var defend = opts.find(function (o) { return o.id === 'defend'; });
     var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>';
     h += '<div class="menu4">' +
-      '<button class="big" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
+      '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
       '<button class="big" data-nav data-act="list" data-id="skill"' + (nSkill ? '' : ' disabled') + '>スキル<span class="c">' + nSkill + '</span><span class="d">ユニーク' + (u.id === 'N' ? '' : '・コモン') + '</span></button>' +
-      '<button class="big" data-nav data-act="skill" data-id="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">このターン受けるダメージ半分</span></button>' +
+      '<button class="big t-def" data-nav data-act="skill" data-id="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">このターン受けるダメージ半分</span></button>' +
       '</div>';
     var pas = B.passivesOf(u);
     if (pas.length) h += '<div class="hint">常時：' + pas.map(function (s) { return s + '（' + SR.passives[s][2] + '）'; }).join('　') + '</div>';
@@ -352,7 +359,7 @@
     return h;
   }
   function skillButton(o) {
-    var a = o.skill, h = '<button class="sk" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
+    var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
     h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? '気力' + o.cost : '消費なし') + '</span>';
     var tags = SR.typeBadge(o.id);
     if (a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
@@ -361,6 +368,7 @@
     if (a.fire) tags += '<span class="badge b-fire">炎</span>';
     if (a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
     if (tags) h += '<div>' + tags + '</div>';
+    h += stLine(a);
     if (a.kind === 'attack') {
       var hits = a.hits || 1;
       h += '<div class="meter"><span>崩す力</span><div class="m"><i style="width:' + Math.min(100, a.kd * hits / 70 * 100) + '%;background:var(--k)"></i></div></div>' +
@@ -371,7 +379,8 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>';
+    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' +
+      '<div class="catlegend"><span><i style="background:var(--catAtk)"></i>攻撃</span><span><i style="background:var(--catDef)"></i>守備</span><span><i style="background:var(--catSup)"></i>回復・補助</span></div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id); }).sort(function (a, b) { return rank(a) - rank(b); });
     var uni = sk.filter(function (o) { return !SR.isCommon(o.id); }), com = sk.filter(function (o) { return SR.isCommon(o.id); });
@@ -518,6 +527,8 @@
     if (f.heal) popup(el, '+' + f.heal, 'heal');
     if (f.kheal) popup(el, '気力+' + f.kheal, 'heal');
     if (f.broke) popup(el, 'BREAK', 'brk');
+    if (f.status) { var sp = document.createElement('div'); sp.className = 'pop stpop'; sp.innerHTML = SR.statusIcon(f.status) + SR.statuses[f.status].name; el.appendChild(sp); }
+    if (f.miss) popup(el, 'ミス', 'kd');
   }
   function popup(el, text, cls) { var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text; el.appendChild(s); }
   function finishTurn() {
