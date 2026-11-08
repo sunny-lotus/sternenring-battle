@@ -42,6 +42,7 @@
       var a = SR.skills[s], tags = a ? SR.typeBadge(s) : '';
       if (a && a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
       if (a && a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
+      if (a && a.era > 1) tags += '<span class="badge b-charge">' + (a.era === 3 ? '終盤' : '中盤') + 'の技</span>';
       return '<button class="sk' + (on ? ' on' : '') + (a ? catClass(s) : ' t-pas') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' +
         '<b>' + s + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／気力' + a.cost : '') + '</span>' +
         (tags ? '<div>' + tags + '</div>' : '') + (a ? stLine(a, !!SR.tunes[pick.tune].status) : '') + '<span class="d">' + desc + '</span></button>';
@@ -77,7 +78,7 @@
       var b = document.createElement('button');
       b.className = 'btn choice' + (pick[key] === k ? ' sel' : '');
       b.setAttribute('data-nav', '');
-      b.innerHTML = '<b>' + list[k].name + '</b><span class="small">' + (key === 'kit' ? kitNote(k) : list[k].note) + '</span>';
+      b.innerHTML = '<b>' + list[k].name + '</b><span class="small">' + (key === 'kit' ? kitNote(k) : (list[k].era ? '【' + ['', '序盤', '中盤', '終盤'][list[k].era] + '】' : '') + list[k].note) + '</span>';
       b.onclick = function () { pick[key] = k; drawTitle(); };
       box.appendChild(b);
     });
@@ -219,6 +220,8 @@
       var tags = '';
       if (u.id === 'N') tags += '<span class="badge b-form">' + SR.formNames[v.form] + '</span>';
       if (u.exposed >= B.t) tags += '<span class="badge b-charge">無防備</span>';
+      if (u.exhausted >= B.t) tags += '<span class="badge b-charge">燃え尽き</span>';
+      if (u.ward >= B.t) tags += '<span class="badge b-buff">守りの祈り</span>';
       if (v.brk) tags += '<span class="badge b-brk">ブレイク</span>';
       if (u.aim > 0) tags += '<span class="badge b-buff">照準</span>';
       if (u.kProtect >= B.t) tags += '<span class="badge b-buff">気力防護</span>';

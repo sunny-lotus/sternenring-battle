@@ -15,7 +15,7 @@ SR.Battle = function (opts) {
   var formation = opts.formation || roster;
   var heroes = roster.map(function (id) {
     return { id: id, name: SR.names[id], hero: true, hp: 560, maxHp: 560, k: 100, maxK: 100, until: 0, form: 'default',
-      abilities: kit[id], pos: formation.indexOf(id), aim: 0, analyzed: false, kProtect: 0, protect: 0,
+      abilities: kit[id].filter(function (s) { var a = SR.skills[s]; return !a || !a.era || a.era <= (enc.era || 3); }), pos: formation.indexOf(id), aim: 0, analyzed: false, kProtect: 0, protect: 0,
       bp: tune.boost ? 1 : 0, boostUsed: 0, boostMul: 1 };
   });
   var isBoss = enc.engine !== '集団';
@@ -189,6 +189,7 @@ SR.Battle = function (opts) {
     if (a.kind === 'aim') return has(u, '照準共有') ? 'ally' : 'none';
     if (a.kind === 'heal') return a.allies ? 'none' : 'ally';
     if (a.kind === 'revive') return 'allyDown';
+    if (a.kind === 'ward' || a.kind === 'rally') return 'ally';
     if (['energy', 'protect', 'kProtect', 'kBarrier', 'power', 'haste'].indexOf(a.kind) >= 0) return 'ally';
     return 'none';
   };
@@ -257,6 +258,16 @@ SR.Battle = function (opts) {
     return r;
   };
 
+  // 終盤の大技のリスク（緊張感ありのみ）。守りの祈りが掛かっていれば打ち消す
+  function applyRisk(u, a) {    if (!statusOn || !(a.recoilTo || a.expose || a.exhaust || a.allK || a.teamRecoil)) return;
+    if (a.allK) u.k = 0;
+    if (a.teamRecoil) front().forEach(function (v) {      if (v.hp <= 0) return;
+      if (v.ward >= t) { emit(v.name + 'は守りの祈りで反動を受けなかった', { target: v.id }, 500); return; }      var lost = Math.round(v.hp * (1 - a.teamRecoil)); v.hp = Math.max(1, v.hp - lost); v.recoilLost = (v.recoilLost || 0) + lost; v.recoilT = t;
+      emit(v.name + '　' + (a.label || a.id) + 'の反動　体力-' + lost, { target: v.id, dmg: lost }, 400);
+    });
+    if (!(a.recoilTo || a.expose || a.exhaust)) return;
+    if (u.ward >= t) { u.ward = 0; emit(u.name + 'は守りの祈りで反動を打ち消した', { target: u.id }, 700); return; }    var why = [];
+    if (a.recoilTo) { var lost = Math.round(u.hp * (1 - a.recoilTo)); u.hp = Math.max(1, u.hp - lost); u.recoilLost = lost; u.recoilT = t; why.push('体力-' + lost); }    if (a.expose) { u.exposed = t + 1; why.push('次のターンの終わりまで無防備（受けるダメージ2倍・回復を受けつけない）'); }    if (a.exhaust) { u.exhausted = t + 1; why.push('次のターンは動けない'); }    emit(u.name + '　' + (a.label || a.id) + 'の反動　' + why.join('・'), { target: u.id, dmg: a.recoilTo ? u.recoilLost : 0 }, 800);  }
   function perform(u, a, target) {
     var tname = target ? target.name : '';
     emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + (a.id === 'basic' ? '・' + (1 + u.boostN) + '回攻撃' : '・威力×' + u.boostMul) + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
@@ -268,8 +279,16 @@ SR.Battle = function (opts) {
     if (a.kind === 'guard') { u.kProtect = t; return; }
     if (a.kind === 'heal') {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
+        if (v.hp > 0 && v.exposed >= t) { emit(v.name + 'は無防備で回復を受けつけない', { target: v.id }, 450); return; }
         if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * u.boostMul); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
+      return;
+    }
+    if (a.kind === 'ward') { target.ward = t + 1; target.exposed = 0; emit(target.name + 'に守りの祈り（次の反動・無防備・燃え尽きを打ち消す）', { target: target.id }, 600); return; }
+    if (a.kind === 'rally') {
+      var back = target.recoilT >= t - 1 ? target.recoilLost || 0 : 0; target.recoilLost = 0; target.exposed = 0; target.exhausted = 0;
+      if (back) { var hb = target.hp; target.hp = Math.min(target.maxHp, target.hp + back); emit(target.name + 'を立て直した　体力+' + Math.round(target.hp - hb) + '（無防備も解けた）', { target: target.id, heal: Math.round(target.hp - hb) }, 600); }
+      else emit(target.name + 'を立て直した（無防備・燃え尽きが解けた）', { target: target.id }, 600);
       return;
     }
     if (a.kind === 'scan') {
@@ -319,6 +338,7 @@ SR.Battle = function (opts) {
         if (a.finisher && broken(e)) hp *= a.finisher;
         if (a.exploit && hasSt(e, a.exploit[0])) hp *= a.exploit[1];
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
+        if (a.allK) hp *= 1 + u.k / u.maxK * 1.5;   // 決死の一閃：残りの気力が多いほど強い（撃つと気力0）
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
@@ -331,10 +351,7 @@ SR.Battle = function (opts) {
         if (a.id === '炎撃' && has(u, '残り火')) e.pressure = t + 1;
       });
     }
-    if (a.desperate && statusOn) {   // 捨て身：反動で体力が減り、次のターンの終わりまで無防備（受けるダメージ2倍）
-      var cost = Math.round(u.hp * 0.85); u.hp = Math.max(1, u.hp - cost); u.exposed = t + 1;   // 反動：今の体力の15%まで減る
-      emit(u.name + '　捨て身の反動　体力-' + cost + '（次のターンの終わりまで無防備：受けるダメージ2倍）', { target: u.id, dmg: cost }, 700);
-    }
+    applyRisk(u, a);
     if (aimed) u.aim--; u.power = false;
   }
   // ---- ブースト：1ターンに1たまる（最大2）。使ったターンの次はたまらない。威力だけ上がり、回数は増えない ----
@@ -440,7 +457,7 @@ SR.Battle = function (opts) {
       if (broken(e)) return;
       if (e.charge === 1) { list.push({ id: e.id, name: e.name, kind: 'enemy', speed: speedOf(e, e.speed), label: '溜め' }); return; }
       if (e.k < 6) return;
-      var counts = e.released ? 2 : 1;
+      var counts = (e.released ? 2 : 1) + (tune.bossActs && (isBoss || e.type === 'twin') ? tune.bossActs - 1 : 0);
       for (var c = 0; c < counts; c++) list.push({ id: e.id, name: e.name, kind: 'enemy', speed: speedOf(e, e.speed) - c * 2,
         label: c === 0 && e.charge === 2 ? '大技' : e.heal ? '攻撃か回復' : (self.aoe || e.aoeAll) ? '全体攻撃' : '攻撃' });
     });
@@ -448,7 +465,7 @@ SR.Battle = function (opts) {
     return list;
   };
 
-  this.actors = function () { return front().filter(function (u) { return u.hp > 0 && !broken(u); }); };
+  this.actors = function () { return front().filter(function (u) { return u.hp > 0 && !broken(u) && !(u.exhausted >= t); }); };
 
   // commands: { heroId: { skill, target } }
   this.resolve = function (commands) {
@@ -473,6 +490,8 @@ SR.Battle = function (opts) {
         u.boostN = 0; u.boostMul = 1;
       } });
     });
+    // 交代は、入る人の行動の順番が来たときに入れ替わる（それまでは下がる人が前線で攻撃を受ける）
+    if (tune.status && self.swapped && !self.swapped.front) {      var so = unit(self.swapped.out), si = unit(self.swapped.inn), sp = si.pos; si.pos = so.pos; so.pos = sp;      var inAct = actions.find(function (x) { return x.u === si; });      var doSwap = function () { var q = si.pos; si.pos = so.pos; so.pos = q; if (cover && cover.target === so) cover = null; emit('交代：' + so.name + ' → ' + si.name, { actor: si.id, swap: true }, 650); };      if (inAct) { var ex0 = inAct.execute; inAct.execute = function () { doSwap(); ex0(); }; } else actions.push({ u: si, speed: 60, execute: doSwap });    }
     var nums = isBoss ? tune.boss : tune.mob;
     living().forEach(function (e) {
       if (broken(e)) return;
@@ -483,11 +502,11 @@ SR.Battle = function (opts) {
         return;
       }
       if (e.k < 6) return; e.k -= 6;
-      var counts = e.released ? 2 : 1; e.released = false;
+      var counts = (e.released ? 2 : 1) + (tune.bossActs && (isBoss || e.type === 'twin') ? tune.bossActs - 1 : 0); e.released = false;
       var alive = front().filter(function (u) { return u.hp > 0; });
       var roll = random(), idx = roll < .5 ? 0 : roll < .8 ? 1 : 2;
       if (!alive.length) return;
-      var chosen = alive[Math.min(idx, alive.length - 1)];
+      var chosen = alive[Math.min(idx, alive.length - 1)], chosenPos = chosen.pos;
       for (var c = 0; c < counts; c++) (function (c) { actions.push({ u: e, speed: speedOf(e, e.speed) - c * 2, execute: function () {
         var big = c === 0 && e.charge === 2;
         if (big) e.charge = 0;
@@ -503,6 +522,7 @@ SR.Battle = function (opts) {
         bleedOnAct(e);
         if (e.hp <= 0) return;
         var aoe = big ? isBoss : (self.aoe || !!e.aoeAll);
+        if (chosen.pos >= 3) chosen = front().find(function (u) { return u.pos === chosenPos && u.hp > 0; }) || chosen;
         var victim = taunt && taunt.target === e && taunt.u.hp > 0 && !broken(taunt.u) ? taunt.u : chosen;
         var targets = aoe ? front().filter(function (u) { return u.hp > 0; }) : [victim];
         var who = aoe ? '' : ' → ' + victim.name + (victim !== chosen ? '（誘い斬りで引きつけ）' : '');

@@ -11,8 +11,8 @@ SR.C = { maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5,
-    boss: { single: [31, 133], aoe: [38, 202], aoeAlways: [29, 112], big: [86, 281] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2,
+    boss: { single: [20, 86], aoe: [25, 131], aoeAlways: [19, 73], big: [86, 281] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
 SR.names = { N: 'ナハト', V: 'ヴォルト', F: 'フレア', S: 'セレナ', L: 'リヒト' };
@@ -41,19 +41,19 @@ skill('返し斬り', 'N', 3, 16, { kind: 'attack', kd: 20, hp: 38, form: 'reven
 skill('誘い斬り', 'N', 4, 18, { kind: 'attack', kd: 22, hp: 38, form: 'revenge', taunt: true });
 skill('断ち込み', 'N', 6, 30, { kind: 'attack', kd: 8, hp: 100, form: 'assault', finisher: 1.65 });
 skill('見切りの構え', 'N', 4, 10, { kind: 'guard', form: 'revenge' });
-skill('捨て身斬り', 'N', 7, 46, { kind: 'attack', kd: 8, hp: 132, form: 'assault', desperate: true });
+skill('捨て身斬り', 'N', 7, 46, { kind: 'attack', kd: 8, hp: 132, form: 'assault', desperate: true, era: 3, recoilTo: 0.15, expose: true });
 skill('連射', 'V', 5, 24, { kind: 'attack', kd: 14, hp: 16, hits: 3 });
 skill('解析', 'V', 3, 8, { kind: 'analyze' });
 skill('導機照準', 'V', 4, 14, { kind: 'aim' });
 skill('術式妨害', 'V', 5, 25, { kind: 'attack', kd: 28, hp: 25, antiSpell: true });
-skill('分散連射', 'V', 6, 30, { kind: 'attack', kd: 12, hp: 15, hits: 6, scatter: true });
+skill('分散連射', 'V', 6, 30, { kind: 'attack', kd: 12, hp: 15, hits: 6, scatter: true, era: 2 });
 skill('火槍', 'F', 4, 24, { kind: 'attack', kd: 38, hp: 45, brave: true, fire: true });
 skill('火の粉', 'F', 4, 22, { kind: 'attack', kd: 18, hp: 15, all: true, fire: true });
 skill('炎撃', 'F', 5, 32, { kind: 'attack', kd: 10, hp: 108, fire: true });
 skill('集中火力', 'F', 5, 40, { kind: 'attack', kd: 66, hp: 55, brave: true, fire: true });
 skill('炎圧', 'F', 6, 34, { kind: 'attack', kd: 32, hp: 22, all: true, fire: true });
-skill('収束火槍', 'F', 6, 32, { kind: 'attack', kd: 20, hp: 76, brave: true, fire: true, breakBonus: 1.5 });
-skill('灰燼', 'F', 7, 44, { kind: 'attack', kd: 8, hp: 65, all: true, fire: true, finisher: 1.7 });
+skill('収束火槍', 'F', 6, 32, { kind: 'attack', kd: 20, hp: 76, brave: true, fire: true, breakBonus: 1.5, era: 2 });
+skill('灰燼', 'F', 7, 44, { kind: 'attack', kd: 8, hp: 65, all: true, fire: true, finisher: 1.7, era: 3 });
 skill('小回復', 'common', 3, 14, { kind: 'heal', amount: 95 });
 skill('中回復', 'common', 4, 25, { kind: 'heal', amount: 180 });
 skill('気力支援', 'common', 4, 22, { kind: 'energy', amount: 32 });
@@ -67,6 +67,14 @@ skill('連環回復', 'common', 5, 28, { kind: 'heal', amount: 74, allies: true 
 skill('衝撃波', 'common', 5, 30, { kind: 'attack', kd: 22, hp: 10, all: true });
 skill('集中付与', 'common', 4, 14, { kind: 'power' });
 skill('連弾', 'S', 5, 22, { kind: 'attack', kd: 12, hp: 14, hits: 3 });
+// ---- 2026-11-08 時期（era）：1=序盤 2=中盤 3=終盤。相手の時期より後の技は、その戦いでは使えない ----
+// 終盤の大技：次のターンに倒れるくらいのリスクと引きかえ。リスクは補助（守りの祈り・立て直し・かばう）で打ち消せる
+skill('業火', 'F', 7, 48, { kind: 'attack', kd: 10, hp: 210, fire: true, era: 3, exhaust: true, expose: true });   // 撃った次のターンは動けず無防備
+skill('決死の一閃', 'L', 7, 20, { kind: 'attack', kd: 40, hp: 120, brave: true, era: 3, allK: true, expose: true }); // 残りの気力を全部注ぐ
+skill('星落とし', 'V', 7, 44, { kind: 'attack', kd: 24, hp: 95, all: true, era: 3, teamRecoil: 0.5 });          // 敵全体。前線の味方全員の体力も半分に
+// リスクを打ち消す補助
+skill('守りの祈り', 'S', 4, 20, { kind: 'ward', era: 2 });   // 次の反動・無防備・燃え尽きを打ち消す（2ターン）
+skill('立て直し', 'L', 4, 22, { kind: 'rally', era: 2 });    // 反動で減った体力を戻し、無防備を解く
 skill('深癒', 'S', 6, 30, { kind: 'heal', amount: 300 });
 skill('癒しの波', 'S', 7, 40, { kind: 'heal', amount: 150, allies: true });
 skill('蘇生', 'S', 5, 36, { kind: 'revive', amount: 0.4 });         // 2026-11-08 ボスを強くした分、倒れても立て直せるように
@@ -185,18 +193,18 @@ SR.enemyTypes = {
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
 SR.encounters = {
-  normal: { imgs: ['enemy002a', 'enemy002', 'enemy002b'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
+  normal: { era: 1, imgs: ['enemy002a', 'enemy002', 'enemy002b'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { img: 'boss004', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
-  aoe: { img: 'boss002', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+  boss: { era: 1, img: 'boss004', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
+  aoe: { era: 3, img: 'boss002', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
     config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze' } },
-  fireResist: { img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+  fireResist: { era: 2, img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
   // ここから試作で追加した戦い（数値は仮）
-  shellSwift: { name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
-  casters: { name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
-  elements: { name: '炎と氷', note: '炎に強い炎獣と、炎に弱い氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
-  swarm: { name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
-  twins: { name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
+  shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
+  casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
+  elements: { era: 2, name: '炎と氷', note: '炎に強い炎獣と、炎に弱い氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
+  swarm: { era: 1, name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
+  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
 };
 
@@ -208,7 +216,7 @@ SR.category = function (id) {
   if (id === 'defend') return 'defend';
   if (id === 'scan') return 'scan';
   if (id === 'wait') return 'wait';
-  if (['cover', 'guard', 'kProtect', 'teamKProtect', 'protect', 'kBarrier'].indexOf(a.kind) >= 0) return 'skillDef';
+  if (['cover', 'guard', 'kProtect', 'teamKProtect', 'protect', 'kBarrier', 'ward', 'rally'].indexOf(a.kind) >= 0) return 'skillDef';
   return a.kind === 'attack' ? 'skillAtk' : 'skillSup';
 };
 SR.isSkill = function (id) { return /^skill/.test(SR.category(id)); };
@@ -235,7 +243,12 @@ SR.describe = function (a) {
     if (a.fire) p.push('炎');
     if (a.finisher) p.push('ブレイク中の相手に' + a.finisher + '倍');
     if (a.breakBonus) p.push('この技でブレイクさせると威力' + a.breakBonus + '倍');
-    if (a.desperate) p.push('自分の気力が少ないほど強い・反動で体力が今の15%まで減り、次のターンの終わりまで受けるダメージ2倍');
+    if (a.desperate) p.push('自分の気力が少ないほど強い');
+    if (a.allK) p.push('残りの気力が多いほど強い（撃つと気力0）');
+    if (a.recoilTo) p.push('反動で体力が今の' + Math.round(a.recoilTo * 100) + '%まで減る');
+    if (a.teamRecoil) p.push('反動で前線の味方全員の体力が半分');
+    if (a.exhaust) p.push('次のターンは動けない');
+    if (a.expose) p.push('次のターンの終わりまで無防備（受けるダメージ2倍・回復を受けつけない）');
     if (a.taunt) p.push('相手の攻撃を自分へ引きつける');
     if (a.antiSpell) p.push('術を使う相手に気力削り2倍');
     return p.join('・');
@@ -245,6 +258,8 @@ SR.describe = function (a) {
     guard: '自分への気力ダメージを0.65倍（このターン）',
     heal: a.allies ? '前線全員の体力を' + a.amount * (SR.hpScale || 1) + '回復' : '仲間一人の体力を' + a.amount * (SR.hpScale || 1) + '回復',
     revive: '倒れた前線の仲間一人を、体力' + Math.round(a.amount * 100) + '%で起こす',
+    ward: '仲間一人に、次の反動・無防備・燃え尽きを打ち消す祈り（2ターン）。今の無防備も解く',
+    rally: '仲間一人の、反動で減った体力を戻し、無防備・燃え尽きを解く',
     energy: '仲間一人の気力を' + a.amount + '回復',
     protect: '仲間一人の被ダメージを0.7倍（2ターン）',
     kProtect: '仲間一人への気力ダメージを0.65倍（2ターン）',
