@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <title>星環バトル試作</title>
 <style>
 :root{
@@ -68,6 +72,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
 .enemy svg{width:100%;height:auto;display:block}
 .enemy .nm{font-size:16px;font-weight:700}
 .enemy.down{opacity:.15}
+.enemy img.mon,.choice.enc img.th,.oi img.mon{image-rendering:pixelated}
 .enemy img.mon{display:block;width:100%;max-width:170px;aspect-ratio:1/1;object-fit:contain;margin:0 auto;filter:drop-shadow(0 6px 6px #0009)}
 .enemy.boss img.mon{max-width:250px}
 .enemy.many img.mon{max-width:90px}
@@ -441,7 +446,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
   <div id="loadout" class="hidden"></div>
   <h3>難しさ</h3>
   <div class="choices" id="tuneChoices"></div>
-  <div class="row"><button class="btn primary" id="startBtn" data-nav>たたかう</button><button class="btn snd" data-snd="bgm" data-nav></button><button class="btn snd" data-snd="se" data-nav></button></div>
+  <div class="row"><button class="btn primary" id="startBtn" data-nav>たたかう</button><button class="btn snd" data-snd="bgm" data-nav></button><button class="btn snd" data-snd="se" data-nav></button><button class="btn snd" data-fs data-nav>全画面</button></div>
   <h3>ルール</h3>
   <ul class="rules">
     <li><b>体力</b>が0になると倒れる。<b>気力</b>は技を使うと先に払い、毎ターン回復する。</li>
@@ -459,6 +464,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
     <li><b>緊張感あり</b>：相手は力を溜め、次のターンに大技を撃つ。溜めているあいだはスキだらけで、気力が1.5倍削れる（弱点と重なって3倍）。溜め中か大技の前にブレイクさせれば止まる。止められないなら大技のターンは防御。味方は気力が満タンでも攻撃の半分は受ける（前は4分の1）。敵はブレイク前は体力があまり削れず（気力を削っても半分まで）、<b>ブレイク中は2倍</b>。ブレイクしてからブーストで叩くのが基本。ボス級は体力が多く（2.5倍）、ブレイク1回では倒しきれない。ボス級にかかる状態は半分のターンで解ける。ボス級は1ターンに2回行動する。ボス級は<b>弱点の状態が付いていないと気力が4割しか削れない</b>（付いていれば2倍）。ボス級の気力は3倍あるので、弱点を付け直しながら何ターンかかけて崩す。ボス戦では仲間が倒れることもある。セレナの<b>蘇生</b>（体力40%で起こす）や、だれでも持てる<b>気付け</b>（25%）で立て直す。コマンドを入れなかった人はブレイブ攻撃をする。</li>
     <li>操作：マウス・タッチ・キーボード（矢印で選ぶ、Enterで決定、Escで戻る、Q/Eでキャラ切替、Cで交代）・コントローラー（十字キー、A決定、B戻る、L/Rキャラ切替、X交代、STARTで行動開始）。</li>
   </ul>
+  <p class="credit" style="font-size:11px;color:var(--sub);margin-top:10px">素材：敵イラスト JosephSeraph（opengameart.org, CC BY 3.0・切り出しと拡大の加工あり）／効果音 Little Robot Sound Factory（www.littlerobotsoundfactory.com, CC BY 3.0）・leohpaz（CC BY 4.0）・StarNinjas・rubberduck（CC0）。くわしくは audio/se/CREDITS.txt と img/enemies/CREDITS.txt</p>
 </section>
 
 <section id="battle" class="hidden">
@@ -469,7 +475,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
     <div id="partyArea"></div>
     <div id="reserveArea"></div>
 
-    <div class="sndbox"><button class="btn snd" id="logBtn">ログ</button><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
+    <div class="sndbox"><button class="btn snd" data-fs>全画面</button><button class="btn snd" id="logBtn">ログ</button><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
     <div id="banner" class="hidden"></div>
   </div>
   <div id="bottom">

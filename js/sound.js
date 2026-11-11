@@ -1,5 +1,5 @@
 // 音。BGM はゲーム音楽フォルダの採用版ループ（星火の剣舞29／臨界の刃62）。
-// 効果音は Kenney（CC0）のファイル。魔法系の音とファイルが読めないときは合成音。
+// 効果音は audio/se/ のファイル（OpenGameArt の CC0・CC BY 素材。audio/se/CREDITS.txt）。読めないときは合成音。
 var SR = window.SR || (window.SR = {});
 
 SR.sound = (function () {
@@ -75,6 +75,7 @@ SR.sound = (function () {
     },
     heal: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.18, 'sine', 0.14, null, i * 0.06); }); },
     support: function () { tone(988, 0.12, 'sine', 0.08); tone(1319, 0.14, 'sine', 0.07, null, 0.06); },
+    boost: function () { tone(220, 0.25, 'sawtooth', 0.08, 660); },
     charge: function () { tone(110, 0.7, 'sawtooth', 0.1, 440); tone(165, 0.7, 'sawtooth', 0.06, 660); },
     big: function () { noise(0.7, 0.5, 400, 0, 0.5); tone(90, 0.8, 'sawtooth', 0.3, 30); },
     stop: function () { tone(1568, 0.1, 'square', 0.08); tone(2093, 0.25, 'square', 0.08, null, 0.08); },
@@ -83,21 +84,44 @@ SR.sound = (function () {
     win: function () { [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone(f, i === 5 ? 0.6 : 0.14, 'square', 0.07, null, i * 0.13); }); },
     lose: function () { [392, 330, 262, 196].forEach(function (f, i) { tone(f, 0.35, 'triangle', 0.12, null, i * 0.28); }); },
   };
-  // 効果音ファイル：Kenney（CC0）。audio/se/。魔法系（回復・支援・溜め）は合成音のまま。
-  var FILES = { tick: 'tick', ok: 'ok', back: 'back', swap: 'swap', hit: 'hit', hit2: 'hit2', hurt: 'hurt',
-    brk: 'brk', stop: 'stop', big: 'big', down: 'down', win: 'win', lose: 'lose' };
-  var VOL = { tick: 0.4, ok: 0.5, back: 0.5, swap: 0.6, hit: 0.8, hit2: 0.8, hurt: 0.8, brk: 0.9, stop: 0.9, big: 1, down: 0.7, win: 0.7, lose: 0.7 };
-  var pool = {}, broken = {};
+  // 効果音ファイル：audio/se/（出どころとライセンスは audio/se/CREDITS.txt）。読めないときは上の合成音。
+  // [ファイル, 音量, 頭出し秒]
+  var FILES = {
+    tick: ['tick.mp3', 0.45, 0], ok: ['ok.ogg', 0.45, 0], back: ['back.ogg', 0.4, 0.04], swap: ['swap.ogg', 0.5, 0],
+    hit: ['hit.ogg', 0.6, 0.05], hit2: ['hit2.ogg', 0.55, 0.04], hurt: ['hurt.ogg', 2.8, 0],
+    brk: ['brk.mp3', 2.4, 0], stop: ['stop.ogg', 0.5, 0.03], big: ['big.mp3', 4, 0], charge: ['charge.mp3', 0.9, 0],
+    down: ['down.ogg', 0.8, 0.08], win: ['win.mp3', 0.6, 0], lose: ['lose.mp3', 0.6, 0],
+    heal: ['heal.mp3', 0.9, 0.05], support: ['support.ogg', 0.55, 0], boost: ['boost.ogg', 0.55, 0.02]
+  };
+  var bufs = {}, pool = {}, broken = {}, fileGain = null, loading = false;
   Object.keys(FILES).forEach(function (k) {
     try {
-      var a = new Audio('audio/se/' + FILES[k] + '.ogg'); a.preload = 'auto';
+      var a = new Audio('audio/se/' + FILES[k][0]); a.preload = 'auto';
       a.addEventListener('error', function () { broken[k] = true; });
       pool[k] = a;
     } catch (e) { broken[k] = true; }
   });
+  // 音を先に解読しておく（遅れが少なく、音量も1より上げられる）。file:// などで読めなければ Audio 要素で鳴らす。
+  function loadBufs() {
+    var c = ac(); if (!c || loading || !window.fetch) return; loading = true;
+    Object.keys(FILES).forEach(function (k) {
+      fetch('audio/se/' + FILES[k][0]).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(function (ab) { return new Promise(function (ok, ng) { c.decodeAudioData(ab, ok, ng); }); })
+        .then(function (b) { bufs[k] = b; }).catch(function () {});
+    });
+  }
   function playFile(name) {
+    var f = FILES[name]; if (!f) return false;
+    var c = ac(); loadBufs();
+    if (c && bufs[name]) {
+      if (!fileGain) { fileGain = c.createGain(); fileGain.gain.value = 0.8; fileGain.connect(c.destination); }
+      var src = c.createBufferSource(), g = c.createGain();
+      src.buffer = bufs[name]; g.gain.value = f[1]; src.connect(g); g.connect(fileGain); src.start(0, f[2] || 0);
+      return true;
+    }
     var base = pool[name]; if (!base || broken[name]) return false;
-    var a = base.cloneNode(); a.volume = VOL[name] || 0.7;
+    var a = base.cloneNode(); a.volume = Math.min(1, f[1]);
+    try { if (f[2]) a.currentTime = f[2]; } catch (e) {}
     var p = a.play(); if (p && p.catch) p.catch(function () {});
     return true;
   }

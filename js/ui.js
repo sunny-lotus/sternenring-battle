@@ -86,7 +86,7 @@
         for (var i = 0; i < 5; i++) pips += '<i class="' + (i < d ? 'on' : '') + '"></i>';
         try { best = (JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {})[e.name] || 0; } catch (x) {}
         b.className += ' enc';
-        b.innerHTML = (img ? '<img class="th" src="img/enemies/pipo-' + img + '.png" alt="">' : '<span class="th">？</span>') +
+        b.innerHTML = (img ? '<img class="th" src="img/enemies/' + img + '.png" alt="">' : '<span class="th">？</span>') +
           '<span class="tx"><b>' + e.name + '</b><span class="meta">' + (e.era ? '<span class="badge b-form">' + ['', '序盤', '中盤', '終盤'][e.era] + '</span>' : '') +
           (d ? '<span>難しさ<span class="dp">' + pips + '</span></span>' : '') + (best ? '<span class="bestd">自己ベスト ' + best.toLocaleString() + '</span>' : '') +
           '</span><span class="small">' + e.note + '</span></span>';
@@ -128,13 +128,31 @@
     SR.sound.toggle(b.getAttribute('data-snd')); drawSnd();
   });
   drawSnd();
+  // 全画面（できる端末では横向きに固定）。iPhone は全画面にできないのでボタンを隠す。
+  (function () {
+    var de = document.documentElement, req = de.requestFullscreen || de.webkitRequestFullscreen;
+    var btns = document.querySelectorAll('[data-fs]');
+    function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement; }
+    function drawFs() { btns.forEach(function (b) { b.textContent = fsEl() ? '全画面をやめる' : '全画面'; }); }
+    if (!req) { btns.forEach(function (b) { b.style.display = 'none'; }); return; }
+    document.addEventListener('click', function (ev) {
+      if (!ev.target.closest('[data-fs]')) return;
+      if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      try {
+        var p = req.call(de);
+        var lock = function () { try { var q = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (q && q.catch) q.catch(function () {}); } catch (e) {} };
+        if (p && p.then) p.then(lock).catch(function () {}); else lock();
+      } catch (e) {}
+    });
+    document.addEventListener('fullscreenchange', drawFs); document.addEventListener('webkitfullscreenchange', drawFs);
+  })();
   $('logBtn').onclick = function () { $('battle').setAttribute('data-log', getComputedStyle($('log')).display !== 'none' ? 'shut' : 'open'); };
   $('log').onclick = function () { if (getComputedStyle($('log')).position === 'absolute') $('battle').setAttribute('data-log', 'shut'); };
 
   // ================= 絵 =================
   // 敵の絵：ぴぽやのポップモンスター素材（img/enemies）。ない場合は仮の絵。
   function beastSVG(e) {
-    if (e.img) return '<img class="mon" src="img/enemies/pipo-' + e.img + '.png" alt="">';
+    if (e.img) return '<img class="mon" src="img/enemies/' + e.img + '.png" alt="">';
     return beastFallback(e);
   }
   function beastFallback(e) {
@@ -651,7 +669,7 @@
     else if (f.dmg !== undefined) snd(B.unit(f.target).hero ? 'hurt' : 'hit');
     else if (f.heal || f.kheal) snd('heal');
     if (f.actor) { var a = $('u-' + f.actor); if (a) { a.classList.add('acting'); if (f.boost) popup(a, 'ブースト' + f.boost + '！', 'boost'); } }
-    if (f.boost) snd('charge');
+    if (f.boost) snd('boost');
     if (!f.target) return hold;
     var el = $('u-' + f.target); if (!el) return hold;
     var hero = B.unit(f.target).hero;

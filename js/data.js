@@ -180,25 +180,25 @@ SR.supportText = {
 
 // 敵の種類（試作で追加。数値は仮）。fire は炎の効き方（1より小さいと炎に強い）。atk は攻撃の強さの倍率。
 SR.enemyTypes = {
-  shell: { img: 'enemy028', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, fire: 1, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
-  beast: { img: 'enemy002', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, fire: 1, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
-  swift: { img: 'enemy022', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, fire: 1.2, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
-  ember: { img: 'enemy023', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, fire: 0.5, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
-  frost: { img: 'enemy044e', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, fire: 1.6, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
-  caster: { img: 'enemy025', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
-  healer: { img: 'enemy008', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
-  pup: { img: 'enemy034', imgs: ['enemy034', 'enemy034a', 'enemy034b', 'enemy034', 'enemy034a'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
-  twin: { img: 'enemy044', imgs: ['enemy044', 'enemy044c'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
+  shell: { img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, fire: 1, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
+  beast: { img: 'js-bolt', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, fire: 1, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
+  swift: { img: 'js-wind', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, fire: 1.2, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
+  ember: { img: 'js-fire', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, fire: 0.5, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
+  frost: { img: 'js-ice', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, fire: 1.6, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
+  caster: { img: 'js-eye', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
+  healer: { img: 'js-angel', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
+  pup: { img: 'js-wolf', imgs: ['js-wolf', 'js-wolfg', 'js-wolf', 'js-wolfg', 'js-wolf'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
+  twin: { img: 'js-troll', imgs: ['js-troll', 'js-trollb'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
 SR.encounters = {
-  normal: { era: 1, imgs: ['enemy002a', 'enemy002', 'enemy002b'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
+  normal: { era: 1, imgs: ['js-tree', 'js-mino', 'js-smoke'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { era: 1, img: 'boss004', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250・気力3倍の720）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
-  aoe: { era: 3, img: 'boss002', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000・気力3倍の780）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+  boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250・気力3倍の720）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
+  aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000・気力3倍の780）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
     config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze' } },
-  fireResist: { era: 2, img: 'enemy044d', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250・気力3倍）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+  fireResist: { era: 2, img: 'js-demon', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250・気力3倍）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },

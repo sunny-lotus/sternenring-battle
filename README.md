@@ -84,6 +84,8 @@ OneDrive／ドキュメント／ChatGPT／物語／outputs／sr-battle-sandbox�
   - 原本と展開物は vendor/pipoya-monster/（download・extracted）。使っている17枚（陰影効果あり）を img/enemies/ にコピーし、同梱の説明書（規約）を img/enemies/pipoya-readme.html に添えた。
   - 規約の要点：ゲーム利用可・改変可・著作権表記は不要。素材の販売は不可。素材ファイルを無料で配るときは規約を添える（改変物は出典ぴぽやを明記）。当プロジェクトでは「敵イラスト：ぴぽや https://pipoya.net/」と記録しておく。
   - 割り当て：通常の敵A〜C＝enemy002の色違い、甲殻獣＝028、疾風獣＝022、炎獣＝023、氷獣＝044e、術士＝025、癒し手＝008、子獣＝034の色違い、加入期ボス＝boss004、全体攻撃ボス＝boss002、炎耐性ボス＝044d、双子の大獣＝044と044c。
+  - 【その後の差し替え】敵の絵は JosephSeraph 作のドット絵（CC-BY 3.0、OpenGameArt）に入れ替えた。ファイルは img/enemies/js-*.png、出典と規約は img/enemies/CREDITS.txt と JosephSeraph-Readme.txt。割り当て：通常の敵A〜C＝tree・mino・smoke、甲殻獣＝golem、星獣＝bolt、疾風獣＝wind、炎獣＝fire、氷獣＝ice、術士＝eye、癒し手＝angel、子獣＝wolf・wolfg、加入期ボス＝prince、全体攻撃ボス＝lord、炎耐性ボス＝demon、双子の大獣＝troll・trollb。ぴぽやの絵（pipo-*.png）は使っていないが残してある。
+  - 効果音も差し替えた。出典は audio/se/CREDITS.txt。
 
 ### コマンド（当初の案。上の修正で一部変更）
 
