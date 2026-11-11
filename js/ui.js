@@ -72,6 +72,7 @@
     SR.loadout.save(lo.set); SR.loadout.apply(lo.set);
     var keep = nav.idx; drawLoadout(); nav.idx = keep; nav.paint();
   });
+  var DIFF = { normal: 1, swarm: 1, shellSwift: 2, casters: 2, elements: 2, boss: 3, fireResist: 4, aoe: 5, twins: 5 };
   function choiceButtons(box, list, key) {
     box.innerHTML = '';
     Object.keys(list).forEach(function (k) {
@@ -79,6 +80,17 @@
       b.className = 'btn choice' + (pick[key] === k ? ' sel' : '');
       b.setAttribute('data-nav', '');
       b.innerHTML = '<b>' + list[k].name + '</b><span class="small">' + (key === 'kit' ? kitNote(k) : (list[k].era ? '【' + ['', '序盤', '中盤', '終盤'][list[k].era] + '】' : '') + list[k].note) + '</span>';
+      if (key === 'enc') {
+        var e = list[k], t0 = e.party && SR.enemyTypes[e.party[0]], img = e.img || (e.imgs && e.imgs[0]) || (e.config && e.config.img) || (t0 && t0.img);
+        var d = DIFF[k] || 0, pips = '', best = 0;
+        for (var i = 0; i < 5; i++) pips += '<i class="' + (i < d ? 'on' : '') + '"></i>';
+        try { best = (JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {})[e.name] || 0; } catch (x) {}
+        b.className += ' enc';
+        b.innerHTML = (img ? '<img class="th" src="img/enemies/pipo-' + img + '.png" alt="">' : '<span class="th">？</span>') +
+          '<span class="tx"><b>' + e.name + '</b><span class="meta">' + (e.era ? '<span class="badge b-form">' + ['', '序盤', '中盤', '終盤'][e.era] + '</span>' : '') +
+          (d ? '<span>難しさ<span class="dp">' + pips + '</span></span>' : '') + (best ? '<span class="bestd">自己ベスト ' + best.toLocaleString() + '</span>' : '') +
+          '</span><span class="small">' + e.note + '</span></span>';
+      }
       b.onclick = function () { pick[key] = k; drawTitle(); };
       box.appendChild(b);
     });
@@ -97,7 +109,7 @@
     if (encKey === 'random') { var keys = Object.keys(SR.encounters).filter(function (k) { return !SR.encounters[k].random; }); encKey = keys[Math.floor(Math.random() * keys.length)]; }
     B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0 });
     $('title').classList.add('hidden'); $('battle').classList.remove('hidden');
-    $('log').innerHTML = '';
+    $('log').innerHTML = ''; lastCmds = null; prevBar = {};
     logLine(SR.encounters[encKey].name + '／' + SR.kits[pick.kit].name + '構成／' + SR.tunes[pick.tune].name, 's');
     SR.sound.playBgm(B.isBoss || SR.encounters[encKey].bgm === 'boss' ? 'boss' : 'normal');
     newTurn();
@@ -116,6 +128,8 @@
     SR.sound.toggle(b.getAttribute('data-snd')); drawSnd();
   });
   drawSnd();
+  $('logBtn').onclick = function () { $('battle').setAttribute('data-log', getComputedStyle($('log')).display !== 'none' ? 'shut' : 'open'); };
+  $('log').onclick = function () { if (getComputedStyle($('log')).position === 'absolute') $('battle').setAttribute('data-log', 'shut'); };
 
   // ================= 絵 =================
   // 敵の絵：ぴぽやのポップモンスター素材（img/enemies）。ない場合は仮の絵。
@@ -150,9 +164,16 @@
   function catClass(id) { var c = SR.category(id); return c === 'skillAtk' || c === 'brave' ? ' t-atk' : c === 'skillDef' || c === 'defend' || c === 'guard' ? ' t-def' : c === 'skillSup' ? ' t-sup' : ''; }
   function pct(a, b) { return Math.max(0, Math.min(100, a / b * 100)); }
   function hpColor(r) { return r > .5 ? 'var(--hp)' : r > .25 ? 'var(--hpLow)' : 'var(--hpCrit)'; }
+  // 減った分は白く残って、少し遅れて消える
+  var prevBar = {};
+  function ghost(key, now, max) {
+    var p = prevBar[key], t = Date.now(), from = !p ? now : (p.gT && t - p.gT < 800 ? Math.max(p.g, p.v) : p.v);
+    prevBar[key] = { v: now, g: from, gT: p && now < p.v ? t : (p ? p.gT : 0) };
+    return from > now ? '<b class="ghost" data-to="' + pct(now, max) + '" style="width:' + pct(from, max) + '%"></b>' : '';
+  }
   function bars(u, v) {
-    return '<div class="bar"><i style="width:' + pct(v.hp, u.maxHp) + '%;background:' + hpColor(v.hp / u.maxHp) + '"></i></div>' +
-      '<div class="bar k"><i style="width:' + pct(v.k, u.maxK) + '%"></i></div>' +
+    return '<div class="bar">' + ghost(u.id + 'h', v.hp, u.maxHp) + '<i style="width:' + pct(v.hp, u.maxHp) + '%;background:' + hpColor(v.hp / u.maxHp) + '"></i></div>' +
+      '<div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div>' +
       '<div class="nums"><span>体力 ' + Math.round(v.hp) + '</span><span>気力 ' + Math.round(v.k) + '</span></div>';
   }
   function pickableIds() {
@@ -252,6 +273,7 @@
         d.classList.add('pickable'); d.onclick = function () { onUnitClick(u.id); };
       }
     });
+    requestAnimationFrame(function () { document.querySelectorAll('#field .ghost').forEach(function (g) { g.style.width = g.getAttribute('data-to') + '%'; }); });
   }
 
   function cmdText(u, c) {
@@ -280,7 +302,7 @@
         tag = o.kind === 'support' ? '支援' : '';
       }
       var title = o.name + '：' + o.label;
-      return '<div class="oc o-' + o.kind + (o.todo ? ' todo' : '') + (curId === o.id ? ' cur' : '') + '" title="' + title + '">' +
+      return '<div class="oc o-' + o.kind + (o.kind === 'enemy' && o.label === '大技' ? ' hotc' : '') + (o.todo ? ' todo' : '') + (curId === o.id ? ' cur' : '') + '" title="' + title + '">' +
         '<div class="oi">' + icon + '</div>' + (tag ? '<span class="' + tcls + '">' + tag + '</span>' : '') + '</div>';
     }).join('') + '</div><span class="ol slow">おそい</span>';
   }
@@ -339,11 +361,42 @@
       : '<button class="btn" data-nav data-act="swap"' + (swapOutCands().length ? '' : ' disabled') + '>交代・並べ替え</button>';
     var left = B.actors().filter(function (u) { return !cmds[u.id]; }).length;
     return '<div class="row">' + s +
+      (lastCmds ? '<button class="btn" data-nav data-act="repeat">前と同じ</button>' : '') +
       '<button class="btn" data-nav data-act="autoAll">全員おまかせ</button>' +
       '<button class="btn primary" data-nav' + (left ? '' : ' data-first') + ' data-act="go">行動開始' + (left ? '（未入力' + left + '人はブレイブ攻撃）' : '') + '</button></div>';
   }
+  // 気力がこの値以下になると、このターンのうちにブレイクされやすい
+  function riskK() { return B.isBoss ? 40 : 15; }
+  function costOf(u, id) { var o = B.options(u).find(function (x) { return x.id === id; }); return o ? o.cost || 0 : 0; }
+  function warnHTML() {
+    var w = [], acts = B.actors();
+    if (B.enemies.some(function (e) { return e.hp > 0 && e.charge === 2 && !B.broken(e); })) {
+      var nd = acts.filter(function (u) { return cmds[u.id] && cmds[u.id].skill !== 'defend'; });
+      w.push('大技が来る！ ' + (nd.length ? nd.map(function (u) { return u.name; }).join('・') + 'は防御していない' : '防御するか、ブレイクさせて止める'));
+    }
+    acts.forEach(function (u) {
+      var c = cmds[u.id]; if (!c || c.skill === 'defend') return;
+      var left = u.k - costOf(u, c.skill);
+      if (left <= riskK()) w.push(u.name + 'は気力が残り' + Math.max(0, Math.round(left)) + 'になる（ブレイクの危険）');
+    });
+    return w.length ? '<div class="warnbox">' + w.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '</div>' : '';
+  }
+  var lastCmds = null;
+  function repeatLast() {
+    B.actors().forEach(function (u) {
+      var c = lastCmds[u.id]; if (!c || !B.available(u, c.skill)) return;
+      var tg = c.target;
+      if (B.targetKind(u, c.skill) !== 'none') {
+        st.actor = u; st.skill = c.skill;
+        var cands = targetCands(); if (!cands.length) return;
+        if (!cands.some(function (v) { return v.id === tg; })) tg = cands[0].id;
+      }
+      cmds[u.id] = { skill: c.skill, target: tg, boost: B.boostable(c.skill) ? Math.min(c.boost || 0, u.bp) : 0 };
+    });
+    st.mode = 'idle'; st.actor = null; st.skill = null; draw();
+  }
   function idleHTML() {
-    var h = '<div class="phead"><h3>コマンドを入れる人を選ぶ</h3>' + commonButtons() + '</div><div class="who">';
+    var h = '<div class="phead"><h3>コマンドを入れる人を選ぶ</h3>' + commonButtons() + '</div>' + warnHTML() + '<div class="who">';
     var firstTodo = B.actors().find(function (u) { return !cmds[u.id]; });
     B.actors().forEach(function (u) {
       var c = cmds[u.id];
@@ -359,7 +412,7 @@
     var nSkill = opts.filter(function (o) { return SR.isSkill(o.id); }).length;
     var defend = opts.find(function (o) { return o.id === 'defend'; });
     var scan = opts.find(function (o) { return o.id === 'scan'; });
-    var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>';
+    var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>' + warnHTML();
     h += boostRow(u);
     h += '<div class="menu4">' +
       '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
@@ -394,7 +447,10 @@
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
     h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? '気力' + o.cost : '消費なし') + '</span>';
-    var tags = SR.typeBadge(o.id);
+    var tags = SR.typeBadge(o.id), foes = B.living();
+    if (B.statusOn && a.inflict && foes.some(function (e) { return e.weak === a.inflict[0] && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
+    if (B.statusOn && a.exploit && foes.some(function (e) { return e.st && e.st[a.exploit[0]] > 0; })) tags = '<span class="badge b-hit">今が狙い目</span>' + tags;
+    if (o.ok && o.cost && st.actor && st.actor.k - o.cost <= riskK()) tags += '<span class="badge b-risk">気力残り' + Math.max(0, Math.round(st.actor.k - o.cost)) + '</span>';
     if (a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
     if (a.all) tags += '<span class="badge b-form">全体</span>';
     if (a.hits) tags += '<span class="badge b-form">' + a.hits + '連撃</span>';
@@ -520,7 +576,8 @@
     else if (act === 'toMenu') { st.mode = 'menu'; draw(); }
     else if (act === 'toIdle') { st.mode = 'idle'; st.actor = null; draw(); }
     else if (act === 'auto') { setAuto(st.actor); nextActor(); }
-    else if (act === 'autoAll') { B.actors().forEach(function (u) { if (!cmds[u.id]) setAuto(u); }); st.mode = 'idle'; st.actor = null; draw(); }
+    else if (act === 'repeat') repeatLast();
+    else if (act === 'autoAll'){ B.actors().forEach(function (u) { if (!cmds[u.id]) setAuto(u); }); st.mode = 'idle'; st.actor = null; draw(); }
     else if (act === 'swap') startSwap();
     else if (act === 'unswap') unswap();
     else if (act === 'swapPick') onUnitClick(id);
@@ -535,6 +592,7 @@
   function run() {
     B.actors().forEach(function (u) { if (!cmds[u.id]) cmds[u.id] = { skill: B.available(u, 'basic') ? 'basic' : 'defend', target: null }; });
     B.actors().forEach(function (u) { logLine(u.name + '：' + cmdText(u, cmds[u.id]), 'g'); });
+    lastCmds = JSON.parse(JSON.stringify(cmds));
     st.mode = 'play'; st.actor = null; speed = 1; draw();
     playOrder = B.previewOrder(cmds); playActor = null;
     if (B.fxBest === undefined) { try { B.fxBest = (JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {})[B.enc.name] || 0; } catch (e) { B.fxBest = 0; } B.fxTop = B.fxBest; }

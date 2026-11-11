@@ -60,9 +60,8 @@ window.SR = window.SR || {};
     '.fxslash{left:-10%;width:120%;height:7px;background:linear-gradient(90deg,transparent,#fff 20%,#fff 80%,transparent);box-shadow:0 0 18px 5px var(--sc,#9fe3ff);rotate:var(--rt,-18deg);animation:fxslash .55s forwards;animation-delay:var(--dl,0s);opacity:0}',
     '@keyframes fxslash{0%{opacity:1;scale:0 1;transform-origin:0 50%}35%{opacity:1;scale:1 1}60%{opacity:1;scale:1 2.4}100%{opacity:0;scale:1 .1}}',
     // ---- ブースト・交代・倒れる・蘇生 ----
-    '.unit.aura1{box-shadow:0 0 14px 4px #ffd76a,0 0 34px 8px #ffb30088!important;border-color:#ffe9a0!important;animation:fxaura .5s ease-in-out infinite alternate}',
-    '.unit.aura2{box-shadow:0 0 16px 5px #ff7af0,0 0 44px 12px #ff3ad688!important;border-color:#ffc4fa!important;animation:fxaura .32s ease-in-out infinite alternate}',
-    '@keyframes fxaura{to{filter:brightness(1.35)}}',
+    '.unit.aura1{animation:fxaura .5s ease-in-out infinite alternate}.unit.aura2{animation:fxaura .32s ease-in-out infinite alternate}',
+    '@keyframes fxaura{to{filter:brightness(1.3)}}',
     '.fxring{width:40px;height:40px;border-radius:50%;border:4px solid #ffd76a;transform:translate(-50%,-50%);animation:fxring .6s ease-out forwards}.fxring.r2{border-color:#ff7af0}',
     '@keyframes fxring{0%{opacity:1;scale:.4}100%{opacity:0;scale:5}}',
     '.unit.fxrush{animation:fxrush .5s cubic-bezier(.1,.9,.2,1)}@keyframes fxrush{0%{translate:-140px 0;opacity:0}60%{translate:10px 0;opacity:1}100%{translate:0 0}}',

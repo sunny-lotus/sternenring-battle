@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>星環バトル試作</title>
 <style>
 :root{
@@ -265,6 +265,104 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
   .big .d{font-size:11px}
   #bottom{gap:6px}
 }
+
+/* ===== 枠なし：状態は輪郭の光で示す ===== */
+.unit{border-color:transparent!important;box-shadow:none!important;background:none!important}
+.unit .nm,.unit .nums,.unit .cmd{text-shadow:0 1px 2px #000,0 0 5px #000}
+#reserveArea{border:none;background:#0003}
+.unit .pic img,.enemy img.mon,.enemy>svg{transition:filter .2s}
+.unit.pickable .pic img,.enemy.pickable img.mon,.enemy.pickable>svg{filter:drop-shadow(0 0 2px #7fd4ff) drop-shadow(0 0 7px #7fd4ffaa)}
+.unit.brk .pic img{filter:drop-shadow(0 0 3px var(--brk)) drop-shadow(0 0 9px var(--brk)) saturate(.5)}
+.unit.active .pic img{filter:drop-shadow(0 0 3px #f2c86b) drop-shadow(0 0 11px #f2c86b)}
+.unit.acting .pic img,.enemy.acting img.mon,.enemy.acting>svg{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px #fff)}
+.unit.aura1 .pic img{filter:drop-shadow(0 0 4px #ffd76a) drop-shadow(0 0 14px #ffb300)}
+.unit.aura2 .pic img{filter:drop-shadow(0 0 4px #ff7af0) drop-shadow(0 0 16px #ff3ad6)}
+.unit.down .pic img{filter:grayscale(1) brightness(.45)}
+
+/* ===== ゲージ：太く、減った分が遅れて消える ===== */
+.bar{position:relative;height:12px;border-radius:6px;box-shadow:0 0 0 1px #000a}
+.bar.k{height:8px}
+.bar>i{position:relative;z-index:1;border-radius:inherit}
+.bar>.ghost{position:absolute;left:0;top:0;height:100%;background:#fff;border-radius:inherit;transition:width .5s ease-in .3s}
+.bar.k>.ghost{background:#d6ecff}
+.nums{font-weight:700}
+
+/* ===== 行動順：大技の位置を赤く ===== */
+.oc.hotc .oi{border-color:#ff3a2a;box-shadow:0 0 10px 2px #ff3a2a;animation:blink .8s infinite}
+
+/* ===== 警告と札 ===== */
+.warnbox{background:#5a1616;border:1px solid #ff8a8a;border-radius:10px;padding:5px 10px;margin:0 0 8px;font-size:13px;font-weight:700;color:#ffe1e1;line-height:1.5}
+.badge.b-hit{background:#f2c86b;color:#2b1c00}
+.badge.b-risk{background:#7a1f1f;color:#ffd0d0}
+
+/* ===== タイトルの相手カード ===== */
+.choice.enc{display:flex;gap:10px;align-items:center}
+.choice.enc .th{flex:none;width:60px;height:60px;object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--sub)}
+.choice.enc .tx{min-width:0;flex:1}
+.choice.enc .meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:1px 0 3px;font-size:12px;color:var(--sub)}
+.dp{display:inline-flex;gap:2px;margin-left:4px;vertical-align:middle}
+.dp i{width:9px;height:9px;border-radius:2px;background:#0006;border:1px solid var(--line)}
+.dp i.on{background:#ff7a5a;border-color:#ffb49c}
+.bestd{color:#ffd27a;font-weight:700}
+
+#battle[data-log=shut] #log{display:none}
+#battle[data-log=shut] #bottom{grid-template-columns:1fr}
+
+/* ===== スマホ横向き：左に戦場、右にコマンド。スクロールなし ===== */
+@media (orientation:landscape) and (max-height:540px){
+  #battle{position:fixed;inset:0;max-width:none;height:auto;min-height:0;display:grid;grid-template-columns:minmax(0,56fr) minmax(0,44fr);grid-template-rows:auto minmax(0,1fr);gap:4px;
+    padding:4px max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left))}
+  #order{grid-column:1;grid-row:1;padding:2px 6px;gap:4px;border-radius:8px}
+  #order .ol{font-size:10px}
+  .oc{width:38px}.oi{width:34px;height:34px;border-width:2px}.otrack{padding:3px 2px 1px;gap:4px}.otrack::before{top:19px;height:3px}
+  .oc.o-support .oi{width:24px;height:24px;margin-top:5px}
+  .ot{font-size:10px;margin-top:1px}
+  #field{grid-column:1;grid-row:2;flex:none;min-height:0;display:grid;grid-template-columns:41% minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;padding:24px 4px 4px;gap:2px 4px;border-radius:10px}
+  #enemyArea,#partyArea,#reserveArea{position:static;width:auto;min-width:0}
+  #enemyArea{grid-row:1/3;gap:2px;flex-wrap:wrap}
+  #partyArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;align-items:end}
+  .hero{position:relative;width:auto;max-width:none;padding:0 3px}.hero[data-pos]{left:auto;top:auto}
+  .hero .pic{height:clamp(50px,27dvh,130px)}
+  .hero .nm{font-size:13px;white-space:nowrap;overflow:hidden}
+  .role{font-size:10px;padding:0 4px;margin-right:2px}
+  .badge{font-size:10px;padding:0 4px}
+  .bar{height:9px;margin-top:2px}.bar.k{height:6px}
+  .nums{font-size:11px}
+  .cmd{font-size:10px;min-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  #reserveArea{flex-direction:row;padding:2px;gap:4px;align-items:stretch}
+  #reserveArea .lbl{display:none}
+  .reserve{flex:1;display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px;align-items:center;padding:0 2px}
+  .reserve .pic{height:42px;width:32px}
+  .reserve .nm{font-size:11px;white-space:nowrap;overflow:hidden}
+  .enemy{padding:0}.enemy .nm{font-size:12px}
+  .enemy img.mon{max-width:min(96px,24dvh)}.enemy.boss img.mon{max-width:min(150px,38dvh)}.enemy.many img.mon{max-width:46px}
+  #enemyArea{align-content:center;justify-content:center}
+  .enemy:not(.boss){flex:0 0 32%;max-width:32%;width:auto;min-width:0}.enemy:not(.boss) img.mon{max-width:min(60px,19dvh)}
+  .enemy:first-child:nth-last-child(2),.enemy:first-child:nth-last-child(2)~.enemy{flex-basis:48%;max-width:48%}.enemy:first-child:nth-last-child(2) img.mon,.enemy:first-child:nth-last-child(2)~.enemy img.mon{max-width:min(88px,23dvh)}
+  .enemy.many{flex:0 0 31%;max-width:31%}.enemy.many img.mon{max-width:44px}.enemy:not(.boss) .nums span:last-child{display:none}
+  .enemy .nm{white-space:nowrap;overflow:hidden}
+  .topline{left:6px;top:3px;right:170px;font-size:11px;gap:4px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}.turn{font-size:14px}.chip{font-size:10px;padding:1px 6px}
+  .sndbox{top:3px;right:4px}#battle .sndbox .btn.snd{font-size:10px;padding:3px 7px}
+  #banner{font-size:14px;padding:5px 12px;bottom:6px}
+  #bottom{grid-column:2;grid-row:1/3;display:block;height:auto;min-height:0;position:relative}
+  #panel{height:100%;padding:6px 8px;border-radius:10px}
+  #panel h3{font-size:14px;margin-bottom:4px}
+  #battle .btn{padding:8px 10px;font-size:13px}
+  .phead{margin-bottom:4px;gap:4px}
+  .menu4{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .big{font-size:15px;padding:9px 10px}.big .d{font-size:10px}.big .c{font-size:12px}
+  .list{grid-template-columns:1fr 1fr;gap:4px}
+  .sk{padding:5px 7px}.sk b{font-size:13px}.sk .d{font-size:10px;line-height:1.3}.sk .c{font-size:11px}
+  .meter{font-size:10px;margin-top:2px}
+  .boostrow{margin:2px 0 4px}.boostrow .small,.hint,.catlegend{display:none}
+  .who .btn{min-width:0;flex:1 1 30%}
+  .warnbox{font-size:11px;padding:3px 8px;margin-bottom:4px}
+  .plan{font-size:11px;margin-top:4px}
+  .row{margin-top:5px;gap:4px}
+  #log{position:absolute;inset:0;z-index:8;font-size:12px;border-radius:10px}
+  #battle:not([data-log=open]) #log{display:none}
+  .result h2{font-size:22px;margin:0}.result{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -306,7 +404,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
     <div id="partyArea"></div>
     <div id="reserveArea"></div>
 
-    <div class="sndbox"><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
+    <div class="sndbox"><button class="btn snd" id="logBtn">ログ</button><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
     <div id="banner" class="hidden"></div>
   </div>
   <div id="bottom">
