@@ -189,6 +189,8 @@
     renderOrder(ord);
     function addOrd() {}
 
+    SR.fx.mood(B.enemies.some(function (e) { var v = val(e, snap); return v.brk && v.hp > 0; }),
+      B.outcome ? 0 : playMood !== null ? playMood : B.enemies.reduce(function (m, e) { return e.hp > 0 && !B.broken(e) ? Math.max(m, e.charge || 0) : m; }, 0));
     var ea = $('enemyArea'); ea.innerHTML = '';
     B.enemies.forEach(function (e) {
       var v = val(e, snap), d = document.createElement('div');
@@ -535,39 +537,79 @@
     B.actors().forEach(function (u) { logLine(u.name + '：' + cmdText(u, cmds[u.id]), 'g'); });
     st.mode = 'play'; st.actor = null; speed = 1; draw();
     playOrder = B.previewOrder(cmds); playActor = null;
+    if (B.fxBest === undefined) { try { B.fxBest = (JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {})[B.enc.name] || 0; } catch (e) { B.fxBest = 0; } B.fxTop = B.fxBest; }
+    playMood = B.enemies.some(function (e) { return e.hp > 0 && e.charge === 2 && !B.broken(e); }) ? 2 : 0;
     var evs = B.resolve(cmds), i = 0;
     var banner = $('banner');
+    fxs = { aura: null, big: false, sum: 0, n: 0 };
     (function step() {
-      if (i >= evs.length) { banner.classList.add('hidden'); finishTurn(); return; }
-      var ev = evs[i++];
+      if (i >= evs.length) { banner.classList.add('hidden'); playMood = null; finishTurn(); return; }
+      var ev = evs[i++], f = ev.fx || {};
       banner.textContent = ev.text; banner.classList.remove('hidden');
       logLine(ev.text, ev.fx && ev.fx.enemy ? 'e' : ev.fx && ev.fx.broke ? 'b' : '');
-      if (ev.fx && ev.fx.actor) playActor = ev.fx.actor;
-      renderField(ev.snap); fx(ev);
-      setTimeout(step, ev.dur * speed);
+      if (f.actor) { playActor = f.actor; fxs.aura = f.boost ? { id: f.actor, n: Math.min(2, f.boost) } : null; fxs.big = !!f.big; fxs.sum = 0; fxs.n = 0; SR.fx.resetSlot(); }
+      if (f.actor && bigDone) { playMood = 0; bigDone = false; }
+      if (f.charge) playMood = 1; else if (f.big) { playMood = 2; bigDone = true; } else if (f.stop) playMood = 0;
+      renderField(ev.snap);
+      if (fxs.aura) { var ae = $('u-' + fxs.aura.id); if (ae) ae.classList.add('aura' + fxs.aura.n); }
+      // この行動で、このあともう敵に当たらないなら合計を出す
+      var last = true;
+      for (var j = i; j < evs.length; j++) { var g = evs[j].fx; if (!g) continue; if (g.actor) break; if (g.dmg !== undefined && !g.statusTick && !B.unit(g.target).hero) { last = false; break; } }
+      var extra = fx(ev, last);
+      setTimeout(step, Math.max(ev.dur * speed, extra || 0));
     })();
   }
-  function fx(ev) {
-    var f = ev.fx; if (!f) return;
-    var snd = SR.sound.se;
+  var fxs = { aura: null, big: false, sum: 0, n: 0 }, playMood = null, bigDone = false;
+  var SIGNATURE = { '業火': 1, '灰燼': 1, '星落とし': 1, '決死の一閃': 1, '捨て身斬り': 1 };
+  // 演出。長く見せたいときは、その長さ（ミリ秒）を返す
+  function fx(ev, last) {
+    var f = ev.fx; if (!f) return 0;
+    var snd = SR.sound.se, F = SR.fx, hold = 0;
+    var allDown = B.enemies.every(function (e) { return val(e, ev.snap).hp <= 0; });
+    if (f.actor) {
+      var ael = $('u-' + f.actor);
+      if (f.charge) F.charge(ael);
+      else if (f.big) { F.big(B.unit(f.actor).name); hold = 1100; }
+      else if (f.skill && SIGNATURE[f.skill]) { F.skill(f.skill, B.unit(f.actor).name, $('enemyArea')); hold = 1150; }
+      if (f.boost) F.boost(ael, Math.min(2, f.boost));
+      if (f.swap || (ev.text.indexOf('飛び出した') >= 0)) F.rush(ael);
+    }
     if (f.charge) snd('charge');
     else if (f.big) snd('big');
     else if (f.support) snd('support');
-    if (f.stop) { snd('stop'); var se2 = $('u-' + f.target); if (se2) popup(se2, '大技を止めた！', 'brk'); }
+    if (f.stop) { snd('stop'); F.stop($('u-' + f.target)); hold = 1000; }
     else if (f.broke) snd('brk');
     else if (f.down) snd('down');
     else if (f.dmg !== undefined) snd(B.unit(f.target).hero ? 'hurt' : 'hit');
     else if (f.heal || f.kheal) snd('heal');
     if (f.actor) { var a = $('u-' + f.actor); if (a) { a.classList.add('acting'); if (f.boost) popup(a, 'ブースト' + f.boost + '！', 'boost'); } }
     if (f.boost) snd('charge');
-    if (!f.target) return;
-    var el = $('u-' + f.target); if (!el) return;
-    if (f.dmg !== undefined) { el.classList.add('shake'); popup(el, '-' + f.dmg, 'dmg'); if (f.kdmg > 0) popup(el, '気力-' + f.kdmg, 'kd'); }
+    if (!f.target) return hold;
+    var el = $('u-' + f.target); if (!el) return hold;
+    var hero = B.unit(f.target).hero;
+    if (f.dmg !== undefined) {
+      el.classList.add('shake');
+      var best = !hero && !f.statusTick && B.fxBest > 0 && f.dmg > B.fxTop;
+      if (!hero && f.dmg > B.fxTop) B.fxTop = f.dmg;
+      F.num(el, f.dmg, { hurt: hero, big: hero && fxs.big, best: best });
+      if (f.kdmg > 0) popup(el, '気力-' + f.kdmg, 'kd');
+      if (!hero && !f.statusTick) {
+        fxs.sum += f.dmg; fxs.n++;
+        if (last && fxs.n >= 2) { var sm = fxs.sum, sn = fxs.n; setTimeout(function () { F.total($('enemyArea'), sm, sn); }, 260); hold = Math.max(hold, 900); fxs.sum = 0; fxs.n = 0; }
+        if (allDown) hold = Math.max(hold, 900);   // とどめの一撃はゆっくり見せる
+      }
+    }
     if (f.heal) popup(el, '+' + f.heal, 'heal');
     if (f.kheal) popup(el, '気力+' + f.kheal, 'heal');
-    if (f.broke) popup(el, 'BREAK', 'brk');
+    if (f.revive) { F.revive(el); hold = Math.max(hold, 1000); }
+    if (f.broke) { F.breakHit(el, hero); hold = Math.max(hold, hero ? 800 : 1150); }
+    if (f.down) {
+      F.down(el, hero);
+      if (!hero && allDown) { F.finale(); hold = 1800; } else hold = Math.max(hold, 800);
+    }
     if (f.status) { var sp = document.createElement('div'); sp.className = 'pop stpop'; sp.innerHTML = SR.statusIcon(f.status) + SR.statuses[f.status].name; el.appendChild(sp); }
     if (f.miss) popup(el, 'ミス', 'kd');
+    return hold;
   }
   function popup(el, text, cls) { var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text; el.appendChild(s); }
   function finishTurn() {
