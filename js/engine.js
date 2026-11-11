@@ -108,6 +108,7 @@ SR.Battle = function (opts) {
     if (src.hero && fire) { kd *= dst.fire; hp *= dst.fire; }
     if (!dst.hero && dst.weak && hasSt(dst, dst.weak)) kd *= SR.statusFx.weakK;
     else if (!dst.hero && tune.bossK && (isBoss || dst.type === 'twin')) kd *= tune.bossK;   // ボス級は弱点の状態が付いていないと気力が減りにくい
+    if (!dst.hero && dst.charge && tune.chargeK) kd *= tune.chargeK;   // 溜めているあいだはスキだらけ：気力が削れやすい
     if (!wasBroken) {
       if (dst.hero && dst.id === 'N' && dst.form === 'brave') kd *= 1.25;
       if (dst.kProtect >= t) kd *= 0.65;
@@ -168,7 +169,7 @@ SR.Battle = function (opts) {
   function weakKey(e) { return e.type || (opts.encounter + ':' + e.id); }
   function weakKnown(e) { return !!e.weak && SR.weakMemo.has(weakKey(e)); }
   this.weakKnown = weakKnown;
-  function downFront() { return front().filter(function (v) { return v.hp <= 0; }); }
+  function downFront() { return heroes.filter(function (v) { return v.hp <= 0; }).sort(function (a, b) { return a.pos - b.pos; }); }   // 倒れている仲間（前線が先）
   this.downFront = downFront;
   function available(u, id) { if (skills[id] && skills[id].kind === 'revive' && !downFront().length) return false; return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.k >= price(u, skills[id]); }
   this.price = function (u, id) { return price(u, skills[id]); };
@@ -301,7 +302,7 @@ SR.Battle = function (opts) {
       return;
     }
     if (a.kind === 'revive') {
-      if (!target || target.hp > 0 || target.pos >= 3) target = downFront()[0];
+      if (!target || target.hp > 0) target = downFront()[0];
       if (!target) { emit('起こす相手がいなかった', null, 500); return; }
       target.hp = Math.min(target.maxHp, Math.round(target.maxHp * a.amount * u.boostMul)); target.k = Math.max(target.k, 40); target.st = {};
       emit(target.name + ' が起き上がった！　体力' + target.hp, { target: target.id, heal: target.hp, revive: true }, 900);
@@ -389,7 +390,7 @@ SR.Battle = function (opts) {
   // 1ターンに1回：控えとの交代（前線1人⇔控え1人）か、前線同士の入れ替え。ブレイク中の人は動かせない。
   this.canSwap = function (id1, id2) {
     var a = unit(id1), b = unit(id2);
-    if (self.swapped || !a || !b || a === b || !a.hero || !b.hero || broken(a) || broken(b)) return false;
+    if (self.swapped || !a || !b || a === b || !a.hero || !b.hero || (broken(a) && a.hp > 0) || (broken(b) && b.hp > 0)) return false;   // 倒れた人はブレイク中でも下げられる
     if (a.pos < 3 && b.pos < 3) return true;
     if (a.pos >= 3 && b.pos >= 3) return false;
     var res = a.pos >= 3 ? a : b;
@@ -499,7 +500,7 @@ SR.Battle = function (opts) {
       if (broken(e)) return;
       if (e.charge === 1) {
         actions.push({ u: e, speed: speedOf(e, e.speed), execute: function () {
-          emit(e.name + 'は力を溜めている…（次のターンに大技。ブレイクさせれば止まる）', { actor: e.id, enemy: true, charge: true }, 900);
+          emit(e.name + 'は力を溜めている…（次のターンに大技。いまは気力が1.5倍削れる。ブレイクさせれば止まる）', { actor: e.id, enemy: true, charge: true }, 900);
         } });
         return;
       }
@@ -565,6 +566,14 @@ SR.Battle = function (opts) {
     heroes.concat(enemies).forEach(function (u) {
       if (u.until === t) { u.until = 0; u.k = u.maxK; u.released = true; if (u.hp > 0) emit(u.name + 'のブレイクが解けた（気力全回復' + (u.hero ? '' : '・次のターン2回行動') + '）', { target: u.id, recover: true }, 700); }
     });
+    // 前線が全員倒れたら、控えが飛び出す
+    if (tune.status && heroes.filter(function (u) { return u.pos < 3; }).every(function (u) { return u.hp <= 0; })) {
+      var downs = heroes.filter(function (u) { return u.pos < 3; }).sort(function (a, b) { return a.pos - b.pos; });
+      heroes.filter(function (u) { return u.pos >= 3 && u.hp > 0; }).sort(function (a, b) { return a.pos - b.pos; }).forEach(function (r, i) {
+        var d = downs[i], q = r.pos; r.pos = d.pos; d.pos = q;
+        emit(r.name + 'が前線に飛び出した！', { actor: r.id }, 800);
+      });
+    }
     if (enemies.every(function (e) { return e.hp === 0; })) self.outcome = 'win';
     else if (heroes.every(function (u) { return u.hp === 0; })) self.outcome = 'lose';
     return self.events;
