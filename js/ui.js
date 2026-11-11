@@ -174,7 +174,7 @@
   function bars(u, v) {
     return '<div class="bar">' + ghost(u.id + 'h', v.hp, u.maxHp) + '<i style="width:' + pct(v.hp, u.maxHp) + '%;background:' + hpColor(v.hp / u.maxHp) + '"></i></div>' +
       '<div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div>' +
-      '<div class="nums"><span>体力 ' + Math.round(v.hp) + '</span><span>気力 ' + Math.round(v.k) + '</span></div>';
+      '<div class="nums"><span class="nh"><em>体力 </em>' + Math.round(v.hp) + '</span><span class="nk"><em>気力 </em>' + Math.round(v.k) + '</span></div>';
   }
   function pickableIds() {
     if (st.mode === 'idle' || st.mode === 'menu' || st.mode === 'list') return B.actors().map(function (u) { return u.id; });
@@ -302,7 +302,7 @@
         tag = o.kind === 'support' ? '支援' : '';
       }
       var title = o.name + '：' + o.label;
-      return '<div class="oc o-' + o.kind + (o.kind === 'enemy' && o.label === '大技' ? ' hotc' : '') + (o.todo ? ' todo' : '') + (curId === o.id ? ' cur' : '') + '" title="' + title + '">' +
+      return '<div class="oc o-' + o.kind + (o.kind === 'enemy' && o.label === '大技' ? ' hotc' : o.kind === 'enemy' && o.label === '溜め' ? ' warmc' : '') + (o.todo ? ' todo' : '') + (curId === o.id ? ' cur' : '') + '" title="' + title + '">' +
         '<div class="oi">' + icon + '</div>' + (tag ? '<span class="' + tcls + '">' + tag + '</span>' : '') + '</div>';
     }).join('') + '</div><span class="ol slow">おそい</span>';
   }
@@ -358,12 +358,22 @@
   function commonButtons() {
     var s = B.swapped
       ? '<button class="btn" data-nav data-act="unswap">' + (B.swapped.front ? '並べ替え' : '交代') + 'を取り消す</button>'
-      : '<button class="btn" data-nav data-act="swap"' + (swapOutCands().length ? '' : ' disabled') + '>交代・並べ替え</button>';
+      : '<button class="btn" data-nav data-act="swap"' + (swapOutCands().length ? '' : ' disabled') + '>交代<span class="lg">・並べ替え</span></button>';
     var left = B.actors().filter(function (u) { return !cmds[u.id]; }).length;
     return '<div class="row">' + s +
       (lastCmds ? '<button class="btn" data-nav data-act="repeat">前と同じ</button>' : '') +
       '<button class="btn" data-nav data-act="autoAll">全員おまかせ</button>' +
-      '<button class="btn primary" data-nav' + (left ? '' : ' data-first') + ' data-act="go">行動開始' + (left ? '（未入力' + left + '人はブレイブ攻撃）' : '') + '</button></div>';
+      '<button class="btn primary go" data-nav' + (left ? '' : ' data-first') + ' data-act="go">行動開始' + (left ? '<span class="lg">（未入力' + left + '人はブレイブ攻撃）</span><span class="sh">（未入力' + left + '）</span>' : '') + '</button></div>';
+  }
+  // 右側だけで人を切り替える札
+  function actorTabs() {
+    var h = '<div class="atabs">';
+    B.actors().forEach(function (u) {
+      var c = cmds[u.id], on = u === st.actor;
+      h += '<button class="atab' + (on ? ' on' : '') + (c ? ' done' : '') + '" data-nav data-act="actor" data-id="' + u.id + '"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt="">' +
+        '<span><b>' + u.name + '</b><small>' + (on ? '気力 ' + Math.round(u.k) : c ? cmdText(u, c) : '未入力') + '</small></span></button>';
+    });
+    return h + '</div>';
   }
   // 気力がこの値以下になると、このターンのうちにブレイクされやすい
   function riskK() { return B.isBoss ? 40 : 15; }
@@ -412,7 +422,7 @@
     var nSkill = opts.filter(function (o) { return SR.isSkill(o.id); }).length;
     var defend = opts.find(function (o) { return o.id === 'defend'; });
     var scan = opts.find(function (o) { return o.id === 'scan'; });
-    var h = '<div class="phead"><h3><span class="role r' + u.pos + '">' + ROLE[u.pos] + '</span>' + u.name + 'の行動　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + commonButtons() + '</div>' + warnHTML();
+    var h = actorTabs() + '<div class="phead">' + commonButtons() + '</div>' + warnHTML();
     h += boostRow(u);
     h += '<div class="menu4">' +
       '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
@@ -468,7 +478,7 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = '<h3>' + u.name + '：スキル　<span class="small">気力 ' + Math.round(u.k) + '</span></h3>' + boostRow(u) +
+    h = actorTabs() + '<div class="row" style="margin-top:0"><button class="btn" data-nav data-act="toMenu">戻る</button></div>' + boostRow(u) +
       '<div class="catlegend"><span><i style="background:var(--catAtk)"></i>攻撃</span><span><i style="background:var(--catDef)"></i>守備</span><span><i style="background:var(--catSup)"></i>回復・補助</span></div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id); }).sort(function (a, b) { return rank(a) - rank(b); });

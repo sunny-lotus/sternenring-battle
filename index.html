@@ -363,6 +363,71 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
   #battle:not([data-log=open]) #log{display:none}
   .result h2{font-size:22px;margin:0}.result{font-size:12px}
 }
+
+/* ===== 行動順：同じ形の斜めの枠に、顔を大きく ===== */
+.otrack::before{display:none}
+.otrack{gap:0;padding:3px 10px 2px;align-items:flex-start}
+.oc{width:60px}
+.oi,.oc.o-support .oi{width:54px;height:44px;margin-top:0;border-radius:5px;transform:skewX(-14deg);border:2px solid #5aa8f0;border-bottom-width:5px;background:#0d1020}
+.oc.o-enemy .oi{border-radius:5px;border-color:#ff7a7a;background:#2a1020}
+.oc.o-support .oi{border-color:#6b7397;opacity:.6}
+.oi img{transform:skewX(14deg) scale(1.3);object-position:50% 25%}
+.oi img.mon{object-fit:cover;background:none;transform:skewX(14deg) scale(1.45);object-position:50% 30%}
+.oi svg{transform:skewX(14deg)}
+.oc.cur .oi{transform:skewX(-14deg) scale(1.1);border-color:var(--gold);box-shadow:0 0 10px 1px #f2c86b;opacity:1}
+.oc.cur{z-index:2}
+.oc.warmc .oi{border-color:#ffb02e}
+.oc.hotc .oi{border-color:#ff3a2a;box-shadow:0 0 10px 2px #ff3a2a}
+.ot{font-size:11px;margin-top:3px}
+.oc.o-hero .ot{color:#bfe0ff}
+
+/* ===== 右側だけで人を切り替える札 ===== */
+.atabs{display:flex;gap:5px;margin-bottom:6px}
+.atab{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;padding:3px 6px 3px 3px;border-radius:10px;border:2px solid var(--line);background:#141936;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.atab img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto}
+.atab span{min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.atab b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atab small{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atab.done small{color:#8fe3a4}
+.atab.on{border-color:var(--gold);background:#2a2550;box-shadow:0 0 8px #f2c86b88}
+.atab.on small{color:var(--gold)}
+.atab.focus{outline:2px solid #fff}
+.go .sh{display:none}
+.nums em{font-style:normal}
+
+@media (max-width:480px){
+  .oc{width:44px}.oi,.oc.o-support .oi{width:40px;height:34px;border-width:2px;border-bottom-width:4px;margin-top:0}
+  .atab img{width:30px;height:30px}.atab b{font-size:12px}
+}
+@media (orientation:landscape) and (max-height:540px){
+  .oc{width:50px}.oi,.oc.o-support .oi{width:45px;height:34px;border-width:2px;border-bottom-width:4px;margin-top:0}
+  .otrack{padding:3px 8px 1px;gap:0}.ot{font-size:10px;margin-top:2px}
+  #field{grid-template-rows:minmax(0,1fr) auto}
+  #partyArea{align-items:stretch;min-height:0;gap:4px}
+  .hero{display:flex;flex-direction:column;min-height:0;padding:0 2px}
+  .hero .pic{flex:1 1 0;min-height:28px;height:auto;aspect-ratio:auto;max-width:none;max-height:none;width:100%;margin:0 0 2px;border-radius:8px;transition:box-shadow .2s}
+  .hero .pic .st{display:none}
+  .hero .pic .fc{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 18%;border-radius:8px}
+  .unit.hero .pic img{filter:none}
+  .hero.active .pic{box-shadow:0 0 0 2px #f2c86b,0 0 12px 2px #f2c86b}
+  .hero.acting .pic{box-shadow:0 0 0 2px #fff,0 0 14px 2px #fff}
+  .hero.brk .pic{box-shadow:0 0 10px 2px var(--brk)}.unit.hero.brk .pic img{filter:saturate(.4) brightness(.8)}
+  .hero.aura1 .pic{box-shadow:0 0 0 2px #ffd76a,0 0 14px 3px #ffb300}
+  .hero.aura2 .pic{box-shadow:0 0 0 2px #ff7af0,0 0 16px 4px #ff3ad6}
+  .unit.hero.down .pic img{filter:grayscale(1) brightness(.45)}
+  .nums{font-size:11px;white-space:nowrap;gap:4px}.nums em{display:none}.nh{color:#9df0b0}.nk{color:#9fd0ff}
+  .hero .nums em,.reserve .nums em{display:none}
+  .enemy .nums em{display:inline}
+  #reserveArea{background:none;padding:0;gap:6px}
+  .reserve{display:block;padding:1px 4px;background:#0004!important;border-radius:6px}
+  .reserve .pic{display:none}
+  .reserve .nm{font-size:11px}.reserve .bar{height:6px;margin-top:1px}.reserve .bar.k{height:4px}
+  .reserve .nums{display:none}
+  .atabs{gap:4px;margin-bottom:4px}.atab{padding:2px 5px 2px 2px;border-radius:8px}.atab img{width:32px;height:32px}.atab b{font-size:12px}.atab small{font-size:10px}
+  #panel .lg{display:none}.go .sh{display:inline}
+  .phead .row{flex-wrap:nowrap;width:100%;gap:3px}#battle .phead .row .btn{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;padding:8px 3px;font-size:11px}#battle .phead .row .btn.go{font-size:13px;flex:1.4 1 auto}
+  .menu4 .big{padding:7px 9px}
+}
 </style>
 </head>
 <body>
