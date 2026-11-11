@@ -44,7 +44,7 @@
       if (a && a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
       if (a && a.era > 1) tags += '<span class="badge b-charge">' + (a.era === 3 ? '終盤' : '中盤') + 'の技</span>';
       return '<button class="sk' + (on ? ' on' : '') + (a ? catClass(s) : ' t-pas') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' +
-        '<b>' + s + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／気力' + a.cost : '') + '</span>' +
+        '<b>' + s + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／精神力' + a.cost : '') + '</span>' +
         (tags ? '<div>' + tags + '</div>' : '') + (a ? stLine(a, !!SR.tunes[pick.tune].status) : '') + '<span class="d">' + desc + '</span></button>';
     }
     var order = function (a, b) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(a)) - ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(b)); };
@@ -172,7 +172,7 @@
   }
 
   // ================= 盤面の描画 =================
-  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, k: u.k, brk: B.broken(u), form: u.form, st: u.st, bp: u.bp || 0 }; }
+  function val(u, snap) { return snap && snap[u.id] ? snap[u.id] : { hp: u.hp, maxHp: u.maxHp, mp: u.mp, k: u.k, brk: B.broken(u), form: u.form, st: u.st, bp: u.bp || 0 }; }
   function stIcons(st) { var h = ''; if (!B.statusOn || !st) return h; SR.statusOrder.forEach(function (s) { if (st[s] > 0) h += SR.statusIcon(s, st[s]); }); return h; }
   function weakTag(e) {
     if (!B.statusOn || !e.weak) return '';
@@ -190,9 +190,14 @@
     return from > now ? '<b class="ghost" data-to="' + pct(now, max) + '" style="width:' + pct(from, max) + '%"></b>' : '';
   }
   function bars(u, v) {
-    return '<div class="bar">' + ghost(u.id + 'h', v.hp, u.maxHp) + '<i style="width:' + pct(v.hp, u.maxHp) + '%;background:' + hpColor(v.hp / u.maxHp) + '"></i></div>' +
+    // ブレイクで削れた最大体力は、バーの右端に斜線で残す
+    var mh = v.maxHp || u.maxHp, base = u.baseMaxHp || mh, mp = v.mp === undefined ? u.mp : v.mp;
+    var cut = base - mh >= 1 ? '<s class="cut" style="width:' + pct(base - mh, base) + '%"></s>' : '';
+    return '<div class="bar">' + ghost(u.id + 'h', v.hp, base) + '<i style="width:' + pct(v.hp, base) + '%;background:' + hpColor(v.hp / mh) + '"></i>' + cut + '</div>' +
       '<div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div>' +
-      '<div class="nums"><span class="nh"><em>体力 </em>' + Math.round(v.hp) + '</span><span class="nk"><em>気力 </em>' + Math.round(v.k) + '</span></div>';
+      (u.hero ? '<div class="bar m">' + ghost(u.id + 'm', mp, u.maxMp) + '<i style="width:' + pct(mp, u.maxMp) + '%"></i></div>' : '') +
+      '<div class="nums"><span class="nh"><em>体力 </em>' + Math.round(v.hp) + (cut ? '<small>/' + Math.round(mh) + '</small>' : '') + '</span><span class="nk"><em>気力 </em>' + Math.round(v.k) + '</span>' +
+      (u.hero ? '<span class="nmp"><em>精神 </em>' + Math.round(mp) + '</span>' : '') + '</div>';
   }
   function pickableIds() {
     if (st.mode === 'idle' || st.mode === 'menu' || st.mode === 'list') return B.actors().map(function (u) { return u.id; });
@@ -389,7 +394,7 @@
     B.actors().forEach(function (u) {
       var c = cmds[u.id], on = u === st.actor;
       h += '<button class="atab' + (on ? ' on' : '') + (c ? ' done' : '') + '" data-nav data-act="actor" data-id="' + u.id + '"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt="">' +
-        '<span><b>' + u.name + '</b><small>' + (on ? '気力 ' + Math.round(u.k) : c ? cmdText(u, c) : '未入力') + '</small></span></button>';
+        '<span><b>' + u.name + '</b><small>' + (on ? '精神力 ' + Math.round(u.mp) : c ? cmdText(u, c) : '未入力') + '</small></span></button>';
     });
     return h + '</div>';
   }
@@ -404,8 +409,8 @@
     }
     acts.forEach(function (u) {
       var c = cmds[u.id]; if (!c || c.skill === 'defend') return;
-      var left = u.k - costOf(u, c.skill);
-      if (left <= riskK()) w.push(u.name + 'は気力が残り' + Math.max(0, Math.round(left)) + 'になる（ブレイクの危険）');
+      var left = u.k;
+      if (left <= riskK()) w.push(u.name + 'は気力が残り' + Math.max(0, Math.round(left)) + '（ブレイクの危険。防御か交代を）');
     });
     return w.length ? '<div class="warnbox">' + w.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '</div>' : '';
   }
@@ -443,10 +448,10 @@
     var h = actorTabs() + '<div class="phead">' + commonButtons() + '</div>' + warnHTML();
     h += boostRow(u);
     h += '<div class="menu4">' +
-      '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">気力' + brave.cost + '</span><span class="d">気力を0にすればブレイク</span></button>' +
+      '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">' + (brave.cost ? '精神力' + brave.cost : '消費なし') + '</span><span class="d">気力を0にすればブレイク</span></button>' +
       '<button class="big" data-nav data-act="list" data-id="skill"' + (nSkill ? '' : ' disabled') + '>スキル<span class="c">' + nSkill + '</span><span class="d">ユニーク' + (u.id === 'N' ? '' : '・コモン') + '</span></button>' +
       '<button class="big t-def" data-nav data-act="skill" data-id="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">このターン受けるダメージ半分</span></button>' +
-      (scan ? '<button class="big" data-nav data-act="skill" data-id="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">気力' + scan.cost + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
+      (scan ? '<button class="big" data-nav data-act="skill" data-id="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">' + (scan.cost ? '精神力' + scan.cost : '消費なし') + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
       '</div>';
     var pas = B.passivesOf(u);
     if (pas.length) h += '<div class="hint">常時：' + pas.map(function (s) { return s + '（' + SR.passives[s][2] + '）'; }).join('　') + '</div>';
@@ -474,11 +479,10 @@
   }
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
-    h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? '気力' + o.cost : '消費なし') + '</span>';
+    h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? '精神力' + o.cost : '消費なし') + '</span>';
     var tags = SR.typeBadge(o.id), foes = B.living();
     if (B.statusOn && a.inflict && foes.some(function (e) { return e.weak === a.inflict[0] && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
     if (B.statusOn && a.exploit && foes.some(function (e) { return e.st && e.st[a.exploit[0]] > 0; })) tags = '<span class="badge b-hit">今が狙い目</span>' + tags;
-    if (o.ok && o.cost && st.actor && st.actor.k - o.cost <= riskK()) tags += '<span class="badge b-risk">気力残り' + Math.max(0, Math.round(st.actor.k - o.cost)) + '</span>';
     if (a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
     if (a.all) tags += '<span class="badge b-form">全体</span>';
     if (a.hits) tags += '<span class="badge b-form">' + a.hits + '連撃</span>';
@@ -580,7 +584,7 @@
   function checkCosts() {
     Object.keys(cmds).forEach(function (id) {
       var u = B.unit(id);
-      if (!B.available(u, cmds[id].skill)) { delete cmds[id]; logLine(u.name + 'のコマンドは気力が足りなくなったので外した', 's'); }
+      if (!B.available(u, cmds[id].skill)) { delete cmds[id]; logLine(u.name + 'のコマンドは精神力が足りなくなったので外した', 's'); }
     });
   }
   function setAuto(u) { var r = B.autoPick(u); cmds[u.id] = { skill: r.skill, target: r.target ? r.target.id : null, boost: r.boost || 0 }; }
@@ -687,6 +691,8 @@
     }
     if (f.heal) popup(el, '+' + f.heal, 'heal');
     if (f.kheal) popup(el, '気力+' + f.kheal, 'heal');
+    if (f.mheal) popup(el, '精神力+' + f.mheal, 'mp');
+    if (f.maxCut) popup(el, '最大体力-' + f.maxCut, 'kd');
     if (f.revive) { F.revive(el); hold = Math.max(hold, 1000); }
     if (f.broke) { F.breakHit(el, hero); hold = Math.max(hold, hero ? 800 : 1150); }
     if (f.down) {

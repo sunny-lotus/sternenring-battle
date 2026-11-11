@@ -4,14 +4,14 @@
 // 数値は未採用の仮値。本番ゲーム・原作の設定ではない。
 var SR = window.SR || (window.SR = {});
 
-SR.C = { maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
+SR.C = { maxMp: 100, maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 
 // 難しさ。sandbox は試算の数値そのまま。tense は試作で足した調整（試算からの変更）。
 // atk: 敵の通常攻撃 [気力削り, 威力]。big: 溜めのあとの大技。
 SR.tunes = {
-  sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, charge: false,
+  sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, mpRecovery: 18, breakMaxHp: 0.1, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20', recovery: 20, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4, bossKMul: 3, chargeK: 1.5,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20・精神力回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4, bossKMul: 3, chargeK: 1.5,
     boss: { single: [20, 86], aoe: [25, 131], aoeAlways: [19, 73], big: [86, 281] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
@@ -21,12 +21,12 @@ SR.formNames = { default: '通常', brave: 'ブレイブ', revenge: 'リベン�
 
 SR.skills = {};
 function skill(id, owner, ap, cost, props) { SR.skills[id] = Object.assign({ id: id, owner: owner, ap: ap, cost: cost }, props); }
-skill('basic', 'all', 0, 8, { kind: 'attack', kd: 16, hp: 24, brave: true, label: '基本ブレイブ' });
+skill('basic', 'all', 0, 0, { kind: 'attack', kd: 16, hp: 24, brave: true, label: '基本ブレイブ' });
 skill('wait', 'all', 0, 0, { kind: 'wait', label: '待機' });
 // 見やすさ版で足したコマンド（試算にはない。数値は仮）
-skill('light', 'all', 0, 4, { kind: 'attack', kd: 12, hp: 28, label: '基本攻撃' });
+skill('light', 'all', 0, 0, { kind: 'attack', kd: 12, hp: 28, label: '基本攻撃' });
 skill('defend', 'all', 0, 0, { kind: 'defend', label: '防御' });
-skill('scan', 'all', 0, 4, { kind: 'scan', label: '調べる' });   // 2026-11-08 弱点は調べるまで分からない
+skill('scan', 'all', 0, 0, { kind: 'scan', label: '調べる' });   // 2026-11-08 弱点は調べるまで分からない
 // 見つけた弱点はこの端末に覚えておき、次の戦いからは最初からアイコンで見える
 SR.weakMemo = (function () {
   var KEY = 'sr-battle-weak-v1', set = {};
@@ -134,17 +134,21 @@ SR.passives = {
   '追撃の極意': ['N', 9, '無料追撃が1ターンに2回まで'],
   '返し崩し': ['N', 8, '無料反撃で相手をブレイクできる'],
   '反攻の冴え': ['N', 6, '無料反撃の威力が上がる（34→62）'],
-  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技の消費が3割引'],
-  '連撃調整': ['V', 6, '連撃の気力削り1.3倍、消費1.25倍'],
+  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技の精神力消費が3割引'],
+  '連撃調整': ['V', 6, '連撃の気力削り1.3倍、精神力消費1.25倍'],
   '照準共有': ['V', 5, '導機照準を仲間にもかけられる'],
   '蓄積照準': ['V', 6, '同じ相手への連撃ほど気力削りが増える'],
   '急所観測': ['V', 5, '解析した相手への気力削り1.2倍'],
   '照準維持': ['V', 7, '照準が2回分続く'],
   '連撃継続': ['V', 7, '連撃中にブレイクさせた相手へ威力1.5倍'],
   '残り火': ['F', 5, '炎撃を当てた相手の気力回復を抑える'],
-  '過熱': ['F', 7, '炎の威力1.4倍、消費1.25倍'],
+  '過熱': ['F', 7, '炎の威力1.4倍、精神力消費1.25倍'],
   '火勢': ['F', 5, '炎技を続けるほど威力が上がる'],
-  '残熱回収': ['F', 3, 'ブレイクさせると気力12回復'],
+  '残熱回収': ['F', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
+  '勝ち鬨': ['N', 4, '敵がブレイクすると精神力8回復（だれが崩してもよい・1ターンに1回）'],
+  '集積回路': ['V', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
+  '静心': ['S', 4, '毎ターンの精神力回復+5'],
+  '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間の精神力8回復（1ターンに1回）'],
 };
 
 // 持ち込み構成（five-trial.cjs の kits）
@@ -171,11 +175,11 @@ SR.kits = {
 
 // 支援プリセット（five-trial の仮設定）
 SR.supportText = {
-  N: '気力の少ない前線一人の体力被ダメージを4%軽減（気力8）',
-  V: '気力の少ない前線一人の、そのターンの技消費を2軽減（気力8）',
-  F: '気力の少ない前線一人の、そのターンの体力への攻撃を4%強化（気力8）',
-  S: '前線で体力の最も少ない一人を200回復（気力10）',
-  L: '気力の少ない前線一人への、攻撃一発の気力ダメージを2軽減（気力8）',
+  N: '気力の少ない前線一人の体力被ダメージを4%軽減（精神力8）',
+  V: '気力の少ない前線一人の、そのターンの技消費を2軽減（精神力8）',
+  F: '気力の少ない前線一人の、そのターンの体力への攻撃を4%強化（精神力8）',
+  S: '前線で体力の最も少ない一人を200回復（精神力10）',
+  L: '気力の少ない前線一人への、攻撃一発の気力ダメージを2軽減（精神力8）',
 };
 
 // 敵の種類（試作で追加。数値は仮）。fire は炎の効き方（1より小さいと炎に強い）。atk は攻撃の強さの倍率。
@@ -230,7 +234,7 @@ SR.typeBadge = function (id) {
 
 SR.describe = function (a) {
   if (!a) return '';
-  if (a.kind === 'wait') return '何もしない。気力を温存する';
+  if (a.kind === 'wait') return '何もしない。精神力を温存する';
   if (a.kind === 'defend') return 'このターン、受けるダメージと気力ダメージが半分';
   if (a.kind === 'scan') return '敵一体の弱点を調べる。分かった弱点は次の戦いからも見える';
   if (a.kind === 'attack') {
