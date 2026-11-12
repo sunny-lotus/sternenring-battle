@@ -133,7 +133,7 @@ SR.Battle = function (opts) {
       if (dst.k === 0 && brave) {
         dst.until = t + 1; stat[dst.hero ? 'allyBreaks' : 'breaks']++; brokeNow = true;
         if (cover && dst === cover.protector) cover = null;
-        if (breakCut) { var cutBy = Math.min(dst.maxHp - dst.baseMaxHp * (tune.breakMaxHpFloor || .5), dst.baseMaxHp * breakCut); if (cutBy > 0) { dst.maxHp -= cutBy; dst.hp = Math.min(dst.hp, dst.maxHp); dst.cutNow = Math.round(cutBy); } }
+        if (breakCut && dst.hero) { var cutBy = Math.min(dst.maxHp - dst.baseMaxHp * (tune.breakMaxHpFloor || .5), dst.baseMaxHp * breakCut); if (cutBy > 0) { dst.maxHp -= cutBy; dst.hp = Math.min(dst.hp, dst.maxHp); dst.cutNow = Math.round(cutBy); } }
         if (src.hero && src.id === 'N' && src.chasing && has(src, '勝機の一閃')) src.discount = true;
         if (!dst.hero && dst.charge) { dst.charge = 0; dst.stopped = true; }
       }
