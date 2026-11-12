@@ -46,7 +46,7 @@ SR.Battle = function (opts) {
   });
   var S = SR.hpScale || 1;
   heroes.concat(enemies).forEach(function (u) { u.hp *= S; u.maxHp *= S; if (u.heal) u.heal *= S; });
-  heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; });
+  heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
   var breakCut = tune.breakMaxHp || 0;
   function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　精神力+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }
   function once(u, key) { if (u[key] === t) return false; u[key] = t; return true; }
@@ -133,6 +133,7 @@ SR.Battle = function (opts) {
       if (dst.k === 0 && brave) {
         dst.until = t + 1; stat[dst.hero ? 'allyBreaks' : 'breaks']++; brokeNow = true;
         if (cover && dst === cover.protector) cover = null;
+        var fs = tune.foeStack; if (fs && !dst.hero && dst.brkN < fs.max) { dst.brkN++; dst.maxK = dst.baseMaxK * (1 - fs.k * dst.brkN); dst.stackNow = dst.brkN; }
         if (breakCut && dst.hero) { var cutBy = Math.min(dst.maxHp - dst.baseMaxHp * (tune.breakMaxHpFloor || .5), dst.baseMaxHp * breakCut); if (cutBy > 0) { dst.maxHp -= cutBy; dst.hp = Math.min(dst.hp, dst.maxHp); dst.cutNow = Math.round(cutBy); } }
         if (src.hero && src.id === 'N' && src.chasing && has(src, '勝機の一閃')) src.discount = true;
         if (!dst.hero && dst.charge) { dst.charge = 0; dst.stopped = true; }
@@ -140,6 +141,7 @@ SR.Battle = function (opts) {
     }
     var dc = (dst.hero ? tune.heroDmg : tune.dmg) || { base: 0.25, slope: 0.75, broken: 1.5 };
     var amount = hp * (broken(dst) ? dc.broken : dc.base + dc.slope * (1 - dst.k / dst.maxK));
+    if (!dst.hero && dst.brkN && tune.foeStack) amount *= 1 + tune.foeStack.dmg * dst.brkN;   // 崩れの蓄積：ブレイクした回数だけ、受けるダメージが増える
     if (!src.hero && aoe) amount *= [1.2, 1, 0.8][pos];
     if (dst.hero && dst.id === 'N' && dst.form === 'revenge' && !broken(dst)) amount *= 0.6;
     if (dst.exposed >= t) amount *= 2;
@@ -154,7 +156,7 @@ SR.Battle = function (opts) {
     var kLoss = previous - dst.k;
     emit((label ? label + '　' : '') + dst.name + '　体力-' + Math.round(amount) + (kLoss > 0 ? '　気力-' + Math.round(kLoss) : ''),
       { target: dst.id, dmg: Math.round(amount), kdmg: Math.round(kLoss) }, 330);
-    if (brokeNow) { emit(dst.name + ' ブレイク！（' + (t + 1) + 'ターン目の終わりまで動けない' + (dst.cutNow ? '・最大体力-' + dst.cutNow : '') + '）', { target: dst.id, broke: true, maxCut: dst.cutNow || 0 }, 900); dst.cutNow = 0; breakMp(dst, src); }
+    if (brokeNow) { emit(dst.name + ' ブレイク！（' + (t + 1) + 'ターン目の終わりまで動けない' + (dst.cutNow ? '・最大体力-' + dst.cutNow : '') + (dst.stackNow ? '・崩れ' + dst.stackNow + '：最大気力' + Math.round(dst.maxK) + '・受けるダメージ+' + Math.round(tune.foeStack.dmg * dst.stackNow * 100) + '%' : '') + '）', { target: dst.id, broke: true, maxCut: dst.cutNow || 0 }, 900); dst.cutNow = 0; dst.stackNow = 0; breakMp(dst, src); }
     if (dst.stopped) { dst.stopped = false; stat.stops = (stat.stops || 0) + 1; emit('溜めが崩れた！ ' + dst.name + 'の大技を止めた', { target: dst.id, stop: true }, 1000); }
     if (dst.hp === 0) emit(dst.name + ' は倒れた', { target: dst.id, down: true }, 700);
     if (o.inflict && dst.hp > 0) addStatus(dst, o.inflict[0], o.inflict[1]);

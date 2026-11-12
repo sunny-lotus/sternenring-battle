@@ -9,9 +9,9 @@ SR.C = { maxMp: 100, maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
 // 難しさ。sandbox は試算の数値そのまま。tense は試作で足した調整（試算からの変更）。
 // atk: 敵の通常攻撃 [気力削り, 威力]。big: 溜めのあとの大技。
 SR.tunes = {
-  sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, mpRecovery: 18, breakMaxHp: 0.1, charge: false,
+  sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, mpRecovery: 18, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20・精神力回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4, bossKMul: 3, chargeK: 1.5,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20・精神力回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 2, bossK: 0.4, bossKMul: 3, chargeK: 1.5,
     boss: { single: [20, 86], aoe: [25, 131], aoeAlways: [19, 73], big: [86, 281] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 

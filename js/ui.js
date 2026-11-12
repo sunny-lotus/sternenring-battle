@@ -243,6 +243,7 @@
       d.id = 'u-' + e.id;
       var tags = '';
       if (v.brk) tags += '<span class="badge b-brk">ブレイク</span>';
+      if (e.brkN) tags += '<span class="badge b-hit" title="ブレイクした回数。最大気力-' + Math.round(B.tune.foeStack.k * e.brkN * 100) + '%・受けるダメージ+' + Math.round(B.tune.foeStack.dmg * e.brkN * 100) + '%">崩れ' + e.brkN + (e.brkN >= B.tune.foeStack.max ? '（最大）' : '') + '</span>';
       if (e.charge === 1 && !v.brk) tags += '<span class="badge b-charge">溜め</span>';
       if (e.charge === 2 && !v.brk) tags += '<span class="badge b-charge hot">大技</span>';
       if (e.fire < 1) tags += '<span class="badge b-fire">炎に強い</span>';
