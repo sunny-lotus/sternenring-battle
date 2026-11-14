@@ -31,11 +31,11 @@ SR.Battle = function (opts) {
     : !isBoss
     ? [0, 1, 2].map(function (i) {
         return { id: 'E' + i, name: '敵' + 'ABC'[i], hp: 340, maxHp: 340, k: 95, maxK: 95, regen: 12, speed: 68 - i * 15,
-          brave: i !== 1, fire: i === 0 ? 1.3 : 1, until: 0 };
+          brave: i !== 1, aff: i === 0 ? { 干渉: 1.3 } : {}, until: 0 };
       })
-    : [{ id: 'B', name: enc.engine === '炎耐性ボス' ? '炎耐性ボス' : enc.config.alwaysAoe ? '全体攻撃ボス' : '加入期ボス',
+    : [{ id: 'B', name: enc.engine === '炎耐性ボス' ? '干渉に強いボス' : enc.config.alwaysAoe ? '全体攻撃ボス' : '加入期ボス',
         hp: 1450, maxHp: 1450, k: 240, maxK: 240, regen: 18, speed: 62, brave: true,
-        fire: enc.engine === '炎耐性ボス' ? 0.55 : 1, until: 0 }];
+        aff: enc.engine === '炎耐性ボス' ? { 干渉: 0.55 } : {}, until: 0 }];
   enemies.forEach(function (e, i) {
     Object.assign(e, enc.config); e.pressure = 0;
     if (!e.img) e.img = enc.imgs ? enc.imgs[i] : enc.img;
@@ -119,7 +119,7 @@ SR.Battle = function (opts) {
       return;
     }
     var wasBroken = broken(dst), previous = dst.k, brokeNow = false;
-    if (src.hero && fire) { kd *= dst.fire; hp *= dst.fire; }
+    if (src.hero && o.sys) hp *= SR.affMul(dst, o.sys);   // 体系の相性：体力へのダメージだけ
     if (!dst.hero && dst.weak && hasSt(dst, dst.weak)) kd *= SR.statusFx.weakK;
     else if (!dst.hero && tune.bossK && (isBoss || dst.type === 'twin')) kd *= tune.bossK;   // ボス級は弱点の状態が付いていないと気力が減りにくい
     if (!dst.hero && dst.charge && tune.chargeK) kd *= tune.chargeK;   // 溜めているあいだはスキだらけ：気力が削れやすい
@@ -361,10 +361,10 @@ SR.Battle = function (opts) {
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
-        var willBreak = !broken(e) && a.brave && e.k <= kd * (a.fire ? e.fire : 1);
+        var willBreak = !broken(e) && a.brave && e.k <= kd;
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
         var before = broken(e);
-        hit(u, e, kd, hp, !!a.brave, { fire: a.fire, inflict: a.inflict });
+        hit(u, e, kd, hp, !!a.brave, { fire: a.fire, sys: a.sys, inflict: a.inflict });
         if (!before && broken(e)) brokeInSeq.add(e);
         targetHits.set(e, (targetHits.get(e) || 0) + 1);
         if (a.id === '炎撃' && has(u, '残り火')) e.pressure = t + 1;

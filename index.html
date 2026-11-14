@@ -117,6 +117,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
 .b-form{background:#3c3f73;color:#dfe2ff}
 .b-buff{background:#28454f;color:#bff}
 .b-fire{background:#5a2a12;color:#ffc8a5}
+.b-sys{background:#26304f;color:#c9d6ff;border:1px solid #4a5a8a}.b-sys.good{background:#2b4a2f;color:#c9ffd0;border-color:#4f8a5a}
 .b-charge{background:#6b4a0c;color:#ffe08a}
 .b-charge.hot{background:#c23a2a;color:#fff;animation:blink .8s infinite}
 
@@ -457,6 +458,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
     <li><b>体力</b>が0になると倒れる。<b>精神力</b>は技を使うと払い、毎ターン少し回復する（最大100）。<b>気力</b>は攻撃を受けると減る守りの力で、技では減らない。毎ターン回復する。</li>
     <li><b>味方はブレイクされるたびに最大体力が1割減る</b>（元の半分まで。敵は減らない）。戦いのあいだは戻らない。</li>
     <li><b>崩れ</b>：敵はブレイクするたびに崩れが1つたまる（最大3）。1つごとに最大気力が15%減り（次のブレイクが早くなる）、受けるダメージが15%増える。戦いのあいだは消えない。</li>
+    <li><b>体系</b>：魔法は星律の七つの体系（構築・循環・観測・干渉・因果・時環・星核）の組み合わせ。炎や水は術式から起きる現象で、属性ではない。敵ごとに「〇〇に弱い／強い」体系があり、<b>体力へのダメージ</b>だけが変わる（気力の削り方は状態の弱点が受け持つ）。仮の割り当て：フレア（炎を生み出す）＝干渉・循環、ヴォルト（電気を操る）＝干渉・観測、セレナ（氷・温度・水）＝循環・時環、リヒト（光・構築）＝構築・星核、コモンの攻撃＝干渉。ナハトの剣は体系なし。</li>
     <li>特性（パッシブ）には、<b>ブレイクさせると精神力が回復</b>するものがある（勝ち鬨・集積回路・残熱回収・陣頭指揮）。</li>
     <li>相手の気力を削るほど体力へのダメージが大きい。<b>ブレイブ攻撃</b>などで気力を0にすると<b>ブレイク</b>：次のターンの終わりまで動けず、ダメージ1.5倍（緊張感ありは2倍）。</li>
     <li><b>前衛・中衛・後衛</b>の3人が行動する。敵に近い前衛ほど先に動く。<b>控え</b>の2人は小さな支援を自動で行う（緊張感ありでは、控えにいる間ターンの終わりに体力が少し回復する）。</li>

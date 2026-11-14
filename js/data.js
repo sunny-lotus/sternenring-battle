@@ -129,6 +129,30 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blin
   SR.statusSkill = { N: '裂き払い', V: '放電弾', F: '焼き付け', S: '氷結弾', L: '閃光' };
 })();
 
+// ---- 2026-11-14 星律魔法の七体系（仮の割り当て） ----
+// 魔法は七体系の組み合わせで、炎や水は術式から起きる現象（物語の設定）。属性ではなく体系で相性を見る。
+// 体系の相性は体力へのダメージだけを変える（気力の削り方は状態の弱点が受け持つ）。
+// ナハトの技には体系を付けない（本人は剣術だと思っている。原初魔法《共鳴》は明かさない）。
+// 2026-11-14 先生のイメージ：フレア＝炎を生み出す（原初もあるが星律も使える）、ヴォルト＝電気を操る、セレナ＝氷や温度・水、リヒト＝光・構築系
+SR.systems = ['構築', '循環', '観測', '干渉', '因果', '時環', '星核'];
+SR.sysAff = { weak: 1.3 };   // 目安。敵ごとの倍率は enemyTypes の aff
+(function () {
+  function set(ids, sys) { ids.forEach(function (id) { if (SR.skills[id]) SR.skills[id].sys = sys; }); }
+  var S = SR.skills;
+  Object.keys(S).forEach(function (id) {
+    var a = S[id], o = a.owner;
+    if (o === 'all' || o === 'N') return;
+    if (o === 'V') a.sys = a.kind === 'attack' ? ['干渉', '観測'] : ['観測'];   // 電気を操る（導機・術式の専門）
+    if (o === 'F') a.sys = a.kind === 'attack' ? ['干渉', '循環'] : ['循環'];   // 炎を生み出す（原初魔法の感覚もあるが、星律も使える。原初は表に出さない）
+    if (o === 'S') a.sys = a.kind === 'attack' ? ['循環', '時環'] : ['循環'];   // 氷・温度・水
+    if (o === 'L') a.sys = a.kind === 'attack' ? ['構築', '星核'] : ['構築'];   // 光・構築
+    if (o === 'common') a.sys = a.kind === 'attack' ? ['干渉'] : a.kind === 'heal' || a.kind === 'revive' || a.kind === 'energy' ? ['循環'] : a.kind === 'haste' ? ['時環'] : a.kind === 'pressure' ? ['干渉'] : ['構築'];
+  });
+  set(['術式妨害'], ['観測', '干渉']); set(['星落とし'], ['干渉', '星核']);
+  set(['守りの祈り'], ['構築', '循環']); set(['立て直し'], ['循環']);
+})();
+SR.affMul = function (e, sys) { var m = 1; if (sys && e.aff) sys.forEach(function (s) { if (e.aff[s]) m *= e.aff[s]; }); return m; };
+
 SR.passives = {
   '追撃の冴え': ['N', 5, '無料追撃の威力が上がる（36→64）'],
   '追撃の極意': ['N', 9, '無料追撃が1ターンに2回まで'],
@@ -182,17 +206,17 @@ SR.supportText = {
   L: '気力の少ない前線一人への、攻撃一発の気力ダメージを2軽減（精神力8）',
 };
 
-// 敵の種類（試作で追加。数値は仮）。fire は炎の効き方（1より小さいと炎に強い）。atk は攻撃の強さの倍率。
+// 敵の種類（試作で追加。数値は仮）。aff は体系の効き方（1より小さいとその体系に強い・体力へのダメージだけ）。atk は攻撃の強さの倍率。
 SR.enemyTypes = {
-  shell: { img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, fire: 1, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
-  beast: { img: 'js-bolt', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, fire: 1, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
-  swift: { img: 'js-wind', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, fire: 1.2, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
-  ember: { img: 'js-fire', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, fire: 0.5, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
-  frost: { img: 'js-ice', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, fire: 1.6, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
-  caster: { img: 'js-eye', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, fire: 1, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
-  healer: { img: 'js-angel', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, fire: 1, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
-  pup: { img: 'js-wolf', imgs: ['js-wolf', 'js-wolfg', 'js-wolf', 'js-wolfg', 'js-wolf'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, fire: 1, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
-  twin: { img: 'js-troll', imgs: ['js-troll', 'js-trollb'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, fire: 1, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
+  shell: { aff: { 構築: 0.6, 循環: 1.3 }, img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
+  beast: { img: 'js-bolt', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
+  swift: { aff: { 観測: 1.3 }, img: 'js-wind', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
+  ember: { aff: { 干渉: 0.5 }, img: 'js-fire', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
+  frost: { aff: { 干渉: 1.6 }, img: 'js-ice', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
+  caster: { aff: { 干渉: 0.7, 構築: 1.3 }, img: 'js-eye', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
+  healer: { aff: { 星核: 1.3 }, img: 'js-angel', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
+  pup: { img: 'js-wolf', imgs: ['js-wolf', 'js-wolfg', 'js-wolf', 'js-wolfg', 'js-wolf'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
+  twin: { aff: { 星核: 0.7, 時環: 1.3 }, img: 'js-troll', imgs: ['js-troll', 'js-trollb'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
@@ -201,12 +225,12 @@ SR.encounters = {
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
   boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
   aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
-    config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze' } },
-  fireResist: { era: 2, img: 'js-demon', name: '炎耐性ボス', note: '炎の効果が0.55倍。フレア以外で崩す（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+    config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze', aff: { 観測: 0.7, 構築: 1.3 } } },
+  fireResist: { era: 2, img: 'js-demon', name: '干渉に強いボス', note: '干渉の技の体力ダメージが0.55倍（フレアの炎も干渉）。ほかの体系で削る（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
-  elements: { era: 2, name: '炎と氷', note: '炎に強い炎獣と、炎に弱い氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
+  elements: { era: 2, name: '炎と氷', note: '干渉が効きにくい炎獣と、干渉がよく効く氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
   swarm: { era: 1, name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
   twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
@@ -244,7 +268,7 @@ SR.describe = function (a) {
     p.push('気力削り' + a.kd);
     p.push('威力' + a.hp * (SR.hpScale || 1));
     if (a.brave) p.push('ブレイブ（気力0でブレイク）');
-    if (a.fire) p.push('炎');
+    if (a.sys) p.push('体系：' + a.sys.join('・'));
     if (a.finisher) p.push('ブレイク中の相手に' + a.finisher + '倍');
     if (a.breakBonus) p.push('この技でブレイクさせると威力' + a.breakBonus + '倍');
     if (a.desperate) p.push('自分の気力が少ないほど強い');

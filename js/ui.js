@@ -156,8 +156,8 @@
     return beastFallback(e);
   }
   function beastFallback(e) {
-    var col = e.color || (e.fire < 1 ? '#5fb7c9' : e.fire > 1 ? '#d9774a' : '#8b6cd9');
-    var glow = e.glow || (e.fire < 1 ? '#c8fbff' : '#ffe08a');
+    var col = e.color || '#8b6cd9';
+    var glow = e.glow || '#ffe08a';
     return '<svg viewBox="0 0 300 170" aria-hidden="true">' +
       '<defs><radialGradient id="g' + e.id + '" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="' + col + '"/><stop offset="1" stop-color="#1a1430"/></radialGradient></defs>' +
       '<ellipse cx="150" cy="160" rx="110" ry="8" fill="#0008"/>' +
@@ -246,8 +246,7 @@
       if (e.brkN) tags += '<span class="badge b-hit" title="ブレイクした回数。最大気力-' + Math.round(B.tune.foeStack.k * e.brkN * 100) + '%・受けるダメージ+' + Math.round(B.tune.foeStack.dmg * e.brkN * 100) + '%">崩れ' + e.brkN + (e.brkN >= B.tune.foeStack.max ? '（最大）' : '') + '</span>';
       if (e.charge === 1 && !v.brk) tags += '<span class="badge b-charge">溜め</span>';
       if (e.charge === 2 && !v.brk) tags += '<span class="badge b-charge hot">大技</span>';
-      if (e.fire < 1) tags += '<span class="badge b-fire">炎に強い</span>';
-      if (e.fire > 1) tags += '<span class="badge b-fire">炎に弱い</span>';
+      Object.keys(e.aff || {}).forEach(function (s) { var m = e.aff[s]; if (m !== 1) tags += '<span class="badge b-sys' + (m > 1 ? ' good' : '') + '" title="' + s + 'の技の体力ダメージ' + m + '倍">' + s + (m > 1 ? 'に弱い' : 'に強い') + '</span>'; });
       if (e.pressure >= B.t) tags += '<span class="badge b-buff">重圧</span>';
       (e.tags || []).forEach(function (tg) { tags += '<span class="badge b-form">' + tg + '</span>'; });
       tags += weakTag(e);
@@ -487,7 +486,7 @@
     if (a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
     if (a.all) tags += '<span class="badge b-form">全体</span>';
     if (a.hits) tags += '<span class="badge b-form">' + a.hits + '連撃</span>';
-    if (a.fire) tags += '<span class="badge b-fire">炎</span>';
+    if (a.sys) { var am = foes.length ? Math.max.apply(null, foes.map(function (e) { return SR.affMul(e, a.sys); })) : 1, an = foes.length ? Math.min.apply(null, foes.map(function (e) { return SR.affMul(e, a.sys); })) : 1; tags += '<span class="badge b-sys">' + a.sys.join('・') + '</span>'; if (a.kind === 'attack' && am > 1) tags = '<span class="badge b-hit">よく効く相手がいる</span>' + tags; else if (a.kind === 'attack' && an < 1 && foes.length === 1) tags += '<span class="badge b-risk">効きにくい</span>'; }
     if (a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
     if (tags) h += '<div>' + tags + '</div>';
     h += stLine(a);
