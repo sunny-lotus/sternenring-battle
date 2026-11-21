@@ -750,3 +750,12 @@ SR.moneyText = function (n) { var s = SR.coinSplit(n); return s.length ? s.map(f
     localStorage.setItem('sr-money-v2', '1');
   } catch (e) {}
 })();
+
+// 2026-11-22 サニー：お金は1つの数字で、右から2けた＝銅（銅貨・大銅貨）、3〜4けた目＝銀（銀貨・大銀貨）、5けた目から＝金（金貨・大金貨）の色で見せる
+SR.moneyHTML = function (n) {
+  n = Math.max(0, Math.floor(n || 0));
+  var s = String(n), cu = s.slice(-2), ag = s.slice(-4, -2), au = s.slice(0, -4);
+  if (s.length < 2) cu = s;
+  return '<span class="money mnum" title="' + SR.moneyText(n) + '">' +
+    (au ? '<b class="au">' + au + '</b>' : '') + (ag ? '<b class="ag">' + ag + '</b>' : '') + '<b class="cu">' + cu + '</b></span>';
+};
