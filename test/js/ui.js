@@ -194,7 +194,7 @@
       return '<button class="btn" data-nav data-lo="tpl" data-id="' + k + '">' + SR.kits[k].name + '</button>';
     }).join('') + '<span class="small">選んだ内容は自動で保存されます</span></div>';
     if (box) box.innerHTML = h;   // 編成のページはなくした（技の書に一本化）
-    var bt = '<div class="lo-tabs">' + L.ids.map(function (c) { return '<button class="btn' + (c === id ? ' sel' : '') + '" data-nav data-lo="who" data-id="' + c + '">' + SR.names[c] + '<small>' + (c === 'N' ? '剣技のみ' : '重点：' + SR.growth.focus(c)) + '</small></button>'; }).join('') + '</div>';
+    var bt = '<div class="lo-tabs">' + L.ids.map(function (c) { return '<button class="btn' + (c === id ? ' sel' : '') + '" data-nav data-lo="who" data-id="' + c + '">' + SR.names[c] + '<small>' + (c === 'N' ? '刀剣術のみ' : '重点：' + SR.growth.focus(c)) + '</small></button>'; }).join('') + '</div>';
     $('bookBox').innerHTML = bookHTML(id, bt);
     var c3 = document.getElementById('tree3d');
     if (c3 && lo.who !== 'N') {
