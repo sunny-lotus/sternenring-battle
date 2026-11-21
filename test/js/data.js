@@ -772,3 +772,5 @@ SR.PIX = {};
 // カットインの大きな絵：5人とも構えの絵
 SR.CUTIN = {};
 Object.keys(SR.img).forEach(function (id) { SR.CUTIN[id] = 'img/' + SR.img[id] + '_ready.png?v=2'; });
+// キャラごとのテーマ色（演出の光・魔法陣・カットインの帯など）2026-11-22
+SR.THEME = { N: '#a88cff', V: '#ffd27a', F: '#ff6a4a', S: '#8fc8ff', L: '#e8ecff' };

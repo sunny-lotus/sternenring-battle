@@ -144,56 +144,97 @@ function sync(states) {
     u.m.visible = u.sh.visible = s.show !== false;
   });
 }
-// ---- 当たったときの演出：火花・衝撃の輪・光・カメラのゆれ ----
-const SPN = 600;
-let spk = null, spkPos, spkCol, spkVel, spkLife, spkHead = 0, rings = [], flashL = null, shakeA = 0, introT0 = -1, introDur = 0;
+// ---- 当たったときの演出：火花（光の尾つき）・やわらかい衝撃の輪・十字の光・カメラのゆれ ----
+// 2026-11-22：技を出した人の色（SR.THEME）で光る。技を出すときは足もとに魔法陣
+const SPN = 700;
+let spk = null, streak = null, spkPos, spkCol, spkVel, spkLife, spkGrav, stPos, stCol, spkHead = 0, rings = [], stars = [], circles = [], flashL = null, shakeA = 0, introT0 = -1, introDur = 0;
 function ensureFx() {
   if (spk || !scene) return;
   const g = new THREE.BufferGeometry();
-  spkPos = new Float32Array(SPN * 3); spkCol = new Float32Array(SPN * 3); spkVel = new Float32Array(SPN * 3); spkLife = new Float32Array(SPN);
+  spkPos = new Float32Array(SPN * 3); spkCol = new Float32Array(SPN * 3); spkVel = new Float32Array(SPN * 3); spkLife = new Float32Array(SPN); spkGrav = new Float32Array(SPN);
   for (let i = 0; i < SPN; i++) spkPos[i * 3 + 1] = -99;
   g.setAttribute('position', new THREE.BufferAttribute(spkPos, 3)); g.setAttribute('color', new THREE.BufferAttribute(spkCol, 3));
-  const dot = tex(64, 64, (c, w) => { const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, '#fff'); gr.addColorStop(.3, 'rgba(255,255,255,.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, w); });
-  spk = new THREE.Points(g, new THREE.PointsMaterial({ size: .32, map: dot, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const dot = tex(64, 64, (c, w) => { const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, '#fff'); gr.addColorStop(.18, 'rgba(255,255,255,.9)'); gr.addColorStop(.45, 'rgba(255,255,255,.25)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, w); });
+  spk = new THREE.Points(g, new THREE.PointsMaterial({ size: .26, map: dot, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   spk.frustumCulled = false; scene.add(spk);
-  for (let i = 0; i < 4; i++) {
-    const r = new THREE.Mesh(new THREE.RingGeometry(.86, 1, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  // 光の尾：火花ごとに、いまの位置から少し前の位置まで線を引く（先は明るく、うしろは消える）
+  const g2 = new THREE.BufferGeometry(); stPos = new Float32Array(SPN * 6); stCol = new Float32Array(SPN * 6);
+  for (let i = 0; i < SPN; i++) { stPos[i * 6 + 1] = -99; stPos[i * 6 + 4] = -99; }
+  g2.setAttribute('position', new THREE.BufferAttribute(stPos, 3)); g2.setAttribute('color', new THREE.BufferAttribute(stCol, 3));
+  streak = new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  streak.frustumCulled = false; scene.add(streak);
+  // やわらかい輪（ふちがぼけた光の輪）
+  const ringT = tex(256, 256, (c, w) => { const gr = c.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.6, 'rgba(255,255,255,0)'); gr.addColorStop(.84, 'rgba(255,255,255,.75)'); gr.addColorStop(.9, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, w); });
+  for (let i = 0; i < 6; i++) {
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: ringT, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
     r.visible = false; scene.add(r); rings.push({ m: r, t: -9, dur: .6, max: 4 });
   }
+  // 十字の光（当たった瞬間にきらっと）
+  const starT = tex(256, 256, (c, w) => {
+    c.globalCompositeOperation = 'lighter';
+    const core = c.createRadialGradient(128, 128, 0, 128, 128, 56); core.addColorStop(0, 'rgba(255,255,255,1)'); core.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = core; c.fillRect(0, 0, w, w);
+    [[0, 1], [1, 0], [.7, .7], [.7, -.7]].forEach((d, k) => {
+      const L = k < 2 ? 124 : 66, Wd = k < 2 ? 7 : 4; c.save(); c.translate(128, 128); c.rotate(Math.atan2(d[1], d[0]));
+      const gr = c.createLinearGradient(-L, 0, L, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = gr; c.beginPath(); c.moveTo(-L, 0); c.lineTo(0, -Wd); c.lineTo(L, 0); c.lineTo(0, Wd); c.closePath(); c.fill(); c.restore();
+    });
+  });
+  for (let i = 0; i < 4; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: starT, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending })); s.visible = false; scene.add(s); stars.push({ m: s, t: -9, dur: .35, max: 3, rot: 0 }); }
+  // 技を出すときの足もとの魔法陣
+  for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: SR._rune, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); m.visible = false; scene.add(m); circles.push({ m, t: -9, dur: 1.1, max: 3 }); }
   flashL = new THREE.PointLight(0xffe6b0, 0, 14, 1.6); scene.add(flashL);
 }
 const tmpC = new THREE.Color();
-function sparks(x, y, z, n, col, sp) {
+// up があるときは「立ちのぼる光」：その幅に散らばって、ゆっくり上へ
+function sparks(x, y, z, n, col, sp, grav, up) {
   ensureFx(); if (!spk) return;
   for (let k = 0; k < n; k++) {
     const i = spkHead; spkHead = (spkHead + 1) % SPN;
-    spkPos[i * 3] = x; spkPos[i * 3 + 1] = y; spkPos[i * 3 + 2] = z;
-    const a = Math.random() * Math.PI * 2, b = (Math.random() - .3) * Math.PI * .8, s = sp * (.4 + Math.random() * .8);
-    spkVel[i * 3] = Math.cos(a) * Math.cos(b) * s; spkVel[i * 3 + 1] = Math.sin(b) * s + sp * .3; spkVel[i * 3 + 2] = Math.sin(a) * Math.cos(b) * s;
+    spkPos[i * 3] = x + (up ? (Math.random() - .5) * up : 0); spkPos[i * 3 + 1] = y; spkPos[i * 3 + 2] = z + (up ? (Math.random() - .5) * up * .6 : 0);
+    if (up) { spkVel[i * 3] = (Math.random() - .5) * .3; spkVel[i * 3 + 1] = sp * (.5 + Math.random() * .7); spkVel[i * 3 + 2] = (Math.random() - .5) * .3; }
+    else {
+      const a = Math.random() * Math.PI * 2, b = (Math.random() - .3) * Math.PI * .8, s = sp * (.4 + Math.random() * .8);
+      spkVel[i * 3] = Math.cos(a) * Math.cos(b) * s; spkVel[i * 3 + 1] = Math.sin(b) * s + sp * .3; spkVel[i * 3 + 2] = Math.sin(a) * Math.cos(b) * s;
+    }
     tmpC.set(Array.isArray(col) ? col[k % col.length] : col); spkCol[i * 3] = tmpC.r; spkCol[i * 3 + 1] = tmpC.g; spkCol[i * 3 + 2] = tmpC.b;
-    spkLife[i] = .5 + Math.random() * .5;
+    spkLife[i] = (up ? .8 : .45) + Math.random() * .5; spkGrav[i] = grav === undefined ? 9 : grav;
   }
 }
-function ring(x, z, col, max, dur, up) {
+function ring(x, z, col, max, dur, up, y) {
   ensureFx(); const r = rings.find(q => clock.getElapsedTime() - q.t > q.dur) || rings[0];
   r.t = clock.getElapsedTime(); r.max = max; r.dur = dur; r.m.material.color.set(col); r.m.visible = true;
-  r.up = !!up; r.m.position.set(x, up ? 1.2 : .05, z);
+  r.up = !!up; r.m.position.set(x, up ? (y || 1.2) : .05, z);
 }
-// power 1 ふつう / 2 強い / 3 ブレイク・とどめ
-function hit(id, power) {
-  const u = units[id]; if (!u) return; const t = clock.getElapsedTime(); u.hitT = t; power = power || 1;
+function star(x, y, z, col, max, dur) {
+  ensureFx(); const s = stars.find(q => clock.getElapsedTime() - q.t > q.dur) || stars[0];
+  s.t = clock.getElapsedTime(); s.max = max; s.dur = dur; s.rot = Math.random() * Math.PI; s.m.material.color.set(col); s.m.visible = true; s.m.position.set(x, y, z + .3);
+}
+function circle(x, z, col, max) {
+  ensureFx(); const c = circles.find(q => clock.getElapsedTime() - q.t > q.dur) || circles[0];
+  c.t = clock.getElapsedTime(); c.max = max; c.m.material.color.set(col); c.m.visible = true; c.m.position.set(x, .04, z);
+}
+const WHITE = new THREE.Color(1, 1, 1);
+function lighten(hex, k) { tmpC.set(hex); tmpC.lerp(WHITE, k); return '#' + tmpC.getHexString(); }
+// power 1 ふつう / 2 強い / 3 ブレイク・とどめ。tc＝技を出した味方の色
+function hit(id, power, tc) {
+  const u = units[id]; if (!u) return; u.hitT = clock.getElapsedTime(); power = power || 1;
   const x = u.m.position.x, z = u.base[1], y = u.h * .55;
-  const col = u.hero ? ['#ff6a6a', '#ffb0a0', '#ffffff'] : power >= 3 ? ['#9fe6ff', '#ffffff', '#5cc8f0', '#ffe08a'] : ['#ffe08a', '#ffffff', '#ffb43c'];
-  sparks(x, y, z, power >= 3 ? 90 : power >= 2 ? 45 : 26, col, power >= 3 ? 7 : 4.5);
-  ring(x, z, power >= 3 ? '#9fe6ff' : u.hero ? '#ff7070' : '#ffd27a', power >= 3 ? 5 : 2.6, power >= 3 ? .7 : .4);
-  if (power >= 3) ring(x, z, '#ffffff', 3.2, .5, true);
-  if (flashL) { flashL.position.set(x, y + .6, z + .8); flashL.color.set(power >= 3 ? 0xbfefff : u.hero ? 0xff8080 : 0xffe0a0); flashL.intensity = power >= 3 ? 90 : 40; }
+  const base = u.hero ? '#ff6a6a' : (tc || '#ffd27a');
+  const col = u.hero ? ['#ff6a6a', '#ffb0a0', '#ffffff'] : power >= 3 ? ['#9fe6ff', '#ffffff', base, lighten(base, .5)] : [base, '#ffffff', lighten(base, .45)];
+  sparks(x, y, z, power >= 3 ? 110 : power >= 2 ? 55 : 32, col, power >= 3 ? 7.5 : 5);
+  star(x, y, z, power >= 3 ? '#e8f8ff' : lighten(base, .35), power >= 3 ? 4.2 : power >= 2 ? 3 : 2.2, power >= 3 ? .5 : .32);
+  ring(x, z, power >= 3 ? '#9fe6ff' : base, power >= 3 ? 5 : 2.8, power >= 3 ? .75 : .45);
+  ring(x, z, lighten(base, .4), power >= 3 ? 3.4 : 2, power >= 3 ? .55 : .35, true, y);
+  if (power >= 3) ring(x, z, '#ffffff', 4.2, .6, true, y);
+  if (flashL) { flashL.position.set(x, y + .6, z + .8); flashL.color.set(power >= 3 ? 0xbfefff : base); flashL.intensity = power >= 3 ? 95 : 45; }
   shakeA = Math.max(shakeA, power >= 3 ? .45 : power >= 2 ? .22 : .1);
 }
-function cast(id) {   // 技を出す人のまわりに光
+function cast(id, tc) {   // 技を出す人：足もとに魔法陣が広がり、光の粒が立ちのぼる
   const u = units[id]; if (!u) return;
-  sparks(u.m.position.x, u.h * .3, u.base[1], 30, u.hero ? ['#ffe08a', '#ffffff'] : ['#ff5a64', '#ffb0a0'], 2.2);
-  ring(u.m.position.x, u.base[1], u.hero ? '#ffd27a' : '#ff5a64', 2.2, .5);
+  const c = u.hero ? (tc || '#ffd27a') : '#ff5a64';
+  circle(u.m.position.x, u.base[1], c, u.h * 1.5);
+  sparks(u.m.position.x, .1, u.base[1], 34, [c, '#ffffff', lighten(c, .5)], 2.6, -1.5, .9);
+  ring(u.m.position.x, u.base[1], c, 2.4, .55);
 }
 // カメラを手で回す（dx・dy はラジアン）。reset で元にもどす
 let tYaw = 0, tPitch = 0, uYaw = 0, uPitch = 0; const dv = new THREE.Vector3();
@@ -202,18 +243,34 @@ function resetView() { tYaw = 0; tPitch = 0; }
 function intro(sec) { introT0 = clock.getElapsedTime(); introDur = sec || 3; }
 function fxFrame(t, dt) {
   if (spk) {
+    const dmp = Math.pow(.3, dt), tl = .05;
     for (let i = 0; i < SPN; i++) {
       if (spkLife[i] <= 0) continue;
-      spkLife[i] -= dt; spkVel[i * 3 + 1] -= 9 * dt;
+      const j = i * 6;
+      spkLife[i] -= dt; spkVel[i * 3 + 1] -= spkGrav[i] * dt; spkVel[i * 3] *= dmp; spkVel[i * 3 + 2] *= dmp;
       spkPos[i * 3] += spkVel[i * 3] * dt; spkPos[i * 3 + 1] = Math.max(.05, spkPos[i * 3 + 1] + spkVel[i * 3 + 1] * dt); spkPos[i * 3 + 2] += spkVel[i * 3 + 2] * dt;
-      if (spkLife[i] <= 0) spkPos[i * 3 + 1] = -99;
-      else if (spkLife[i] < .25) { spkCol[i * 3] *= .9; spkCol[i * 3 + 1] *= .9; spkCol[i * 3 + 2] *= .9; }
+      if (spkLife[i] <= 0) { spkPos[i * 3 + 1] = -99; stPos[j + 1] = -99; stPos[j + 4] = -99; continue; }
+      if (spkLife[i] < .25) { spkCol[i * 3] *= .9; spkCol[i * 3 + 1] *= .9; spkCol[i * 3 + 2] *= .9; }
+      stPos[j] = spkPos[i * 3]; stPos[j + 1] = spkPos[i * 3 + 1]; stPos[j + 2] = spkPos[i * 3 + 2];
+      stPos[j + 3] = spkPos[i * 3] - spkVel[i * 3] * tl; stPos[j + 4] = spkPos[i * 3 + 1] - spkVel[i * 3 + 1] * tl; stPos[j + 5] = spkPos[i * 3 + 2] - spkVel[i * 3 + 2] * tl;
+      stCol[j] = spkCol[i * 3]; stCol[j + 1] = spkCol[i * 3 + 1]; stCol[j + 2] = spkCol[i * 3 + 2]; stCol[j + 3] = 0; stCol[j + 4] = 0; stCol[j + 5] = 0;
     }
     spk.geometry.attributes.position.needsUpdate = true; spk.geometry.attributes.color.needsUpdate = true;
+    streak.geometry.attributes.position.needsUpdate = true; streak.geometry.attributes.color.needsUpdate = true;
     rings.forEach(r => {
       const k = (t - r.t) / r.dur; if (k > 1 || k < 0) { r.m.visible = false; return; }
       const s = .3 + (r.max - .3) * (1 - Math.pow(1 - k, 3)); r.m.scale.setScalar(s); r.m.material.opacity = (1 - k) * .95;
       if (r.up) r.m.quaternion.copy(camera.quaternion); else r.m.rotation.set(-Math.PI / 2, 0, 0);
+    });
+    stars.forEach(s => {
+      const k = (t - s.t) / s.dur; if (k > 1 || k < 0) { s.m.visible = false; return; }
+      const sc = s.max * (k < .2 ? .3 + .7 * k / .2 : 1 + (k - .2) * .25); s.m.scale.set(sc, sc, 1);
+      s.m.material.opacity = k < .2 ? 1 : 1 - (k - .2) / .8; s.m.material.rotation = s.rot + k * .5;
+    });
+    circles.forEach(c => {
+      const k = (t - c.t) / c.dur; if (k > 1 || k < 0) { c.m.visible = false; return; }
+      const s = c.max * (.35 + .65 * (1 - Math.pow(1 - Math.min(1, k * 2.2), 3))); c.m.scale.set(s, s, 1);
+      c.m.material.opacity = (k < .12 ? k / .12 : 1 - (k - .12) / .88) * .95; c.m.rotation.set(-Math.PI / 2, 0, k * 2.4);
     });
     if (flashL) flashL.intensity *= Math.pow(.004, dt);
   }

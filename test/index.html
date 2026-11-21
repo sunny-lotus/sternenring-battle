@@ -1384,6 +1384,37 @@ svg.coin.cbig{width:18px;height:18px}
 #statusBox.still .stfig img,#statusBox.still .stsweep,#statusBox.still .stroma,#statusBox.still .stc.stinfo,#statusBox.still .stc.stinfo>*{animation:none}
 #statusBox.still .stsweep{opacity:0}
 @media (prefers-reduced-motion:reduce){.strune i,.stmotes i,.stfig::before{animation:none}}
+/* 相性のアイコン：現象＋三角（弱い＝緑の上向き、強い＝灰色の下向き）2026-11-22 */
+.phi.aff{position:relative;overflow:visible}
+.phi.aff b{position:absolute;right:-4px;bottom:-3px;width:0;height:0;border-left:4.5px solid transparent;border-right:4.5px solid transparent;filter:drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1px #000)}
+.phi.aff.up b{border-bottom:7px solid #7dffa0}
+.phi.aff.dn b{border-top:7px solid #aab0d8}
+.phi.aff.dn svg{opacity:.75}
+.ichelp .phi.aff{border-radius:50%;background:radial-gradient(circle,#2a2550,#14122e 70%)}
+/* ==== 戦闘の演出（2026-11-22）==== */
+/* カットイン：キャラの色の帯、うしろの大きな名前、絵の上を走る光 */
+#battle.hd #cutin .croma{position:absolute;right:1%;top:6%;font-family:Cinzel,serif;font-weight:900;font-size:calc(var(--u)*10);letter-spacing:.1em;line-height:1;white-space:nowrap;color:transparent;-webkit-text-stroke:1px color-mix(in srgb,var(--tc) 55%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--tc) 30%,transparent),transparent 90%);-webkit-background-clip:text;background-clip:text;pointer-events:none;animation:croma .7s cubic-bezier(.2,.8,.2,1) both}
+#battle.hd #cutin.again .croma{animation:none}
+@keyframes croma{from{opacity:0;letter-spacing:.45em;transform:translateX(4%)}to{opacity:1}}
+#battle.hd #cutin .csweep{position:absolute;right:13%;bottom:-20%;height:98%;aspect-ratio:2/3;pointer-events:none;-webkit-mask-size:100% 100%,100% 100%;mask-size:100% 100%,100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-composite:source-in;mask-composite:intersect;background:linear-gradient(105deg,transparent 36%,rgba(255,250,232,.8) 48%,color-mix(in srgb,var(--tc) 70%,transparent) 53%,transparent 64%) no-repeat;background-size:300% 100%;background-position:120% 0;mix-blend-mode:screen;animation:csweep .9s .15s ease-out both}
+@keyframes csweep{from{background-position:120% 0}to{background-position:-20% 0}}
+#battle.hd #cutin .band{border-top-color:var(--tc)!important;box-shadow:0 0 18px color-mix(in srgb,var(--tc) 35%,transparent)}
+#battle.hd #cutin .band::after{background:var(--tc)}
+#battle.hd #cutin .cname{text-shadow:0 0 1vw rgba(0,0,0,.9),0 0 1.4vw color-mix(in srgb,var(--tc) 60%,transparent),0 3px 0 #3a2808}
+#battle.hd #cutin img[src*="_ready"]{filter:drop-shadow(0 0 1vw color-mix(in srgb,var(--tc) 35%,transparent)) contrast(1.12) saturate(1.25) brightness(.96)}
+/* 斬撃の線：技を出した人の色 */
+#battle.hd .fxslash i{background:linear-gradient(90deg,transparent,#fff 35%,var(--hc,#ffe08a) 65%,transparent);box-shadow:0 0 10px var(--hc,#ffd27a),0 0 22px color-mix(in srgb,var(--hc,#ffb43c) 70%,transparent)}
+/* ダメージの数字：飾り文字（Cinzel）に金のグラデーション */
+#battle.hd .fxnum{font-family:Cinzel,serif;font-weight:900;letter-spacing:.02em;color:transparent;background:linear-gradient(180deg,#ffffff 0%,#fff6dc 48%,#e8c47a 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:1px rgba(36,18,0,.6);text-shadow:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.9)) drop-shadow(0 0 6px rgba(0,0,0,.75))}
+#battle.hd .fxnum::after{content:"";display:block;height:2px;width:90%;margin:1px auto 0;background:linear-gradient(90deg,transparent,#f2d48a,transparent);opacity:.85}
+#battle.hd .fxnum.t3{background-image:linear-gradient(180deg,#fffbe8 0%,#ffd98a 50%,#e08a1a 100%);filter:drop-shadow(0 2px 0 rgba(0,0,0,.9)) drop-shadow(0 0 10px rgba(255,170,40,.55))}
+#battle.hd .fxnum.t4{background-image:linear-gradient(180deg,#fff3c0 0%,#ffa040 50%,#c83a10 100%);filter:drop-shadow(0 3px 0 rgba(0,0,0,.9)) drop-shadow(0 0 14px rgba(255,110,20,.75))}
+#battle.hd .fxnum.t5{background-image:linear-gradient(180deg,#ffffff 0%,#ffe066 45%,#ff9a00 100%);filter:drop-shadow(0 3px 0 #5a2a00) drop-shadow(0 0 18px rgba(255,190,40,.9)) drop-shadow(0 0 36px rgba(255,130,0,.6))}
+#battle.hd .fxnum.t4::after,#battle.hd .fxnum.t5::after{height:3px;background:linear-gradient(90deg,transparent,#fff1b8,#ff9a2a,#fff1b8,transparent)}
+#battle.hd .fxnum.hurt{background-image:linear-gradient(180deg,#fff0f0 0%,#ff9a9a 50%,#d02a2a 100%)}
+#battle.hd .fxnum.hurt::after{background:linear-gradient(90deg,transparent,#ff6a6a,transparent)}
+#battle.hd .fxnum small{font-family:"Shippori Mincho B1",serif;-webkit-text-stroke:0}
+#battle.hd .fxtotal{font-family:Cinzel,"Shippori Mincho B1",serif;letter-spacing:.04em}
 .stc.stinfo .sn{font-size:22px}
 .stc.stinfo dl{font-size:13px}
 </style>
@@ -1551,14 +1582,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122zc"></script>
-<script src="js/icons.js?v=t1122zc"></script>
-<script src="js/engine.js?v=t1122zc"></script>
-<script src="js/loadout.js?v=t1122zc"></script>
-<script src="js/sound.js?v=t1122zc"></script>
-<script src="js/fx.js?v=t1122zc"></script>
-<script src="js/tree3d.js?v=t1122zc"></script>
-<script src="js/ui.js?v=t1122zc"></script>
-<script type="module" src="js/stage3d.js?v=t1122zc"></script>
+<script src="js/data.js?v=t1122zd"></script>
+<script src="js/icons.js?v=t1122zd"></script>
+<script src="js/engine.js?v=t1122zd"></script>
+<script src="js/loadout.js?v=t1122zd"></script>
+<script src="js/sound.js?v=t1122zd"></script>
+<script src="js/fx.js?v=t1122zd"></script>
+<script src="js/tree3d.js?v=t1122zd"></script>
+<script src="js/ui.js?v=t1122zd"></script>
+<script type="module" src="js/stage3d.js?v=t1122zd"></script>
 </body>
 </html>

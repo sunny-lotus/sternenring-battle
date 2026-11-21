@@ -130,7 +130,7 @@ window.SR = window.SR || {};
     },
     resetSlot: function () { slot = 0; },
     // 斬撃の線（当たったところに3本走る）
-    slash: function (el, big) { var p = at(el); add('fxslash' + (big ? ' big' : ''), '<i></i><i></i><i></i>', 600, p.x, p.y); if (big) add('fxflash', '', 260); },
+    slash: function (el, big, col) { var p = at(el); add('fxslash' + (big ? ' big' : ''), '<i></i><i></i><i></i>', 600, p.x, p.y, col ? { '--hc': col } : null); if (big) add('fxflash', '', 260); },   // col：技を出した人の色
     total: function (el, sum, n) {
       var p = at(el), big = sum >= 5000;
       add('fxtotal' + (big ? ' big' : ''), '<small>' + n + 'ヒット 合計</small>' + Math.round(sum).toLocaleString(), 1500, p.w / 2, Math.max(40, p.y - 70));

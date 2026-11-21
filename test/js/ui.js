@@ -372,6 +372,8 @@
     group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い輪の状態（弱点）', 'その敵の弱点。この状態にするとブレイクゲージが大きく削れる'),
       row(SR.phenIcon('炎', 'kp'), '赤い輪の現象（急所）', 'その敵の急所。この現象の技でブレイクゲージが多く削れる'),
       row('<span class="stexp">' + SR.statusIcon('burn') + '</span>', '金の枠の状態', 'その状態の相手に、威力が上がる技（技の札）')]);
+    group('アイコン：相性（相手を選ぶとき）', [row(SR.affIcon('衝撃', true), '上向きの三角', 'その現象に弱い。HPダメージがよく効く'),
+      row(SR.affIcon('冷気', false), '下向きの三角', 'その現象に強い。HPダメージが効きにくい')]);
     ul.insertAdjacentHTML('beforeend', h);
   }
   function paginateHelp() {
@@ -1269,7 +1271,7 @@
     var allDown = B.enemies.every(function (e) { return val(e, ev.snap).hp <= 0; });
     if (f.actor) {
       var ael = $('u-' + f.actor);
-      if (SR.stage3d && SR.stage3d.cast && !f.charge) SR.stage3d.cast(f.actor);
+      if (SR.stage3d && SR.stage3d.cast && !f.charge) SR.stage3d.cast(f.actor, SR.THEME[f.actor]);
       if (f.charge) F.charge(ael);
       else if (f.big) { F.big(B.unit(f.actor).name); hold = 1100; }
       else if (f.skill && SIGNATURE[f.skill]) { F.skill(f.skill, B.unit(f.actor).name, $('enemyArea')); hold = 1150; }
@@ -1290,8 +1292,8 @@
     var el = $('u-' + f.target); if (!el) return hold;
     var hero = B.unit(f.target).hero;
     if (f.dmg !== undefined) {
-      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target, f.broke || (f.down && !hero) ? 3 : f.dmg >= 700 || (hero && fxs.big) ? 2 : 1);
-      if (!hero && !f.statusTick) F.slash(el, f.dmg >= 700 || f.broke);
+      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target, f.broke || (f.down && !hero) ? 3 : f.dmg >= 700 || (hero && fxs.big) ? 2 : 1, f.actor && SR.THEME[f.actor]);
+      if (!hero && !f.statusTick) F.slash(el, f.dmg >= 700 || f.broke, f.actor && SR.THEME[f.actor]);
       var best = !hero && !f.statusTick && B.fxBest > 0 && f.dmg > B.fxTop;
       if (!hero && f.dmg > B.fxTop) B.fxTop = f.dmg;
       F.num(el, f.dmg, { hurt: hero, big: hero && fxs.big, best: best });
@@ -1503,7 +1505,12 @@
     var v = val(u), w = SR.weapons && SR.weapons[u.id], fav = SR.tree && SR.tree.start && SR.tree.start[u.id];
     var again = c.getAttribute('data-who') === u.id && !c.classList.contains('hidden');
     c.classList.remove('hidden'); c.setAttribute('data-who', u.id);
-    var html = '<img src="' + (SR.CUTIN[u.id] || 'img/' + SR.img[u.id] + '_stand.png?v=4') + '" alt=""' + (again ? ' style="animation:none"' : '') + '><div class="band"></div><div class="cname">' + u.name + '</div>' + (u.id === 'N' ? '<div class="cform f-' + val(u).form + '">' + SR.formNames[val(u).form] + '</div>' : '') +
+    // 2026-11-22：キャラの色・うしろの大きな名前・絵の上を走る光（出たときだけ）
+    var csrc = SR.CUTIN[u.id] || 'img/' + SR.img[u.id] + '_stand.png?v=4', ROMA = { N: 'NACHT', V: 'VOLT', F: 'FLARE', S: 'SERENA', L: 'LICHT' };
+    c.style.setProperty('--tc', SR.THEME[u.id] || '#f2d48a'); c.classList.toggle('again', again);
+    var html = '<div class="croma">' + (ROMA[u.id] || '') + '</div><img src="' + csrc + '" alt=""' + (again ? ' style="animation:none"' : '') + '>' +
+      (again ? '' : '<div class="csweep" style="-webkit-mask-image:url(' + csrc + '),linear-gradient(180deg,#000 62%,transparent 80%);mask-image:url(' + csrc + '),linear-gradient(180deg,#000 62%,transparent 80%)"></div>') +
+      '<div class="band"></div><div class="cname">' + u.name + '</div>' + (u.id === 'N' ? '<div class="cform f-' + val(u).form + '">' + SR.formNames[val(u).form] + '</div>' : '') +
       '';
     c.innerHTML = html;
   }

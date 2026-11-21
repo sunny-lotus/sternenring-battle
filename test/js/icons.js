@@ -37,6 +37,9 @@ SR.phenSVG = {
   '貫通': '<path d="M2 10h11" stroke="#e8f1ff" stroke-width="2.2" stroke-linecap="round"/><path d="M11.5 5.5L18 10l-6.5 4.5z" fill="#e8f1ff" stroke="#3a4a7a" stroke-width=".8"/>',
   '強撃': '<rect x="3.5" y="3" width="10" height="6" rx="1" fill="#d8c08a" stroke="#4a3608" stroke-width=".9" transform="rotate(-30 8.5 6)"/><path d="M10.4 8.8l4.6 8.2" stroke="#8a6a3a" stroke-width="2.4" stroke-linecap="round"/>'
 };
+SR.affIcon = function (p, weak) {
+  return '<span class="phi aff ' + (weak ? 'up' : 'dn') + '" title="' + p + (weak ? 'に弱い（よく効く）' : 'に強い（効きにくい）') + '"><svg viewBox="0 0 20 20" aria-hidden="true">' + SR.phenSVG[p] + '</svg><b></b></span>';
+};
 SR.phenIcon = function (p, extra) {
   var svg = SR.phenSVG[p]; if (!svg) return '<span class="badge b-sys">' + p + '</span>';
   return '<span class="phi ' + (extra || '') + '" title="' + p + '"><svg viewBox="0 0 20 20" aria-hidden="true">' + svg + '</svg></span>';
@@ -69,7 +72,12 @@ SR.markIcon = function (id, title, extra) {
 SR.MARK_OF = { '全体': 'all', 'ブレイク': 'brk', 'ブレイク可': 'brk', 'あと一押し': 'push', '溜め': 'charge', '大技': 'big', 'すき': 'open', '重圧': 'press', '防御': 'shield', '防護': 'guard', '気力防護': 'kguard', '無防備': 'exposed', '燃え尽き': 'ember', '守りの祈り': 'pray', '照準': 'aim', '弱点を突ける': 'star', 'よく効く相手がいる': 'star', '急所を突ける': 'star', '今が狙い目': 'star', '効きにくい': 'down', '？': 'unk' };
 SR.iconizeTags = function (html) {
   return (html || '').replace(/<span class="badge ([^"]*)"( title="[^"]*")?>([^<]*)<\/span>/g, function (all, cls, ttl, txt) {
-    if (/b-sys/.test(cls)) return txt.split('・').map(function (p) { return SR.phenIcon(p); }).join('');
+    if (/b-sys/.test(cls)) {
+      // 相性（敵を選ぶときだけ）：「衝撃に弱い」→ 衝撃のアイコン＋上向きの三角、「冷気に強い」→ 下向きの三角
+      var am = /^(.+)に(弱い|強い)$/.exec(txt);
+      if (am && SR.phenSVG[am[1]]) return SR.affIcon(am[1], am[2] === '弱い');
+      return txt.split('・').map(function (p) { return SR.phenIcon(p); }).join('');
+    }
     if (/b-weak/.test(cls) && SR.phenSVG[txt]) return SR.phenIcon(txt, 'kp" title="' + (ttl ? ttl.slice(8, -1) : txt + 'が急所'));
     if (SR.typeLabel && Object.keys(SR.typeLabel).some(function (k) { return SR.typeLabel[k] === txt; })) return '';   // 種類は札の色でわかる
     var cm = /^崩れ(\d+)$/.exec(txt);   // 崩れ（ブレイクされた回数）：割れた石のアイコン＋回数
