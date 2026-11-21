@@ -20,6 +20,13 @@ SR.Battle = function (opts) {
   });
   // 2026-11-21 技の書の能力の星（自分で編成のときだけ）
   heroes.forEach(function (u) { u.bonus = kit.growth && u.id !== 'N' ? SR.growthBonus(u.id) : {}; if (u.bonus.maxK) { u.maxK += u.bonus.maxK; u.k = u.maxK; } if (u.bonus.spd) u.speed += u.bonus.spd; });
+  // レベル（自分で編成のときだけ）
+  heroes.forEach(function (u) {
+    if (!kit.growth || !SR.level) return;
+    var lv = SR.level.lv(u.id), g = SR.lvGrowth, d = lv - 1; u.lv = lv; if (!d) return;
+    u.maxHp = Math.round(u.maxHp * (1 + g.hp * d)); u.hp = u.maxHp; u.maxK += g.k * d; u.k = u.maxK;
+    u.bonus = Object.assign({}, u.bonus); u.bonus.hp = (u.bonus.hp || 0) + g.dmg * d; u.bonus.kd = (u.bonus.kd || 0) + g.kd * d;
+  });
   function bon(u, k) { return (u && u.bonus && u.bonus[k]) || 0; }
   var isBoss = enc.engine !== '集団';
   var enemies = enc.party

@@ -1185,6 +1185,71 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .itempty{display:flex;flex-direction:column;align-items:center;gap:8px;margin:40px auto;color:#c9cfee}
 .itempty svg{width:56px;height:56px;fill:none;stroke:#e8c372;stroke-width:1.4}
 .itempty b{font-family:"Shippori Mincho B1",serif;font-size:20px;color:#f6e2a8}
+/* 活かす状態（〜中に×倍）：金の枠で囲む／付ける状態：そのまま */
+.stexp{display:inline-grid;place-items:center;box-shadow:inset 0 0 0 1.5px #f2d48a,0 0 6px rgba(242,212,138,.6)!important;border-radius:3px;background:rgba(80,60,10,.55)!important}
+#battle.hd #panel .sk .sktags>.stexp{background:linear-gradient(180deg,rgba(140,100,24,.9),rgba(60,40,6,.95))!important;box-shadow:inset 0 0 0 1.5px #ffe08a!important}
+#battle.hd #panel .sk .sktags>.stinf .sti,#battle.hd #panel .sk .sktags>.stexp .sti{transform:skewX(18deg)}
+#battle.hd #panel .sk .sktags .sti b{display:none}
+#tip.hdtip .tchip .stexp{width:1.5em;height:1.5em}
+/* 戦闘中：アイコンの説明ボタンと窓 */
+#battle.hd #icoBtn{position:absolute;top:1%;right:calc(1% + max(calc(var(--u)*2.6),28px) + 6px);z-index:8;width:max(calc(var(--u)*2.6),28px);height:max(calc(var(--u)*2.6),28px);padding:0;border:1px solid rgba(232,195,114,.6);background:linear-gradient(180deg,rgba(40,34,80,.85),rgba(12,12,30,.9));border-radius:2px;cursor:pointer;display:grid;place-items:center}
+#battle.hd #icoBtn::before,#battle.hd #icoBtn::after{display:none}
+#battle.hd #icoBtn svg{width:70%;height:70%}
+#battle:not(.hd) #icoBtn,#battle.hd.intro-on #icoBtn{display:none}
+#icovl{position:absolute;inset:0;z-index:20;background:rgba(4,4,14,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:grid;place-items:center}
+#icovl.hidden{display:none}
+#icovl .iow{position:relative;width:min(92%,980px);max-height:86%;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(40,34,84,.78),rgba(10,10,28,.86) 65%);border:1px solid rgba(232,195,114,.55);border-left:3px solid #e8c372;box-shadow:0 14px 40px rgba(0,0,0,.6);padding:10px 14px}
+#icovl .iow::after{content:"";position:absolute;right:-1px;top:-1px;width:12px;height:12px;border:solid #f2d48a;border-width:2px 2px 0 0}
+#icovl .ioh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding-bottom:5px;background:linear-gradient(90deg,rgba(232,195,114,.7),transparent) left bottom/100% 1px no-repeat}
+#icovl .ioh b{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:18px;color:#f6e2a8;letter-spacing:.1em}
+#icovl .iob{overflow-y:auto;margin:0;padding:0 4px 0 0;list-style:none;scrollbar-width:thin}
+#icovl .iob .ichelp{margin-bottom:8px}
+#icovl .iob .icgrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+@media (max-height:520px){#icovl .iob .icgrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#icovl .ichelp .ic small{font-size:11px!important}}
+#battle.hd #partyHud .lvt{font-family:Cinzel,serif;font-weight:700;font-size:.72em;color:#ffd27a;margin-left:6px;letter-spacing:.04em}
+/* ===== メニュー（RPGの画面：左に仲間、右にコマンド） ===== */
+.rpgm{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;width:100%;max-width:1100px;margin:6px auto 0;flex:1;min-height:0}
+.rpg-party{display:flex;flex-direction:column;gap:6px;min-height:0}
+.rpm{position:relative;display:grid;grid-template-columns:54px 150px 76px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:12px;padding:6px 14px 6px 10px;
+  background:linear-gradient(100deg,rgba(52,44,104,.72),rgba(14,12,36,.85) 60%,rgba(10,10,28,.6));border:1px solid rgba(232,195,114,.35);border-left:3px solid #e8c372;box-shadow:inset 0 1px 0 rgba(255,240,200,.12),0 4px 14px rgba(0,0,0,.45);clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+.rpm.res{opacity:.78;border-left-color:#7c86b8}
+.rpf{grid-row:1 / span 2;width:40px;height:40px;transform:rotate(45deg);overflow:hidden;border:1.5px solid #e8c372;border-radius:3px;margin:6px}
+.rpm.res .rpf{border-color:#7c86b8}
+.rpf img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;transform:rotate(-45deg) scale(1.45)}
+.rpn{grid-row:1 / span 2;display:flex;flex-direction:column}
+.rpn b{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:19px;letter-spacing:.1em;color:#f6e2a8}
+.rpn span{font-size:11.5px;color:#c9cfee}
+.rpl{grid-row:1 / span 2;display:flex;align-items:baseline;gap:4px;font-family:Cinzel,serif}
+.rpl em{font-style:normal;font-size:13px;color:#c9cfee}
+.rpl b{font-size:30px;font-weight:700;color:#ffe3a0;text-shadow:0 0 12px rgba(242,212,138,.5)}
+.rpx{display:flex;align-items:center;gap:8px}
+.lvb{position:relative;flex:1;height:6px;background:rgba(0,0,0,.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);transform:skewX(-20deg);max-width:220px}
+.lvb i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#b8862a,#ffe08a);box-shadow:0 0 6px rgba(255,210,122,.6)}
+.rpx small,.sxp small{font-size:11px;color:#b9bfe0;white-space:nowrap}
+.rps{display:flex;gap:14px;font-size:12px;color:#c9cfee}
+.rps b{color:#eef0ff;font-variant-numeric:tabular-nums}
+.rps .hp{color:#9fe39a}.rps .k{color:#9fe6ff}.rps .m{color:#d6b8ff}
+.rpg-side{display:flex;flex-direction:column;gap:10px}
+.rpg-cmd{display:flex;flex-direction:column;gap:6px}
+.rcmd{position:relative;display:flex;align-items:center;gap:12px;padding:9px 18px 9px 14px;cursor:pointer;color:#f6e2a8;font:inherit;text-align:left;
+  background:linear-gradient(90deg,rgba(70,58,130,.75),rgba(20,16,46,.9));border:1px solid rgba(232,195,114,.45);border-left:3px solid #e8c372;clip-path:polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%);transition:transform .15s,background .15s}
+.rcmd svg{width:24px;height:24px;flex:none;fill:none;stroke:#f2d48a;stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
+.rcmd b{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:18px;letter-spacing:.22em}
+.rcmd:hover,.rcmd.focus{transform:translateX(-6px);background:linear-gradient(90deg,rgba(150,112,36,.85),rgba(60,40,8,.95));color:#fff6dc}
+.rpg-info{display:flex;flex-direction:column;gap:4px;padding:8px 12px;background:rgba(10,10,28,.6);border:1px solid rgba(232,195,114,.3)}
+.rpg-info div{display:flex;justify-content:space-between;align-items:baseline}
+.rpg-info span{font-size:12px;color:#c9cfee}.rpg-info b{font-family:"Shippori Mincho B1",serif;font-size:17px;color:#ffe3a0}
+@media (orientation:landscape) and (max-height:520px){
+  .rpgm{grid-template-columns:minmax(0,1fr) 190px;gap:10px;margin-top:2px}
+  .rpg-party{gap:4px}.rpm{grid-template-columns:40px 112px 54px minmax(0,1fr);padding:3px 10px 3px 6px;column-gap:8px}
+  .rpf{width:28px;height:28px;margin:5px}.rpn b{font-size:15px}.rpn span{font-size:10px}.rpl b{font-size:21px}.rpl em{font-size:11px}
+  .rps{gap:8px;font-size:10.5px}.rpx small{font-size:10px}
+  .rcmd{padding:5px 12px 5px 10px}.rcmd b{font-size:15px}.rcmd svg{width:19px;height:19px}.rpg-cmd{gap:4px}.rpg-info{padding:4px 10px}.rpg-info b{font-size:14px}
+}
+/* ステータスのLv */
+.stc .slv{display:flex;align-items:baseline;gap:4px;font-family:Cinzel,serif}.stc .slv em{font-style:normal;font-size:12px;color:#c9cfee}.stc .slv b{font-size:24px;color:#ffe3a0;text-shadow:0 0 10px rgba(242,212,138,.5)}
+.stc .sxp{display:flex;align-items:center;gap:6px;width:100%}
+.stc .btn.mini{margin-top:4px;font-size:11px;padding:1px 8px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1230,13 +1295,19 @@ input,textarea{-webkit-user-select:text;user-select:text}
   <div class="mpage" id="pg-menu">
     <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>メニュー</h2></div>
     <div class="mbody">
-    <nav class="mgrid">
-      <button class="mbtn" data-nav data-page="status"><svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="5"/><path d="M6 27 Q6 18 16 18 Q26 18 26 27"/></svg><span><b>ステータス</b><small>仲間の力と装備</small></span></button>
-      <button class="mbtn" data-nav data-page="items"><svg viewBox="0 0 32 32"><path d="M7 12 L25 12 L23 27 L9 27 Z M11 12 Q11 5 16 5 Q21 5 21 12"/></svg><span><b>アイテム</b><small>持ち物</small></span></button>
-      <button class="mbtn" data-nav data-page="book"><svg viewBox="0 0 32 32"><path d="M5 7 Q11 5 16 8 Q21 5 27 7 L27 25 Q21 23 16 26 Q11 23 5 25 Z M16 8 L16 26"/></svg><span><b>技の書</b><small>スキルツリー・パッシブ</small></span></button>
-      <button class="mbtn" data-nav data-page="settings"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><path d="M16 6 L16 2 M16 26 L16 30 M6 16 L2 16 M26 16 L30 16 M16 16 L21 11"/></svg><span><b>設定</b><small>難しさ・音・全画面</small></span></button>
-      <button class="mbtn" data-nav data-page="help"><svg viewBox="0 0 32 32"><path d="M8 5 L24 5 Q27 5 27 8 L27 27 L11 27 Q8 27 8 24 Z M5 8 Q5 5 8 5 M12 11 L23 11 M12 16 L23 16 M12 21 L19 21"/></svg><span><b>遊び方</b><small>ルール・アイコン</small></span></button>
-    </nav>
+    <div class="rpgm">
+      <div class="rpg-party" id="menuParty"></div>
+      <div class="rpg-side">
+        <nav class="rpg-cmd">
+          <button class="rcmd" data-nav data-page="status"><svg viewBox="0 0 32 32"><circle cx="16" cy="11" r="5"/><path d="M6 27 Q6 18 16 18 Q26 18 26 27"/></svg><b>ステータス</b></button>
+          <button class="rcmd" data-nav data-page="items"><svg viewBox="0 0 32 32"><path d="M7 12 L25 12 L23 27 L9 27 Z M11 12 Q11 5 16 5 Q21 5 21 12"/></svg><b>アイテム</b></button>
+          <button class="rcmd" data-nav data-page="book"><svg viewBox="0 0 32 32"><path d="M5 7 Q11 5 16 8 Q21 5 27 7 L27 25 Q21 23 16 26 Q11 23 5 25 Z M16 8 L16 26"/></svg><b>技の書</b></button>
+          <button class="rcmd" data-nav data-page="settings"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><path d="M16 6 L16 2 M16 26 L16 30 M6 16 L2 16 M26 16 L30 16 M16 16 L21 11"/></svg><b>設定</b></button>
+          <button class="rcmd" data-nav data-page="help"><svg viewBox="0 0 32 32"><path d="M8 5 L24 5 Q27 5 27 8 L27 27 L11 27 Q8 27 8 24 Z M5 8 Q5 5 8 5 M12 11 L23 11 M12 16 L23 16 M12 21 L19 21"/></svg><b>遊び方</b></button>
+        </nav>
+        <div class="rpg-info" id="menuInfo"></div>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -1320,6 +1391,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
   <div id="cutin" class="hidden"></div>
   <div id="partyHud"></div>
   <div id="intro" class="hidden"></div>
+  <button class="mnu icob" id="icoBtn" aria-label="アイコンの説明"><svg viewBox="0 0 20 20"><path d="M10 1.8L18.2 10 10 18.2 1.8 10z" fill="none" stroke="#f2d48a" stroke-width="1.4"/><circle cx="10" cy="6.6" r="1.2" fill="#f2d48a"/><path d="M10 9v5" stroke="#f2d48a" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  <div id="icovl" class="hidden"><div class="iow"><div class="ioh"><b>アイコンの説明</b><button class="btn" id="icoClose">閉じる</button></div><ul class="rules iob"></ul></div></div>
   <div id="order" class="hidden"></div>
   <div id="field">
     <div class="topline" id="topline"></div>
@@ -1335,14 +1408,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122b"></script>
-<script src="js/icons.js?v=t1122b"></script>
-<script src="js/engine.js?v=t1122b"></script>
-<script src="js/loadout.js?v=t1122b"></script>
-<script src="js/sound.js?v=t1122b"></script>
-<script src="js/fx.js?v=t1122b"></script>
-<script src="js/tree3d.js?v=t1122b"></script>
-<script src="js/ui.js?v=t1122b"></script>
-<script type="module" src="js/stage3d.js?v=t1122b"></script>
+<script src="js/data.js?v=t1122c"></script>
+<script src="js/icons.js?v=t1122c"></script>
+<script src="js/engine.js?v=t1122c"></script>
+<script src="js/loadout.js?v=t1122c"></script>
+<script src="js/sound.js?v=t1122c"></script>
+<script src="js/fx.js?v=t1122c"></script>
+<script src="js/tree3d.js?v=t1122c"></script>
+<script src="js/ui.js?v=t1122c"></script>
+<script type="module" src="js/stage3d.js?v=t1122c"></script>
 </body>
 </html>

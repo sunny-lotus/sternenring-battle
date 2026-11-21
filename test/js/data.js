@@ -659,3 +659,29 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
     SR.passives[p][2] = out;
   });
 })();
+
+// ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
+// 戦いの経験値で上がる。上がると体力・最大気力・与えるダメージ・気力削りが少しずつ伸びる（数値は仮）。
+SR.LV_MAX = 50;
+SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01 };   // 1レベルごと：最大体力+4%・最大気力+2・体力ダメージ+2%・気力削り+1%
+SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
+SR.level = (function () {
+  var KEY = 'sr-battle-lv-v1', d;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!d || !d.exp) d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  function need(lv) { return 40 + lv * 20; }   // lv から lv+1 に必要な経験値
+  function info(id) {
+    var e = d.exp[id] || 0, lv = 1;
+    while (lv < SR.LV_MAX && e >= need(lv)) { e -= need(lv); lv++; }
+    return { lv: lv, cur: e, next: lv < SR.LV_MAX ? need(lv) : 0 };
+  }
+  return {
+    info: info,
+    lv: function (id) { return info(id).lv; },
+    add: function (id, n) { var a = info(id).lv; d.exp[id] = (d.exp[id] || 0) + n; save(); return info(id).lv - a; },
+    up: function (id) { var i = info(id); if (i.lv < SR.LV_MAX) { d.exp[id] = (d.exp[id] || 0) + (i.next - i.cur); save(); } },   // 試し用：1つ上げる
+    reset: function () { d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } }; save(); }
+  };
+})();
+(function () { var rs = SR.growth.reset; SR.growth.reset = function () { rs(); SR.level.reset(); }; })();

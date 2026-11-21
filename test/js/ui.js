@@ -349,8 +349,8 @@
   // 遊び方：項目を、画面に入る分ずつのページに分ける
   var helpPage = 0;
   // 遊び方：アイコンの説明一覧（現象・状態・しるし）。絵は戦闘と同じもの
-  function buildIconHelp() {
-    var ul = document.querySelector('#pg-help .rules'); if (!ul || ul.querySelector('.ichelp')) return;
+  function buildIconHelp(box) {   // box：戦闘中の説明の窓（ページに分けない）
+    var ul = box || document.querySelector('#pg-help .rules'); if (!ul || ul.querySelector('.ichelp')) return;
     function row(icon, name, fx) { return '<div class="ic"><span class="ici">' + icon + '</span><b>' + name + '</b>' + (fx ? '<small>' + fx + '</small>' : '') + '</div>'; }
     var PH = { '炎': '燃やす', '雷': '電気を走らせる', '冷気': '冷やす・凍らせる', '光': 'まぶしい光', '衝撃': 'ぶつける力', '斬撃': '刀や剣で斬る', '貫通': '突き通す', '強撃': '重い一撃' };
     var MK = [['brk', 'ブレイク', '気力が0になって崩れた／技の札ではブレイクできる技'], ['push', 'あと一押し', '気力が1。ブレイクできる技で崩せる'], ['charge', '溜め', '次の番に大技が来る'], ['big', '大技', '強い攻撃が来る。ブレイクで止められる'],
@@ -360,16 +360,18 @@
     // 1ページに4つずつ（スマホの横画面でも読める大きさのまま）
     var h = '';
     function group(title, rows) {
-      for (var i = 0; i < rows.length; i += 4) {
-        var n = Math.ceil(rows.length / 4), part = n > 1 ? '（' + (i / 4 + 1) + '/' + n + '）' : '';
-        h += '<li class="ichelp"><b>' + title + part + '</b><div class="icgrid">' + rows.slice(i, i + 4).join('') + '</div></li>';
+      var per = box ? 99 : 4;
+      for (var i = 0; i < rows.length; i += per) {
+        var n = Math.ceil(rows.length / per), part = n > 1 ? '（' + (i / per + 1) + '/' + n + '）' : '';
+        h += '<li class="ichelp"><b>' + title + part + '</b><div class="icgrid">' + rows.slice(i, i + per).join('') + '</div></li>';
       }
     }
     group('アイコン：現象', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
     group('アイコン：状態', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
     group('アイコン：しるし', MK.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }));
     group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる'),
-      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる')]);
+      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる'),
+      row('<span class="stexp">' + SR.statusIcon('burn') + '</span>', '金の枠の状態', 'その状態の相手に、威力が上がる技（技の札）')]);
     ul.insertAdjacentHTML('beforeend', h);
   }
   function paginateHelp() {
@@ -389,6 +391,31 @@
   $('title').addEventListener('click', function (ev) { var b = ev.target.closest('[data-help]'); if (!b || b.disabled) return; helpPage += +b.getAttribute('data-help'); paginateHelp(); nav.refresh(); });
   window.addEventListener('resize', function () { if (!$('title').classList.contains('hidden')) fitPage(); });
   // ---- メニュー画面：ページの切り替え ----
+  // 今の育ち・装備で戦いを始めたときの仲間（メニューとステータスで使う）
+  function partyNow() {
+    var key = Object.keys(SR.encounters).find(function (k) { return !SR.encounters[k].random; });
+    var T = new SR.Battle({ kit: pick.kit, encounter: key, tune: pick.tune, seed: 1 }), O = ['N', 'V', 'F', 'S', 'L'];
+    return { T: T, list: T.heroes.slice().sort(function (a, b) { return O.indexOf(a.id) - O.indexOf(b.id); }) };
+  }
+  function lvBar(id) {
+    var i = SR.level.info(id);
+    return '<span class="lvb"><i style="width:' + (i.next ? Math.round(i.cur / i.next * 100) : 100) + '%"></i></span><small>' + (i.next ? '次のLvまで ' + (i.next - i.cur) : 'Lv最大') + '</small>';
+  }
+  // メニュー：左に仲間、右にコマンド
+  function drawMenu() {
+    var box = $('menuParty'); if (!box) return;
+    var P; try { P = partyNow(); } catch (e) { box.innerHTML = ''; return; }
+    box.innerHTML = P.list.map(function (u) {
+      var front = u.pos < 3;
+      return '<div class="rpm' + (front ? '' : ' res') + '"><div class="rpf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div>' +
+        '<div class="rpn"><b>' + u.name + '</b><span>' + SR.uniqueName(u.id) + (front ? '' : '・控え') + '</span></div>' +
+        '<div class="rpl"><em>Lv</em><b>' + (u.lv || 1) + '</b></div>' +
+        '<div class="rpx">' + lvBar(u.id) + '</div>' +
+        '<div class="rps"><span class="hp">体力 <b>' + Math.round(u.maxHp) + '</b></span><span class="k">気力 <b>' + Math.round(u.maxK) + '</b></span><span class="m">精神力 <b>' + Math.round(u.maxMp) + '</b></span></div></div>';
+    }).join('');
+    var G = SR.growth, info = $('menuInfo');
+    if (info) info.innerHTML = '<div><span>金貨</span><b>' + G.gold() + '</b></div><div><span>時期</span><b>' + SR.eraName[G.era()] + '</b></div>';
+  }
   // ステータス：今の育ち・装備で戦いを始めたときの数字を見せる
   function drawStatus() {
     var box = $('statusBox'); if (!box) return;
@@ -402,9 +429,9 @@
       var nL = u.id === 'N' ? Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && G.hasLink(s); }).length : 0;
       var pas = T.passivesOf(u).map(SR.skillName);
       return '<div class="stc"><div class="sf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="sn">' + u.name + '</div>' +
-        '<div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
+        '<div class="slv"><em>Lv</em><b>' + (u.lv || 1) + '</b></div><div class="sxp">' + lvBar(u.id) + '</div><div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
         '<dl><dt class="hp">体力</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">気力</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">精神力</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
-        '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div></div>';
+        '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div><button class="btn mini" data-nav data-lvup="' + u.id + '">Lv+1（試し）</button></div>';
     }).join('');
   }
   function goPage(p) {
@@ -413,9 +440,11 @@
     if (p === 'book') drawLoadout();
     if (p === 'settings') drawDev();
     if (p === 'status') drawStatus();
+    if (p === 'menu') drawMenu();
     requestAnimationFrame(fitPage);
     lastMode = null; nav.refresh();
   }
+  $('title').addEventListener('click', function (ev) { var b = ev.target.closest('[data-lvup]'); if (!b) return; SR.level.up(b.getAttribute('data-lvup')); SR.sound.se('ok'); drawStatus(); nav.refresh(); });
   $('title').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-page]'); if (b && b.tagName === 'BUTTON') { SR.sound.se(b.hasAttribute('data-back') ? 'back' : 'ok'); goPage(b.getAttribute('data-page')); return; }
     if (ev.target.closest('[data-start]')) start();
@@ -828,7 +857,7 @@
       if (a.brave) h += '<span class="tchip brk">' + SR.markIcon('brk', '') + 'ブレイク可</span>';
     }
     if (a.inflict) h += '<span class="tchip">' + SR.statusIcon(a.inflict[0]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + '</span>';
-    if (a.exploit) h += '<span class="tchip">' + SR.statusIcon(a.exploit[0]) + 'に×' + a.exploit[1] + '</span>';
+    if (a.exploit) h += '<span class="tchip"><span class="stexp">' + SR.statusIcon(a.exploit[0]) + '</span>' + SR.statuses[a.exploit[0]].name + 'の相手に×' + a.exploit[1] + '</span>';
     if (a.form) h += '<span class="tchip">→' + SR.formNames[a.form] + '</span>';
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') h += '<span class="tchip">' + wl.replace('次の番', '次') + '</span>';
     h += '</div>';
@@ -964,7 +993,9 @@
     if (ph && a.kind === 'attack') { var ms = foes.map(function (e) { return SR.affMul(e, ph, pc); }), am = ms.length ? Math.max.apply(null, ms) : 1, an = ms.length ? Math.min.apply(null, ms) : 1; tags += '<span class="badge b-sys">' + SR.phenText(ph) + '</span>'; if (am > 1) tags = '<span class="badge b-hit">よく効く相手がいる</span>' + tags; else if (an < 1 && foes.length === 1) tags += '<span class="badge b-risk">効きにくい</span>'; if (foes.some(function (e) { return e.kPhen && SR.phenList(ph).some(function (p) { return e.kPhen[p]; }); })) tags = '<span class="badge b-hit">急所を突ける</span>' + tags; }
     if (a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') tags += '<span class="badge ' + (SR.weight(a) < 1 ? 'b-buff' : 'b-charge') + '">' + wl + '</span>';
-    if (tags) h += '<div class="sktags">' + SR.iconizeTags(tags) + '</div>';
+    var stx = (B.statusOn && a.inflict ? '<span class="stinf" title="' + SR.statuses[a.inflict[0]].name + 'を付ける">' + SR.statusIcon(a.inflict[0]) + '</span>' : '') +
+      (B.statusOn && a.exploit ? '<span class="stexp" title="' + SR.statuses[a.exploit[0]].name + 'の相手に威力×' + a.exploit[1] + '">' + SR.statusIcon(a.exploit[0]) + '</span>' : '');
+    if (tags || stx) h += '<div class="sktags">' + SR.iconizeTags(tags) + stx + '</div>';
     h += stLine(a);
     if (a.kind === 'attack') {
       var hits = a.hits || 1;
@@ -1206,6 +1237,11 @@
           SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
+        if (SR.level) {   // レベルの経験値（全員・控えも）
+          var lx = Math.round((big ? SR.lvExp.boss : SR.lvExp.normal) * (B.outcome === 'win' ? 1 : SR.lvExp.loseMul));
+          res.lines.unshift('レベル経験値　全員+' + lx);
+          ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { if (SR.level.add(w, lx)) res.learned.unshift(SR.names[w] + 'は Lv' + SR.level.lv(w) + ' になった！'); });
+        }
         B.grown = res;
         res.lines.forEach(function (l) { logLine('経験値　' + l, 's'); });
         res.learned.forEach(function (l) { logLine(l, 's'); });
@@ -1328,7 +1364,7 @@
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
         d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + SR.iconizeTags(tags) + '</div></div>';
         pa.appendChild(d);
-        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
+        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + '<span class="lvt">Lv' + (u.lv || 1) + '</span>' + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }
       if (can.indexOf(u.id) >= 0 && !(st.mode !== 'target' && st.mode.indexOf('swap') < 0 && st.actor === u)) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(u.id); }; }
     });
@@ -1370,6 +1406,12 @@
   // カメラ：場面ごとに動く／全体で固定（ためし用の切りかえ）
   var camMode = 'auto';
   try { if (localStorage.getItem('sr_cam') === 'fixed') camMode = 'fixed'; } catch (e) {}
+  (function () {
+    var b = $('icoBtn'), o = $('icovl'); if (!b || !o) return;
+    $('battle').appendChild(b); $('battle').appendChild(o);
+    b.onclick = function (e) { e.stopPropagation(); buildIconHelp(o.querySelector('.iob')); o.classList.toggle('hidden'); SR.sound.se(o.classList.contains('hidden') ? 'back' : 'ok'); };
+    o.addEventListener('click', function (e) { if (e.target === o || e.target.closest('#icoClose')) { o.classList.add('hidden'); SR.sound.se('back'); } });
+  })();
   (function () {
     var m = $('mnuBtn'); if (!m) return;
     $('battle').appendChild(m.parentNode);   // 帯や吹き出しより前に出す
