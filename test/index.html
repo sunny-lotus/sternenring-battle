@@ -689,6 +689,13 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #battle.hd #order .oc.cur{width:calc(var(--u)*5.8);height:calc(var(--u)*3.8);border-color:#f2d48a;box-shadow:0 0 12px rgba(242,212,138,.85);z-index:2}
 #battle.hd #order .oc>span{position:absolute;bottom:1px;left:50%;transform:skewX(20deg) translateX(-50%);font-size:calc(var(--u)*.7);background:rgba(10,10,30,.85);color:#fff;padding:0 3px;border-radius:2px;white-space:nowrap}
 #battle.hd #order .oc>span.hot{background:#c23a2a}
+/* 2026-11-22 順番の帯：左へつめる動き・技を選びかけたときの先読み */
+#battle.hd #order .oc.ogone{position:absolute;top:0;margin:0;pointer-events:none;z-index:1}
+#battle.hd #order.pv .otrack{filter:drop-shadow(0 0 6px rgba(143,200,255,.55))}
+#battle.hd #order.pv .oc{border-style:dashed}
+#battle.hd #order.pv .oc.cur{border-style:solid}
+#battle.hd #order .oc.pvn{border:2px solid #8fe0ff;box-shadow:0 0 10px rgba(143,224,255,.9);z-index:2;opacity:1!important}
+#battle.hd #order .oc.pvn>span{background:#2a7fb8;font-weight:800}
 /* カットイン：番のキャラの大きな姿と、名前の帯 */
 #battle.hd #cutin{position:absolute;inset:0;z-index:2;pointer-events:none}
 #battle.hd #cutin.hidden{display:none}
@@ -1584,14 +1591,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122zj"></script>
-<script src="js/icons.js?v=t1122zj"></script>
-<script src="js/engine.js?v=t1122zj"></script>
-<script src="js/loadout.js?v=t1122zj"></script>
-<script src="js/sound.js?v=t1122zj"></script>
-<script src="js/fx.js?v=t1122zj"></script>
-<script src="js/tree3d.js?v=t1122zj"></script>
-<script src="js/ui.js?v=t1122zj"></script>
-<script type="module" src="js/stage3d.js?v=t1122zj"></script>
+<script src="js/data.js?v=t1122zk"></script>
+<script src="js/icons.js?v=t1122zk"></script>
+<script src="js/engine.js?v=t1122zk"></script>
+<script src="js/loadout.js?v=t1122zk"></script>
+<script src="js/sound.js?v=t1122zk"></script>
+<script src="js/fx.js?v=t1122zk"></script>
+<script src="js/tree3d.js?v=t1122zk"></script>
+<script src="js/ui.js?v=t1122zk"></script>
+<script type="module" src="js/stage3d.js?v=t1122zk"></script>
 </body>
 </html>

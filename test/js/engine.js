@@ -701,10 +701,30 @@ SR.Battle = function (opts) {
   };
 
   // これから先の順番（見込み）。いまの番の人が先頭。
-  this.previewOrder = function (n) {
+  // plan＝{ skill, target }：いまの番の人がその技を使ったら、の見込み（2026-11-22 サニー：技を1回押したら未来の順番が見える）
+  this.previewOrder = function (n, plan) {
     n = n || 8;
     var sim = queue().map(function (u) { return { u: u, at: u === self.cur ? -1 : u.at, brk: broken(u), ch: u.charge || 0, tn: u.turns, first: u === self.cur }; });
-    var list = [];
+    var list = [], cu = self.cur, pw = null, pnow = false;
+    if (plan && cu && cu.hero && skills[plan.skill]) {
+      var a = skills[plan.skill], of = function (v) { return sim.filter(function (s) { return s.u === v; })[0]; };
+      var tg = plan.target ? unit(plan.target) : null;
+      if (!tg) tg = ['attack', 'analyze', 'pressure', 'scan', 'vuln', 'slow', 'seal', 'flank'].indexOf(a.kind) >= 0 ? living().slice().sort(function (x, y) { return x.k - y.k; })[0]
+        : a.kind === 'overclock' ? front().filter(function (v) { return v !== cu && v.hp > 0 && !broken(v); })[0] : cu;
+      pw = SR.weight(a) + (cu.id === 'L' && SR.phenList(SR.attackPhen(cu, a)).indexOf('強撃') >= 0 ? 0.1 : 0);
+      var ts = tg && of(tg);
+      if (a.kind === 'haste') { if (tg === cu) pw *= 0.5; else if (ts) ts.at = now + Math.max(0, ts.at - now) * 0.35; }
+      if (a.kind === 'slow' && ts) ts.at += iv(tg) * 0.6;
+      if (a.kind === 'overclock' && ts && tg !== cu && !broken(tg)) { ts.at = now + 0.0005; pw += 0.5; }
+      if (cu.hasteSelf) pw *= 0.5;
+      if (cu.twinNext && a.kind !== 'twin' && !cu.twinSecond) pnow = true;   // 二段構えの番：続けてもう一度
+      if (a.link) a.with.forEach(function (c) { var v = unit(c), s = v && of(v); if (a.join && s && v.pos < 3) s.at += iv(v) * 0.35; });
+      if (a.kind === 'attack') {   // ブレイクしそうな相手は、順番が下がる
+        var hitE = a.all || a.scatter ? living() : tg && !tg.hero ? [tg] : [];
+        hitE.forEach(function (e) { var r = self.estimate(cu.id, a.id, e.id), s = of(e); if (r && s && !r.brk && a.brave && r.kd >= e.k) { s.at += iv(e) * C.brkDelay; s.brk = true; } });
+      }
+    }
+    list = [];
     for (var k = 0; k < n && sim.length; k++) {
       sim.sort(function (a, b) { return a.at - b.at; });
       var s = sim[0], u = s.u, label = '', w = 1;
@@ -721,7 +741,9 @@ SR.Battle = function (opts) {
         else label = u.heal ? '攻撃か回復' : (enc.config.alwaysAoe || u.aoeAll) ? '全体攻撃' : '攻撃';
       }
       list.push({ id: u.id, name: u.name, kind: kindOf(u), label: label, cur: k === 0 });
+      if (k === 0 && pw !== null) w = pw;
       s.at = (k === 0 ? now : s.at) + iv(u) * w;
+      if (k === 0 && pnow) { s.at = now + 0.0001; s.tn--; pnow = false; }
     }
     return list;
   };

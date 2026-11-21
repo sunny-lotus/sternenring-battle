@@ -1047,8 +1047,8 @@
       tipEl.style.maxHeight = (br.height * .66) + 'px';
     } else tipEl.style.maxHeight = '';
   }
-  function hideTip() { tipEl.classList.add('hidden'); tipFor = null; document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); }); }
-  document.addEventListener('pointerover', function (e) { if (e.pointerType !== 'mouse') return; var el = e.target.closest && e.target.closest('[data-tip]'); if (el && el !== tipFor) showTip(el); else if (!el && tipFor) hideTip(); });
+  function hideTip() { var hadSk = tipFor && tipFor.getAttribute && tipFor.getAttribute('data-act') === 'skill'; tipEl.classList.add('hidden'); tipFor = null; if (hadSk) previewSkill(null);document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); }); }
+  document.addEventListener('pointerover', function (e) { if (e.pointerType !== 'mouse') return; var el = e.target.closest && e.target.closest('[data-tip]'); if (el && el !== tipFor) { showTip(el); if (el.getAttribute('data-act') === 'skill' && el.closest('#battle')) previewSkill(el.getAttribute('data-id')); } else if (!el && tipFor) hideTip(); });
   document.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse') return;
     var el = e.target.closest && e.target.closest('[data-tip]'); clearTimeout(tipTimer); if (!el) { hideTip(); return; }
@@ -1069,7 +1069,7 @@
     if (tipFor !== el) {
       e.stopPropagation(); e.preventDefault();
       document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); });
-      showTip(el); el.classList.add('armed');
+      showTip(el); el.classList.add('armed'); previewSkill(el.getAttribute('data-id'));
       if (SR.sound && SR.sound.se) SR.sound.se('ok');
     } else { hideTip(); }
   }, true);
@@ -1227,7 +1227,7 @@
   function run() {
     var u = B.cur; if (!u) return;
     var c = cmds[u.id] || { skill: B.available(u, 'basic') ? 'basic' : 'defend', target: null };
-    playOrder = B.previewOrder(8);
+    playOrder = B.previewOrder(8); playOrderT = B.t;
     var sa0 = SR.skills[c.skill]; playCut = u.hero && sa0 && (sa0.kind === 'attack' || c.skill === 'basic') ? u.id : null;
     var start = B.events.length;
     B.act(c);
@@ -1428,8 +1428,9 @@
     $('topline').innerHTML = tl;
     var can = pickableIds();
     var showOrder = !snap && ['idle', 'menu', 'list', 'target', 'swap1', 'swap2'].indexOf(st.mode) >= 0;
-    var ord = showOrder ? B.previewOrder(8) : (st.mode === 'play' && playOrder ? playOrder : []);
-    renderOrder(ord);
+    var pvOn = st.mode === 'target' && st.skill && st.actor;
+    var ord = showOrder ? ordFor(pvOn ? { skill: st.skill } : null, st.actor) : (st.mode === 'play' && playOrder ? playOrder : []);
+    renderOrder(ord, pvOn ? st.actor : null);
     SR.fx.mood(B.enemies.some(function (e) { var v = val(e, snap); return v.brk && v.hp > 0; }),
       B.outcome ? 0 : playMood !== null ? playMood : B.enemies.reduce(function (m, e) { return e.hp > 0 && !B.broken(e) ? Math.max(m, e.charge || 0) : m; }, 0));
     var tgtSkill = st.mode === 'target' && st.actor && SR.skills[st.skill] && SR.skills[st.skill].kind === 'attack' ? st.skill : null;
@@ -1493,10 +1494,18 @@
     requestAnimationFrame(function () { document.querySelectorAll('#battle .ghost').forEach(function (g) { g.style.width = g.getAttribute('data-to') + '%'; }); placeUnits(); });
   }
 
-  function renderOrder(ord) {
+  // 2026-11-22 サニー：順番がパッと変わらず、左へつめて動く。技を選びかけると「この技ならこうなる」順番へ動いて見せる
+  var ordLastT = null, playOrderT = 0;
+  function renderOrder(ord, pv) {
     var box = $('order');
     if (!ord.length) { box.classList.add('hidden'); return; }
+    var wasHidden = box.classList.contains('hidden');
     box.classList.remove('hidden');
+    var old = wasHidden ? [] : Array.prototype.slice.call(box.querySelectorAll('.otrack > .oc[data-u]')).map(function (el) { return { id: el.getAttribute('data-u'), x: el.getBoundingClientRect().left, el: el }; });
+    var tNow = ord === playOrder ? playOrderT : B.t, adv = ordLastT === null ? 0 : Math.max(0, Math.min(old.length, tNow - ordLastT)); ordLastT = tNow;
+    var gone = old.slice(0, adv); old = old.slice(adv);   // 動き終わった人は左へ抜ける
+    var nNext = -1; if (pv) ord.some(function (o, i) { if (i > 0 && o.id === pv.id) { nNext = i; return true; } });
+    box.classList.toggle('pv', !!pv);
     box.innerHTML = '<div class="otrack">' + ord.map(function (o, i) {
       var icon, tag = '', hot = false;
       if (o.kind === 'enemy') {
@@ -1504,8 +1513,36 @@
         if (o.label === '大技') { tag = '大技'; hot = true; } else if (o.label === '溜め') { tag = '溜め'; hot = true; }
       } else { icon = '<img src="img/' + SR.img[o.id] + '_face.jpg?v=5" alt="">'; tag = o.kind === 'support' ? '支援' : ''; }
       if (o.label.indexOf('ブレイク明け') === 0 || o.label === '動けない') tag = '休み';
-      return '<div class="oc o-' + o.kind + (i === 0 ? ' cur' : '') + '" style="opacity:' + Math.max(.4, 1 - i * .08).toFixed(2) + '" title="' + o.name + '：' + o.label + '"><div class="oi">' + icon + '</div>' + (tag ? '<span' + (hot ? ' class="hot"' : '') + '>' + tag + '</span>' : '') + '</div>';
+      if (i === nNext) tag = '次';
+      return '<div class="oc o-' + o.kind + (i === 0 ? ' cur' : '') + (i === nNext ? ' pvn' : '') + '" data-u="' + o.id + '" style="opacity:' + Math.max(.4, 1 - i * .08).toFixed(2) + '" title="' + o.name + '：' + o.label + '"><div class="oi">' + icon + '</div>' + (tag ? '<span' + (hot ? ' class="hot"' : '') + '>' + tag + '</span>' : '') + '</div>';
     }).join('') + '</div>';
+    if (!old.length && !gone.length) return;
+    var used = {}, els = box.querySelectorAll('.otrack > .oc[data-u]'), dur = adv ? 460 : 280;
+    Array.prototype.forEach.call(els, function (el) {
+      if (!el.animate) return;
+      var id = el.getAttribute('data-u'), from = null;
+      for (var k = 0; k < old.length; k++) if (!used[k] && old[k].id === id) { used[k] = 1; from = old[k]; break; }
+      var base = getComputedStyle(el).transform; base = base && base !== 'none' ? base : '';
+      if (from) { var dx = from.x - el.getBoundingClientRect().left; if (Math.abs(dx) > 1) el.animate([{ transform: 'translateX(' + dx + 'px) ' + base }, { transform: base || 'none' }], { duration: dur, easing: 'cubic-bezier(.3,.7,.2,1)' }); }
+      else el.animate([{ transform: 'translateX(70%) ' + base, opacity: 0 }, { transform: base || 'none', opacity: +el.style.opacity || 1 }], { duration: dur, delay: 80, easing: 'ease-out', fill: 'backwards' });
+    });
+    var tr = box.querySelector('.otrack'), tb = tr.getBoundingClientRect();
+    gone.forEach(function (g) {   // 抜けた人：左へすべって消える
+      var c = g.el.cloneNode(true), base = getComputedStyle(els[0] || tr).transform; base = base && base !== 'none' ? base : '';
+      c.classList.add('ogone'); c.style.left = (g.x - tb.left) + 'px'; tr.appendChild(c);
+      if (c.animate) c.animate([{ transform: base || 'none', opacity: 1 }, { transform: 'translateX(-100%) ' + base, opacity: 0 }], { duration: 380, easing: 'ease-in', fill: 'forwards' });
+      setTimeout(function () { if (c.parentNode) c.parentNode.removeChild(c); }, 420);
+    });
+  }
+  // 技を1回押したとき（マウスは乗せたとき）、その技を使ったあとの順番を見せる
+  function ordFor(plan, who) {   // 番の人の「次の番」までは見せる（最大11）
+    var o = B.previewOrder(11, plan), k = -1;
+    if (who) o.some(function (x, i) { if (i > 0 && x.id === who.id) { k = i; return true; } });
+    return o.slice(0, Math.max(8, k + 1));
+  }
+  function previewSkill(id) {
+    if (!B || !st.actor || ['menu', 'list'].indexOf(st.mode) < 0) return;
+    renderOrder(ordFor(id ? { skill: id } : null, st.actor), id ? st.actor : null);
   }
 
   // 番のキャラのカットイン（大きな姿・名前の帯・バー）
