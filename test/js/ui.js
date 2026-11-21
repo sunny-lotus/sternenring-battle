@@ -25,7 +25,7 @@
   function bookHTML(id, charTabs) {
     var G = SR.growth, era = G.era();
     var tab = lo.btab || 'common'; if (id === 'N' && tab === 'common') tab = 'unique';
-    var h = '<div class="bk-top">' + charTabs + '<div class="row btabs">' + [['common', 'コモン'], ['unique', 'ユニーク'], ['passive', 'パッシブ']].map(function (b) {
+    var h = '<div class="bk-top">' + charTabs + '<div class="row btabs">' + [['common', SR.COMMON_NAME], ['unique', SR.uniqueName(id)], ['passive', 'パッシブ']].map(function (b) {
       return '<button class="btn' + (tab === b[0] ? ' sel' : '') + '" data-nav data-lo="btab" data-id="' + b[0] + '"' + (id === 'N' && b[0] === 'common' ? ' disabled' : '') + '>' + b[1] + '</button>';
     }).join('') + '</div><div class="row bk-era"><span class="small">時期</span>' + [1, 2, 3].map(function (n) {
       return '<button class="btn mini' + (era === n ? ' sel' : '') + '" data-nav data-lo="era" data-id="' + n + '">' + SR.eraName[n] + '</button>';
@@ -187,14 +187,14 @@
     var known = function (x, y) { return SR.canLearn(null, id, y) - SR.canLearn(null, id, x); };
     uni.sort(known); com.sort(known);
     if (p.pas.length) h += '<div class="grp">パッシブ（常に効く・コストで付ける）</div><div class="list">' + p.pas.map(function (s) { return item(s, true); }).join('') + '</div>';
-    h += '<div class="grp">使える技：ユニーク（覚えた技は全部、戦闘で使える）</div><div class="list">' + uni.map(function (s) { return item(s, false); }).join('') + '</div>';
-    if (com.length) h += '<div class="grp">使える技：コモン（技の書のツリーで覚える）</div><div class="list">' + com.map(function (s) { return item(s, false); }).join('') + '</div>';
-    else if (id === 'N') h += '<div class="grp">コモン</div><div class="small">ナハトはコモンを使わない。この枠には、のちに「リンク」が入る予定。</div>';
+    h += '<div class="grp">使える技：' + SR.uniqueName(id) + '（覚えた技は全部、戦闘で使える）</div><div class="list">' + uni.map(function (s) { return item(s, false); }).join('') + '</div>';
+    if (com.length) h += '<div class="grp">使える技：' + SR.COMMON_NAME + '（技の書のツリーで覚える）</div><div class="list">' + com.map(function (s) { return item(s, false); }).join('') + '</div>';
+    else if (id === 'N') h += '<div class="grp">' + SR.COMMON_NAME + '</div><div class="small">ナハトは魔法を使わない。この枠には、のちに「リンク」が入る予定。</div>';
     h += '<div class="row"><span class="small">パッシブのプリセット：</span>' + ['standard', 'counter', 'chase'].map(function (k) {
       return '<button class="btn" data-nav data-lo="tpl" data-id="' + k + '">' + SR.kits[k].name + '</button>';
     }).join('') + '<span class="small">選んだ内容は自動で保存されます</span></div>';
     if (box) box.innerHTML = h;   // 編成のページはなくした（技の書に一本化）
-    var bt = '<div class="lo-tabs">' + L.ids.map(function (c) { return '<button class="btn' + (c === id ? ' sel' : '') + '" data-nav data-lo="who" data-id="' + c + '">' + SR.names[c] + '<small>' + (c === 'N' ? 'ユニークのみ' : '重点：' + SR.growth.focus(c)) + '</small></button>'; }).join('') + '</div>';
+    var bt = '<div class="lo-tabs">' + L.ids.map(function (c) { return '<button class="btn' + (c === id ? ' sel' : '') + '" data-nav data-lo="who" data-id="' + c + '">' + SR.names[c] + '<small>' + (c === 'N' ? '剣技のみ' : '重点：' + SR.growth.focus(c)) + '</small></button>'; }).join('') + '</div>';
     $('bookBox').innerHTML = bookHTML(id, bt);
     var c3 = document.getElementById('tree3d');
     if (c3 && lo.who !== 'N') {
@@ -692,8 +692,8 @@
     h += boostRow(u);
     h += '<div class="menu4">' +
       '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic" data-tip="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">' + (brave.cost ? '精神力' + brave.cost : '消費なし') + '</span><span class="d">気力を0にすればブレイク・' + SR.weapons[u.id].name + '（' + SR.weapons[u.id].phen + '）</span></button>' +
-      '<button class="big t-uni" data-nav data-act="list" data-id="unique"' + (nU ? '' : ' disabled') + '>ユニーク<span class="c">' + nU + '</span><span class="d">' + SR.names[u.id] + 'だけの技</span></button>' +
-      (u.id === 'N' ? '' : '<button class="big t-com" data-nav data-act="list" data-id="common"' + (nC ? '' : ' disabled') + '>コモン<span class="c">' + nC + '</span><span class="d">技の書で覚えた技</span></button>') +
+      '<button class="big t-uni" data-nav data-act="list" data-id="unique"' + (nU ? '' : ' disabled') + '>' + SR.uniqueName(u.id) + '<span class="c">' + nU + '</span><span class="d">' + SR.names[u.id] + 'だけの技</span></button>' +
+      (u.id === 'N' ? '' : '<button class="big t-com" data-nav data-act="list" data-id="common"' + (nC ? '' : ' disabled') + '>' + SR.COMMON_NAME + '<span class="c">' + nC + '</span><span class="d">技の書で覚えた技</span></button>') +
       '<button class="big t-def" data-nav data-act="skill" data-id="defend" data-tip="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">次の番まで受けるダメージ半分・次の番が早い</span></button>' +
       (scan ? '<button class="big" data-nav data-act="skill" data-id="scan" data-tip="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">' + (scan.cost ? '精神力' + scan.cost : '消費なし') + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
       '</div>';
@@ -878,13 +878,13 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = actorTabs() + '<div class="row" style="margin-top:0">' + ['unique', 'common'].filter(function (k) { return k === 'unique' || u.id !== 'N'; }).map(function (k) { return '<button class="btn' + (st.list === k ? ' sel' : '') + '" data-nav data-act="list" data-id="' + k + '">' + (k === 'unique' ? 'ユニーク' : 'コモン') + '</button>'; }).join('') + '</div>' + boostRow(u) +
+    h = actorTabs() + '<div class="row" style="margin-top:0">' + ['unique', 'common'].filter(function (k) { return k === 'unique' || u.id !== 'N'; }).map(function (k) { return '<button class="btn' + (st.list === k ? ' sel' : '') + '" data-nav data-act="list" data-id="' + k + '">' + (k === 'unique' ? SR.uniqueName(u.id) : SR.COMMON_NAME) + '</button>'; }).join('') + '</div>' + boostRow(u) +
       '<div class="row cattabs">' + [['all', '全部'], ['skillAtk', '攻撃'], ['skillDef', '守備'], ['skillSup', '回復・補助']].map(function (c) { return '<button class="btn' + ((st.cat || 'all') === c[0] ? ' sel' : '') + '" data-nav data-act="cat" data-id="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id) && (!st.cat || st.cat === 'all' || SR.category(o.id) === st.cat); }).sort(function (a, b) { return rank(a) - rank(b); });
     var uni = sk.filter(function (o) { return !SR.isCommon(o.id); }), com = sk.filter(function (o) { return SR.isCommon(o.id); });
-    if (st.list !== 'common' && uni.length) h += '<div class="grp">ユニーク</div><div class="list">' + uni.map(skillButton).join('') + '</div>';
-    if (st.list !== 'unique' && com.length) h += '<div class="grp">コモン</div><div class="list">' + com.map(skillButton).join('') + '</div>';
+    if (st.list !== 'common' && uni.length) h += '<div class="grp">' + SR.uniqueName(u.id) + '</div><div class="list">' + uni.map(skillButton).join('') + '</div>';
+    if (st.list !== 'unique' && com.length) h += '<div class="grp">' + SR.COMMON_NAME + '</div><div class="list">' + com.map(skillButton).join('') + '</div>';
     if (!(st.list === 'common' ? com : st.list === 'unique' ? uni : sk).length) h += '<div class="small">この種類の技はまだない。</div>';
     return h + '<div class="row"><button class="btn" data-nav data-back data-act="toMenu">戻る</button></div>';
   }
@@ -1322,8 +1322,8 @@
     }
     h += '<div class="bubs">' +
       bub('atk', 'skill', 'basic', '攻撃', (st.boost ? (1 + st.boost) + '回攻撃・' : 'ブレイブ攻撃・') + (brave.cost ? '精神力' + brave.cost : '消費なし'), null, brave.ok, true) +
-      bub('', 'list', 'unique', 'ユニーク', SR.names[u.id] + 'だけの技', nU, nU > 0) +
-      (u.id === 'N' ? '' : bub('', 'list', 'common', 'コモン', '技の書で覚えた技', nC, nC > 0)) +
+      bub('', 'list', 'unique', SR.uniqueName(u.id), SR.names[u.id] + 'だけの技', nU, nU > 0) +
+      (u.id === 'N' ? '' : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
       bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) +
       (scan ? bub('', 'skill', 'scan', '調べる', '敵の弱点がわかる', null, scan.ok) : '') + '</div>';
     return h;

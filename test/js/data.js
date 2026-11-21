@@ -311,7 +311,7 @@ SR.growth = (function () {
     // まだ覚えていない理由（覚えていれば空）
     why: function (who, id) {
       var n = SR.ctreeNode(id); if (!n) return '';
-      if (who === 'N') return 'ナハトはコモンを使わない';
+      if (who === 'N') return 'ナハトは魔法を使わない';
       if (api.has(who, id)) return '';
       var ss = n.combo || [n.sys], nb = ss.filter(function (s) { return !api.hasBook(s, n.tier); });
       if (nb.length) return nb.map(function (s) { return s + 'の書・' + SR.bookTier[n.tier]; }).join('・') + 'が必要';
@@ -529,3 +529,9 @@ SR.describe = function (a) {
     haste: '仲間一人の次の番を早める（順番の帯で前に来る）',
   }[a.kind] || '';
 };
+
+// ---- 技の区分の呼び名（2026-11-21 先生：コモンは「魔法」、ユニークはキャラごと）----
+// 「星律魔法」は物語のあとで出てくる言葉なので使わない。ユニークの呼び名は仮（相談中）
+SR.COMMON_NAME = '魔法';
+SR.UNIQUE_NAMES = { N: '剣技', V: '導機術', F: '火の技', S: '祈り', L: '大剣技' };
+SR.uniqueName = function (id) { return SR.UNIQUE_NAMES[id] || '固有技'; };
