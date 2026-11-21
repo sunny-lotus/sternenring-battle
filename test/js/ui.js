@@ -575,6 +575,13 @@
       } catch (e) {}
     });
     document.addEventListener('fullscreenchange', drawFs); document.addEventListener('webkitfullscreenchange', drawFs);
+    // 開いてすぐは全画面にできない（ブラウザのきまり）。スマホでは最初に画面をさわったときに全画面にする（1回だけ）
+    document.addEventListener('pointerup', function first(ev) {
+      if (ev.pointerType !== 'touch' && ev.pointerType !== 'pen') return;
+      document.removeEventListener('pointerup', first, true);
+      if (fsEl() || (ev.target.closest && ev.target.closest('[data-fs]'))) return;
+      try { var p = req.call(de); var lock = function () { try { var q = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (q && q.catch) q.catch(function () {}); } catch (e) {} }; if (p && p.then) p.then(lock).catch(function () {}); else lock(); } catch (e) {}
+    }, true);
   })();
   $('logBtn').onclick = function () { $('battle').setAttribute('data-log', getComputedStyle($('log')).display !== 'none' ? 'shut' : 'open'); };
   $('log').onclick = function () { if (getComputedStyle($('log')).position === 'absolute') $('battle').setAttribute('data-log', 'shut'); };
