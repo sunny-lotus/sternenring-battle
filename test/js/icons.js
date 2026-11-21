@@ -89,3 +89,7 @@ SR.iconizeTags = function (html) {
   SR.statusSVG.shock = '<circle cx="10" cy="10" r="9.2" fill="#7b4fd6" stroke="#e6d6ff" stroke-width=".8"/>' +
     g('<path d="M11.5 1.5L4.5 11h4.6L7.3 18.5 15.5 8.4h-4.8L12.9 1.5z" fill="#ffffff" stroke-linejoin="round"/>');
 })();
+// 2026-11-22 裂傷も「斬撃」と同じ形の色ちがいに（深紅の丸に白い斬撃と、しずく）
+SR.statusSVG.bleed = '<circle cx="10" cy="10" r="9.2" fill="#a3182f" stroke="#ffc0c8" stroke-width=".8"/>' +
+  '<g transform="translate(10 10) scale(.74) translate(-10 -10)"><path d="M3 16.5C7.5 14 12.5 9 16.5 2.5 15.5 8 11.5 13.5 4.6 17.6z" fill="#fff4f4"/></g>' +
+  '<path d="M14.2 11.6c.9 1.3 1.6 2.2 1.6 3a1.6 1.6 0 0 1-3.2 0c0-.8.7-1.7 1.6-3z" fill="#ffd0d6"/>';
