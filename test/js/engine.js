@@ -50,17 +50,17 @@ SR.Battle = function (opts) {
     Object.assign(e, enc.config); e.pressure = 0;
     if (!e.img) e.img = enc.imgs ? enc.imgs[i] : enc.img;
     if (enc.weaks) e.weak = enc.weaks[i];
-    // 状態コンボのぶん、ボス級だけ体力を増やして長さと緊張感を保つ
+    // 状態コンボのぶん、ボス級だけHPを増やして長さと緊張感を保つ
     if (tune.status && tune.bossHp && (isBoss || e.type === 'twin')) { e.hp *= tune.bossHp; e.maxHp *= tune.bossHp; }
-    if (tune.bossKMul && (isBoss || e.type === 'twin')) { e.k *= tune.bossKMul; e.maxK *= tune.bossKMul; }   // ボス級の気力（ブレイクまでの長さ）
+    if (tune.bossKMul && (isBoss || e.type === 'twin')) { e.k *= tune.bossKMul; e.maxK *= tune.bossKMul; }   // ボス級のブレイクゲージ（ブレイクまでの長さ）
   });
   var S = SR.hpScale || 1;
   heroes.concat(enemies).forEach(function (u) { u.hp *= S; u.maxHp *= S; if (u.heal) u.heal *= S; });
   heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
   var breakCut = tune.breakMaxHp || 0;
-  function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　精神力+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }
+  function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　MP+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }
   function once(u, key) { if (u[key] === t) return false; u[key] = t; return true; }
-  // ブレイクさせたときの精神力回復（パッシブ。どれも1ターンに1回）
+  // ブレイクさせたときのMP回復（パッシブ。どれも1ターンに1回）
   function breakMp(dst, src) {
     if (dst.hero) return;
     if (src.hero) {
@@ -111,7 +111,7 @@ SR.Battle = function (opts) {
     if (u.hp <= 0) return;
     var d = Math.max(1, Math.min((SR.statusFx.cap[why] || 999) * S, Math.round(u.maxHp * ratio)));
     u.hp = Math.max(0, u.hp - d);
-    emit(u.name + '　' + why + '　体力-' + d, { target: u.id, dmg: d, kdmg: 0, statusTick: true }, 380);
+    emit(u.name + '　' + why + '　HP-' + d, { target: u.id, dmg: d, kdmg: 0, statusTick: true }, 380);
     if (u.hp === 0) emit(u.name + ' は倒れた', { target: u.id, down: true }, 700);
   }
   function bleedOnAct(u) { if (hasSt(u, 'bleed')) hurtBy(u, SR.statusFx.bleed, '裂傷が開いた'); }
@@ -130,22 +130,22 @@ SR.Battle = function (opts) {
       return;
     }
     var wasBroken = broken(dst), previous = dst.k, brokeNow = false;
-    if (src.hero && o.phen) hp *= SR.affMul(dst, o.phen, o.pierce);   // 現象の相性：体力へのダメージだけ（レイピアの貫通は「強い」を受けない）
+    if (src.hero && o.phen) hp *= SR.affMul(dst, o.phen, o.pierce);   // 現象の相性：HPへのダメージだけ（レイピアの貫通は「強い」を受けない）
     var wn = dst.hero ? 0 : (dst.weak && hasSt(dst, dst.weak) ? 1 : 0) + (dst.weak2 && hasSt(dst, dst.weak2) ? 1 : 0);
     if (wn) kd *= dst.weak2 ? C.weak2K[wn] : SR.statusFx.weakK;   // 弱点が二つあるボスは、片方で1.5倍・両方で2.5倍
-    else if (!dst.hero && tune.bossK && (isBoss || dst.type === 'twin')) kd *= tune.bossK;   // ボス級は弱点の状態が付いていないと気力が減りにくい
-    if (!dst.hero && dst.charge && tune.chargeK) kd *= tune.chargeK;   // 溜めているあいだはスキだらけ：気力が削れやすい
+    else if (!dst.hero && tune.bossK && (isBoss || dst.type === 'twin')) kd *= tune.bossK;   // ボス級は弱点の状態が付いていないとブレイクゲージが減りにくい
+    if (!dst.hero && dst.charge && tune.chargeK) kd *= tune.chargeK;   // 溜めているあいだはスキだらけ：ブレイクゲージが削れやすい
     if (!dst.hero && dst.openK > 0) kd *= C.openK;   // 大技・全体攻撃の直後のすき
-    if (!dst.hero && dst.lonelyK && enemies.some(function (x) { return x !== dst && x.type === dst.type && x.hp <= 0; })) kd *= dst.lonelyK;   // 片方が倒れると気力がゆるむ
-    if (src.hero && !dst.hero && dst.kPhen) SR.phenList(o.phen).forEach(function (p) { if (dst.kPhen[p]) kd *= dst.kPhen[p]; });   // 現象の急所：気力に効く
+    if (!dst.hero && dst.lonelyK && enemies.some(function (x) { return x !== dst && x.type === dst.type && x.hp <= 0; })) kd *= dst.lonelyK;   // 片方が倒れるとブレイクゲージがゆるむ
+    if (src.hero && !dst.hero && dst.kPhen) SR.phenList(o.phen).forEach(function (p) { if (dst.kPhen[p]) kd *= dst.kPhen[p]; });   // 現象の急所：ブレイクゲージに効く
     if (!wasBroken) {
       if (dst.hero && dst.id === 'N' && dst.form === 'brave') kd *= 1.25;
       if (dst.kProtect > 0) kd *= 0.65;
       if (dst.defend > 0) kd *= SR.defendRate;
       if (dst.supportKGuard) kd = Math.max(0, kd - dst.supportKGuard);
       if (dst.barrier) { kd *= 0.35; dst.barrier = false; }
-      // 2026-11-21 気力0は必ずブレイク。ブレイク可でない技は気力を1（あと一押し）までしか減らさない
-      kd = Math.round(kd);   // 気力は整数で計算する（画面の数字どおりにブレイクする）
+      // 2026-11-21 ブレイクゲージ0は必ずブレイク。ブレイク可でない技はブレイクゲージを1（あと一押し）までしか減らさない
+      kd = Math.round(kd);   // ブレイクゲージは整数で計算する（画面の数字どおりにブレイクする）
       dst.k = brave ? Math.max(0, dst.k - kd) : Math.max(Math.min(dst.k, 1), dst.k - kd);
       if (dst.k === 0 && brave) {
         dst.brk = true; if (dst !== self.cur) dst.at += iv(dst) * C.brkDelay; else dst.brkLate = true; stat[dst.hero ? 'allyBreaks' : 'breaks']++; brokeNow = true;
@@ -172,9 +172,9 @@ SR.Battle = function (opts) {
     if (src.hero && amount > (stat.maxHit || 0)) { stat.maxHit = amount; stat.maxHitBy = src.name; }
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
-    emit((label ? label + '　' : '') + dst.name + '　体力-' + Math.round(amount) + (kLoss > 0 ? '　気力-' + Math.round(kLoss) : ''),
+    emit((label ? label + '　' : '') + dst.name + '　HP-' + Math.round(amount) + (kLoss > 0 ? '　ブレイクゲージ-' + Math.round(kLoss) : ''),
       { target: dst.id, dmg: Math.round(amount), kdmg: Math.round(kLoss) }, 330);
-    if (brokeNow) { emit(dst.name + ' ブレイク！（順番が下がり、次の番は動けない' + (dst.cutNow ? '・最大体力-' + dst.cutNow : '') + (dst.stackNow ? '・崩れ' + dst.stackNow + '：最大気力' + Math.round(dst.maxK) + '・受けるダメージ+' + Math.round(tune.foeStack.dmg * dst.stackNow * 100) + '%' : '') + '）', { target: dst.id, broke: true, maxCut: dst.cutNow || 0 }, 900); dst.cutNow = 0; dst.stackNow = 0; breakMp(dst, src); }
+    if (brokeNow) { emit(dst.name + ' ブレイク！（順番が下がり、次の番は動けない' + (dst.cutNow ? '・最大HP-' + dst.cutNow : '') + (dst.stackNow ? '・崩れ' + dst.stackNow + '：最大ブレイクゲージ' + Math.round(dst.maxK) + '・受けるダメージ+' + Math.round(tune.foeStack.dmg * dst.stackNow * 100) + '%' : '') + '）', { target: dst.id, broke: true, maxCut: dst.cutNow || 0 }, 900); dst.cutNow = 0; dst.stackNow = 0; breakMp(dst, src); }
     if (dst.stopped) { dst.stopped = false; stat.stops = (stat.stops || 0) + 1; emit('溜めが崩れた！ ' + dst.name + 'の大技を止めた', { target: dst.id, stop: true }, 1000); }
     if (dst.hp === 0) emit(dst.name + ' は倒れた', { target: dst.id, down: true }, 700);
     if (o.inflict && dst.hp > 0) addStatus(dst, o.inflict[0], o.inflict[1]);
@@ -299,14 +299,14 @@ SR.Battle = function (opts) {
 
   // 終盤の大技のリスク（緊張感ありのみ）。守りの祈りが掛かっていれば打ち消す
   function applyRisk(u, a) {    if (!statusOn || !(a.recoilTo || a.expose || a.exhaust || a.allK || a.teamRecoil)) return;
-    if (a.allK) u.k = Math.min(u.k, 1);   // 気力0はブレイクだけ。決死の一閃は1まで注ぐ
+    if (a.allK) u.k = Math.min(u.k, 1);   // ブレイクゲージ0はブレイクだけ。決死の一閃は1まで注ぐ
     if (a.teamRecoil) front().forEach(function (v) {      if (v.hp <= 0) return;
       if (v.ward > 0) { emit(v.name + 'は守りの祈りで反動を受けなかった', { target: v.id }, 500); return; }      var lost = Math.round(v.hp * (1 - a.teamRecoil)); v.hp = Math.max(1, v.hp - lost); v.recoilLost = (v.recoilLost || 0) + lost; v.recoilLeft = 2;
-      emit(v.name + '　' + (a.label || a.id) + 'の反動　体力-' + lost, { target: v.id, dmg: lost }, 400);
+      emit(v.name + '　' + (a.label || a.id) + 'の反動　HP-' + lost, { target: v.id, dmg: lost }, 400);
     });
     if (!(a.recoilTo || a.expose || a.exhaust)) return;
     if (u.ward > 0) { u.ward = 0; emit(u.name + 'は守りの祈りで反動を打ち消した', { target: u.id }, 700); return; }    var why = [];
-    if (a.recoilTo) { var lost = Math.round(u.hp * (1 - a.recoilTo)); u.hp = Math.max(1, u.hp - lost); u.recoilLost = lost; u.recoilLeft = 2; why.push('体力-' + lost); }    if (a.expose) { u.exposed = 2; why.push('次の番が終わるまで無防備（受けるダメージ2倍・回復を受けつけない）'); }    if (a.exhaust) { u.exhausted = 1; why.push('次の番は動けない'); }    emit(u.name + '　' + (a.label || a.id) + 'の反動　' + why.join('・'), { target: u.id, dmg: a.recoilTo ? u.recoilLost : 0 }, 800);  }
+    if (a.recoilTo) { var lost = Math.round(u.hp * (1 - a.recoilTo)); u.hp = Math.max(1, u.hp - lost); u.recoilLost = lost; u.recoilLeft = 2; why.push('HP-' + lost); }    if (a.expose) { u.exposed = 2; why.push('次の番が終わるまで無防備（受けるダメージ2倍・回復を受けつけない）'); }    if (a.exhaust) { u.exhausted = 1; why.push('次の番は動けない'); }    emit(u.name + '　' + (a.label || a.id) + 'の反動　' + why.join('・'), { target: u.id, dmg: a.recoilTo ? u.recoilLost : 0 }, 800);  }
   function perform(u, a, target) {
     var tname = target ? target.name : '';
     emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + (a.id === 'basic' ? '・' + (1 + u.boostN) + '回攻撃' : '・威力×' + u.boostMul) + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
@@ -319,14 +319,14 @@ SR.Battle = function (opts) {
     if (a.kind === 'heal') {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
         if (v.hp > 0 && v.exposed > 0) { emit(v.name + 'は無防備で回復を受けつけない', { target: v.id }, 450); return; }
-        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * u.boostMul * (1 + bon(u, 'heal'))); emit(v.name + '　体力+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
+        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * u.boostMul * (1 + bon(u, 'heal'))); emit(v.name + '　HP+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
       return;
     }
     if (a.kind === 'ward') { target.ward = 2; target.exposed = 0; emit(target.name + 'に守りの祈り（次の反動・無防備・燃え尽きを打ち消す）', { target: target.id }, 600); return; }
     if (a.kind === 'rally') {
       var back = target.recoilLeft > 0 ? target.recoilLost || 0 : 0; target.recoilLost = 0; target.exposed = 0; target.exhausted = 0;
-      if (back) { var hb = target.hp; target.hp = Math.min(target.maxHp, target.hp + back); emit(target.name + 'を立て直した　体力+' + Math.round(target.hp - hb) + '（無防備も解けた）', { target: target.id, heal: Math.round(target.hp - hb) }, 600); }
+      if (back) { var hb = target.hp; target.hp = Math.min(target.maxHp, target.hp + back); emit(target.name + 'を立て直した　HP+' + Math.round(target.hp - hb) + '（無防備も解けた）', { target: target.id, heal: Math.round(target.hp - hb) }, 600); }
       else emit(target.name + 'を立て直した（無防備・燃え尽きが解けた）', { target: target.id }, 600);
       return;
     }
@@ -334,17 +334,17 @@ SR.Battle = function (opts) {
       if (!target || target.hero || target.hp <= 0) return;
       if (!target.weak) { emit(target.name + 'に弱点は見つからなかった', { target: target.id }, 700); return; }
       var first = !weakKnown(target); SR.weakMemo.add(weakKey(target));
-      emit((first ? '弱点を見つけた！ ' : '') + target.name + 'は' + SR.statuses[target.weak].name + (target.weak2 ? 'と' + SR.statuses[target.weak2].name : '') + 'で崩れやすい' + (target.kPhen ? '（' + Object.keys(target.kPhen).join('・') + 'も気力に効く）' : ''), { target: target.id, weak: true }, 1000);
+      emit((first ? '弱点を見つけた！ ' : '') + target.name + 'は' + SR.statuses[target.weak].name + (target.weak2 ? 'と' + SR.statuses[target.weak2].name : '') + 'で崩れやすい' + (target.kPhen ? '（' + Object.keys(target.kPhen).join('・') + 'もブレイクゲージに効く）' : ''), { target: target.id, weak: true }, 1000);
       return;
     }
     if (a.kind === 'revive') {
       if (!target || target.hp > 0) target = downFront()[0];
       if (!target) { emit('起こす相手がいなかった', null, 500); return; }
       target.hp = Math.min(target.maxHp, Math.round(target.maxHp * a.amount * u.boostMul)); target.k = Math.max(target.k, 40); target.st = {};
-      emit(target.name + ' が起き上がった！　体力' + target.hp, { target: target.id, heal: target.hp, revive: true }, 900);
+      emit(target.name + ' が起き上がった！　HP' + target.hp, { target: target.id, heal: target.hp, revive: true }, 900);
       return;
     }
-    if (a.kind === 'energy') { var b = target.k; recover(target, a.amount * u.boostMul); emit(target.name + '　気力+' + Math.round(target.k - b), { target: target.id, kheal: Math.round(target.k - b) }, 380); return; }
+    if (a.kind === 'energy') { var b = target.k; recover(target, a.amount * u.boostMul); emit(target.name + '　ブレイクゲージ+' + Math.round(target.k - b), { target: target.id, kheal: Math.round(target.k - b) }, 380); return; }
     if (a.kind === 'protect') { target.protect = 2; return; }
     if (a.kind === 'kProtect') { target.kProtect = 2; return; }
     if (a.kind === 'teamKProtect') { front().forEach(function (v) { if (v.hp > 0) v.kProtect = 2; }); return; }
@@ -382,7 +382,7 @@ SR.Battle = function (opts) {
         if (a.finisher && broken(e)) hp *= a.finisher;
         if (a.exploit && hasSt(e, a.exploit[0])) hp *= a.exploit[1];
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
-        if (a.allK) hp *= 1 + u.k / u.maxK * 1.5;   // 決死の一閃：残りの気力が多いほど強い（撃つと気力0）
+        if (a.allK) hp *= 1 + u.k / u.maxK * 1.5;   // 決死の一閃：残りのブレイクゲージが多いほど強い（撃つとブレイクゲージ0）
         if (u.power) hp *= 1.4;
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
@@ -430,7 +430,7 @@ SR.Battle = function (opts) {
     if (u.id === 'N') { chaseCount = 0; counterCount = 0; }
     if (cover && cover.protector === u) cover = null;
     if (taunt && taunt.u === u) taunt = null;
-    // 気力・精神力・ブーストの回復（その人の番ごと）
+    // ブレイクゲージ・MP・ブーストの回復（その人の番ごと）
     if (u.hero && !broken(u)) {
       if (u.turns > 0) { recover(u, tune.recovery); u.mp = Math.min(u.maxMp, u.mp + (tune.mpRecovery || 0) + (has(u, '静心') ? 5 : 0) + bon(u, 'mp')); }
       if (boostCfg && u.turns > 0 && !u.boostLast) u.bp = Math.min(boostCfg.max, u.bp + 1);
@@ -439,10 +439,10 @@ SR.Battle = function (opts) {
     if (!u.hero && !broken(u)) u.k = Math.min(u.maxK, u.k + Math.round((u.pressure > 0 ? u.regen * .4 : u.regen) * ((u.weak && hasSt(u, u.weak)) || (u.weak2 && hasSt(u, u.weak2)) ? SR.statusFx.weakRegen : 1)));
     if (u.pressure > 0) u.pressure--;
     TICK.forEach(function (k) { if (u[k] > 0) u[k]--; });
-    if (broken(u)) {   // ブレイク明け：この番は休み、気力が全回復
+    if (broken(u)) {   // ブレイク明け：この番は休み、ブレイクゲージが全回復
       u.brk = false; u.k = u.maxK;
       if (!u.hero) u.released = true;
-      emit(u.name + 'のブレイクが解けた（この番は休み・気力全回復' + (u.hero ? '' : '・次の番が早く来る') + '）', { target: u.id, recover: true }, 700);
+      emit(u.name + 'のブレイクが解けた（この番は休み・ブレイクゲージ全回復' + (u.hero ? '' : '・次の番が早く来る') + '）', { target: u.id, recover: true }, 700);
       return endTurn(true);
     }
     u.turns++;
@@ -451,7 +451,7 @@ SR.Battle = function (opts) {
       if (u.charge === 1) u.charge = 2;
       else if (chargeDue(u, u.turns)) {
         u.charge = 1;
-        emit(u.name + 'は力を溜めている…（次の番に大技。いまは気力が1.5倍削れる。ブレイクさせれば止まる）', { actor: u.id, enemy: true, charge: true }, 900);
+        emit(u.name + 'は力を溜めている…（次の番に大技。いまはブレイクゲージが1.5倍削れる。ブレイクさせれば止まる）', { actor: u.id, enemy: true, charge: true }, 900);
         return endTurn(true);
       }
     }
@@ -530,20 +530,20 @@ SR.Battle = function (opts) {
     var cost = s.id === 'S' ? 10 : 8;
     var targets = front().filter(function (v) { return v.hp > 0; });
     if (broken(s)) emit(s.name + '（控え）：ブレイク中で支援できない', null, 400);
-    else if (s.mp < cost) emit(s.name + '（控え）：精神力が足りず支援できない', null, 400);
+    else if (s.mp < cost) emit(s.name + '（控え）：MPが足りず支援できない', null, 400);
     else if (targets.length) {
       var target = s.id === 'S' ? targets.slice().sort(function (a, b) { return a.hp / a.maxHp - b.hp / b.maxHp; })[0] : targets.slice().sort(function (a, b) { return a.k - b.k; })[0];
       s.mp -= cost;
-      emit(s.name + '（支援）→ ' + target.name + '（' + { N: '次の番まで被ダメージ4%減', V: '次の技の消費-2', F: '次の攻撃4%強化', S: '体力' + 20 * S + '回復', L: '次の番まで気力ダメージ-2' }[s.id] + '）', { actor: s.id, support: true }, 450);
+      emit(s.name + '（支援）→ ' + target.name + '（' + { N: '次の番まで被ダメージ4%減', V: '次の技の消費-2', F: '次の攻撃4%強化', S: 'HP' + 20 * S + '回復', L: '次の番までブレイクゲージダメージ-2' }[s.id] + '）', { actor: s.id, support: true }, 450);
       if (s.id === 'N') target.supportGuard = true;
       if (s.id === 'V') target.supportEconomy = 2;
       if (s.id === 'F') target.supportPower = true;
-      if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20 * S); if (target.hp - b >= 0.5) emit(target.name + '　体力+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
+      if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20 * S); if (target.hp - b >= 0.5) emit(target.name + '　HP+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
       if (s.id === 'L') target.supportKGuard = 2;
     }
     if (tune.reserveRegen && !broken(s) && s.hp < s.maxHp) {
       var hb = s.hp; s.hp = Math.min(s.maxHp, s.hp + s.maxHp * tune.reserveRegen);
-      emit(s.name + '（控えで休む）　体力+' + Math.round(s.hp - hb), { target: s.id, heal: Math.round(s.hp - hb), rest: true }, 300);
+      emit(s.name + '（控えで休む）　HP+' + Math.round(s.hp - hb), { target: s.id, heal: Math.round(s.hp - hb), rest: true }, 300);
     }
   }
 
@@ -557,7 +557,7 @@ SR.Battle = function (opts) {
       var hurt = living().filter(function (x) { return x.hp < x.maxHp * 0.8; }).sort(function (a, b) { return a.hp / a.maxHp - b.hp / b.maxHp; })[0];
       if (hurt) {
         var hb = hurt.hp; hurt.hp = Math.min(hurt.maxHp, hurt.hp + e.heal);
-        emit(e.name + 'の回復 → ' + hurt.name + '　体力+' + Math.round(hurt.hp - hb), { actor: e.id, enemy: true, target: hurt.id, heal: Math.round(hurt.hp - hb) }, 750);
+        emit(e.name + 'の回復 → ' + hurt.name + '　HP+' + Math.round(hurt.hp - hb), { actor: e.id, enemy: true, target: hurt.id, heal: Math.round(hurt.hp - hb) }, 750);
         return;
       }
     }
@@ -585,7 +585,7 @@ SR.Battle = function (opts) {
       }
     });
     if (big) e.charge = 0;
-    if (e.hp > 0 && !broken(e) && ((big && (isBoss || e.type === 'twin')) || (aoe && e.openAfterAoe))) { e.openK = 1; emit(e.name + 'にすきができた（次の番まで気力が' + C.openK + '倍削れる）', { target: e.id }, 650); }
+    if (e.hp > 0 && !broken(e) && ((big && (isBoss || e.type === 'twin')) || (aoe && e.openAfterAoe))) { e.openK = 1; emit(e.name + 'にすきができた（次の番までブレイクゲージが' + C.openK + '倍削れる）', { target: e.id }, 650); }
   }
 
   // 交代：味方の番のあいだに1回。前線と控えの入れ替えか、前線同士の並べ替え。番の人が下がったら、入った人がこの番に動く。
@@ -649,7 +649,7 @@ SR.Battle = function (opts) {
   // ================= 考えるおまかせ（2026-11-21 手元の試作） =================
   // 人が考えるように、できる行動を一つずつ見積もって点を付け、いちばん良いものを選ぶ。
   // 見るもの：順番の帯（大技が自分の次の番より先に来るか）・弱点の状態・現象の相性・急所・すき・
-  // ブレイクできるか・倒しきれるか・仲間の体力と気力・精神力の残り。少しだけ迷い（ゆらぎ）がある。
+  // ブレイクできるか・倒しきれるか・仲間のHPとブレイクゲージ・MPの残り。少しだけ迷い（ゆらぎ）がある。
   var oldPick = this.autoPick;
   function bossish(e) { return isBoss || e.type === 'twin'; }
   function weakOnCount(e) { return (e.weak && hasSt(e, e.weak) ? 1 : 0) + (e.weak2 && hasSt(e, e.weak2) ? 1 : 0); }
@@ -703,7 +703,7 @@ SR.Battle = function (opts) {
     if (r.kills) s += 35 + (e.heal ? 15 : 0) + (e.aoeAll ? 15 : 0);
     if (broken(e)) s += 10;
     if (e.charge === 1 && !broken(e)) s += Math.min(r.kd, e.k) / e.maxK * 40;   // 大技を止めにいく
-    // 付ける状態が弱点なら、気力を崩しやすくなる
+    // 付ける状態が弱点なら、ブレイクゲージを崩しやすくなる
     if (a.inflict && statusOn && !broken(e) && e.hp > r.dmg) {
       var st = a.inflict[0], weakHit = e.weak === st || e.weak2 === st;
       if (weakHit && !(e.st[st] > 0)) s += (bossish(e) ? 55 : 35) * (weakKnown(e) ? 1 : 0.4);
@@ -790,7 +790,7 @@ SR.Battle = function (opts) {
     }
     return { skill: best.skill, target: best.target, boost: boost, why: best.why };
   };
-  // 交代：体力が少なく、自分の次の番より先に攻撃が来るなら、元気な控えと替わる
+  // 交代：HPが少なく、自分の次の番より先に攻撃が来るなら、元気な控えと替わる
   this.smartSwap = function (u) {
     if (self.swapped || !tune.status) return null;
     var th = threat(u), bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S, hitN = nums.single[1] * S * 2;
@@ -799,12 +799,12 @@ SR.Battle = function (opts) {
     return res || null;
   };
   this.autoPick = function (u) { return self.smartPick(u); };
-  // 画面の「技の詳細」用：この技をこの敵に使ったときの見込み（気力・体力・ブレイク・倒せるか）
+  // 画面の「技の詳細」用：この技をこの敵に使ったときの見込み（ブレイクゲージ・HP・ブレイク・倒せるか）
   this.estimate = function (uid, id, eid) {
     var u = unit(uid), e = unit(eid), a = skills[id]; if (!u || !e || !a || a.kind !== 'attack' || e.hp <= 0) return null;
     var r = estimate(u, a, e), pl = SR.phenList(r.phen);
     r.aff = SR.affMul(e, r.phen, u.id === 'S' && pl.indexOf('貫通') >= 0); r.kNow = e.k; r.brk = broken(e);
-    if (!a.brave && !r.brk) r.kd = Math.min(r.kd, Math.max(0, e.k - 1));   // ブレイク可でない技は気力1で止まる
+    if (!a.brave && !r.brk) r.kd = Math.min(r.kd, Math.max(0, e.k - 1));   // ブレイク可でない技はブレイクゲージ1で止まる
     return r;
   };
   this.simplePick = oldPick;

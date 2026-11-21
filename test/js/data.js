@@ -20,11 +20,11 @@ SR.weight = function (a) {
 SR.weightLabel = function (a) { var w = SR.weight(a); return w < 0.95 ? '次の番が早い' : w > 1.05 ? '次の番が遅い' : '次の番ふつう'; };
 
 // 難しさ。sandbox は試算の数値そのまま。tense は試作で足した調整（試算からの変更）。
-// atk: 敵の通常攻撃 [気力削り, 威力]。big: 溜めのあとの大技。
+// atk: 敵の通常攻撃 [ブレイクゲージ削り, 威力]。big: 溜めのあとの大技。
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, mpRecovery: 18, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20・精神力回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 1, bossK: 0.8, bossKMul: 1, chargeK: 1.5,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。ブレイクゲージ回復20・MP回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 1, bossK: 0.8, bossKMul: 1, chargeK: 1.5,
     boss: { single: [23, 99], aoe: [29, 151], aoeAlways: [25, 97], big: [99, 323] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
@@ -83,11 +83,11 @@ skill('連弾', 'S', 5, 22, { kind: 'attack', kd: 12, hp: 14, hits: 3 });
 // ---- 2026-11-08 時期（era）：1=序盤 2=中盤 3=終盤。相手の時期より後の技は、その戦いでは使えない ----
 // 終盤の大技：次のターンに倒れるくらいのリスクと引きかえ。リスクは補助（守りの祈り・立て直し・かばう）で打ち消せる
 skill('業火', 'F', 7, 48, { kind: 'attack', kd: 10, hp: 210, fire: true, era: 3, exhaust: true, expose: true });   // 撃った次のターンは動けず無防備
-skill('決死の一閃', 'L', 7, 20, { kind: 'attack', kd: 40, hp: 120, brave: true, era: 3, allK: true, expose: true }); // 残りの気力を全部注ぐ
-skill('星落とし', 'V', 7, 44, { kind: 'attack', kd: 24, hp: 95, all: true, era: 3, teamRecoil: 0.5 });          // 敵全体。前線の味方全員の体力も半分に
+skill('決死の一閃', 'L', 7, 20, { kind: 'attack', kd: 40, hp: 120, brave: true, era: 3, allK: true, expose: true }); // 残りのブレイクゲージを全部注ぐ
+skill('星落とし', 'V', 7, 44, { kind: 'attack', kd: 24, hp: 95, all: true, era: 3, teamRecoil: 0.5 });          // 敵全体。前線の味方全員のHPも半分に
 // リスクを打ち消す補助
 skill('守りの祈り', 'S', 4, 20, { kind: 'ward', era: 2 });   // 次の反動・無防備・燃え尽きを打ち消す（2ターン）
-skill('立て直し', 'L', 4, 22, { kind: 'rally', era: 2 });    // 反動で減った体力を戻し、無防備を解く
+skill('立て直し', 'L', 4, 22, { kind: 'rally', era: 2 });    // 反動で減ったHPを戻し、無防備を解く
 skill('深癒', 'S', 6, 30, { kind: 'heal', amount: 300 });
 skill('癒しの波', 'S', 7, 40, { kind: 'heal', amount: 150, allies: true });
 skill('蘇生', 'S', 5, 36, { kind: 'revive', amount: 0.4 });         // 2026-11-08 ボスを強くした分、倒れても立て直せるように
@@ -97,10 +97,10 @@ skill('守勢の号令', 'L', 6, 28, { kind: 'teamKProtect' });
 skill('決着の一閃', 'L', 6, 32, { kind: 'attack', kd: 10, hp: 90, finisher: 1.65 });
 
 // ---- 状態付与（2026-11-08 相談で決定。効果は小さめ・数値は仮） ----
-// 状態そのものは気力に関わらない。目的はコンボ（活かす技）と、敵ごとの弱点で気力を崩しやすくすること。
+// 状態そのものはブレイクゲージに関わらない。目的はコンボ（活かす技）と、敵ごとの弱点でブレイクゲージを崩しやすくすること。
 SR.statuses = {
-  burn: { name: '燃焼', color: '#ff7a3a', fx: 'ターンの終わりに最大体力の3%が減る' },
-  bleed: { name: '裂傷', color: '#e05a6a', fx: '行動するたびに最大体力の2%が減る' },
+  burn: { name: '燃焼', color: '#ff7a3a', fx: 'ターンの終わりに最大HPの3%が減る' },
+  bleed: { name: '裂傷', color: '#e05a6a', fx: '行動するたびに最大HPの2%が減る' },
   freeze: { name: '凍結', color: '#7fd4ff', fx: '受けるダメージが1割増える' },
   daze: { name: '目眩', color: '#ffe27a', fx: '与えるダメージが1割減る' },
   shock: { name: '感電', color: '#c9a4ff', fx: '次の番が遅くなる（間隔1.3倍）' },
@@ -108,10 +108,10 @@ SR.statuses = {
 };
 SR.statusOrder = ['burn', 'bleed', 'freeze', 'daze', 'shock', 'blind'];
 SR.statusMax = 6;
-// 2026-11-08 数字が大きい方が気持ちいい → 体力・ダメージ・回復をまとめて10倍で表示（比率は同じなのでバランスは変わらない）
+// 2026-11-08 数字が大きい方が気持ちいい → HP・ダメージ・回復をまとめて10倍で表示（比率は同じなのでバランスは変わらない）
 SR.hpScale = 10;
 SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, shockDelay: 1.3, blind: 0.1, weakK: 2, weakRegen: 0,
-  cap: { '燃焼': 18, '裂傷が開いた': 12 } }; // 体力の多いボスで強くなりすぎないよう、1回の上限
+  cap: { '燃焼': 18, '裂傷が開いた': 12 } }; // HPの多いボスで強くなりすぎないよう、1回の上限
 // 技が付ける状態 [状態, ターン数] と、活かす状態 [状態, 倍率]
 (function () {
   function s(id, inflict, exploit) { var a = SR.skills[id]; if (inflict) a.inflict = inflict; if (exploit) a.exploit = exploit; }
@@ -146,7 +146,7 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, shoc
 // 七体系は属性ではなく「操作」（構築＝形を作る・固定／循環＝流す／観測＝状態を知る／干渉＝既存の現象を変える）。
 // コモンスキルは、体系を鍛えて必要な組み合わせを満たすと覚えられる（スキルツリー）。
 // 因果・時環・星核は高度な領域で、能力は設定でまだ決まっていない → 名前だけ見せて鍛えられない。
-// 体力の削り方は「現象」（炎・雷・冷気・光・衝撃）で変わる。気力の削り方は今までどおり状態の弱点。
+// HPの削り方は「現象」（炎・雷・冷気・光・衝撃）で変わる。ブレイクゲージの削り方は今までどおり状態の弱点。
 // ナハトはツリーなし・技に現象なし（本人は剣術だと思っている。原初魔法《共鳴》は明かさない）。
 SR.systems = ['構築', '循環', '観測', '干渉', '因果', '時環', '星核'];
 SR.baseSystems = ['構築', '循環', '観測', '干渉'];
@@ -177,16 +177,16 @@ SR.ctree = [
   { id: '衝撃波', sys: '干渉', books: ['干渉'], tier: 2, req: ['衝撃'] },
   { id: '重圧', sys: '干渉', books: ['干渉'], tier: 3, req: ['衝撃波'] },
   // 2026-11-21 能力の星（FF10のスフィア盤・スカイリムの星座のような、技と技のあいだの小さな強化）
-  { id: '気力の器', stat: { maxK: 10 }, fx: '最大気力+10', sys: '構築', books: ['構築'], tier: 1, req: [] },
+  { id: '気力の器', stat: { maxK: 10 }, fx: '最大ブレイクゲージ+10', sys: '構築', books: ['構築'], tier: 1, req: [] },
   { id: '守りの型', stat: { guard: 0.05 }, fx: '受けるダメージ-5%', sys: '構築', books: ['構築'], tier: 2, req: ['防護'] },
-  { id: '精神の流れ', stat: { mp: 2 }, fx: '番ごとの精神力回復+2', sys: '循環', books: ['循環'], tier: 1, req: [] },
+  { id: '精神の流れ', stat: { mp: 2 }, fx: '番ごとのMP回復+2', sys: '循環', books: ['循環'], tier: 1, req: [] },
   { id: '癒しの流れ', stat: { heal: 0.1 }, fx: '回復量+10%', sys: '循環', books: ['循環'], tier: 2, req: ['小回復'] },
-  { id: '見極め', stat: { weakKd: 0.1 }, fx: '弱点の状態が付いた相手への気力削り+10%', sys: '観測', books: ['観測'], tier: 1, req: [] },
+  { id: '見極め', stat: { weakKd: 0.1 }, fx: '弱点の状態が付いた相手へのブレイクゲージ削り+10%', sys: '観測', books: ['観測'], tier: 1, req: [] },
   { id: '先読み', stat: { spd: 3 }, fx: '素早さ+3（番が少し早く来る）', sys: '観測', books: ['観測'], tier: 2, req: ['見極め'] },
-  { id: '崩しの手', stat: { kd: 0.05 }, fx: '気力削り+5%', sys: '干渉', books: ['干渉'], tier: 1, req: [] },
-  { id: '押し込み', stat: { hp: 0.05 }, fx: '体力ダメージ+5%', sys: '干渉', books: ['干渉'], tier: 2, req: ['衝撃'] },
+  { id: '崩しの手', stat: { kd: 0.05 }, fx: 'ブレイクゲージ削り+5%', sys: '干渉', books: ['干渉'], tier: 1, req: [] },
+  { id: '押し込み', stat: { hp: 0.05 }, fx: 'HPダメージ+5%', sys: '干渉', books: ['干渉'], tier: 2, req: ['衝撃'] },
   // 四つの体系をすべて育てて覚える能力の星（四本の柱のまん中、上級の高さ）
-  { id: '四系統の調和', stat: { maxK: 10, kd: 0.05, heal: 0.05 }, fx: '最大気力+10・気力削り+5%・回復量+5%', sys: '循環', combo: ['構築', '循環', '観測', '干渉'], books: ['構築', '循環', '観測', '干渉'], tier: 3, req: [] },
+  { id: '四系統の調和', stat: { maxK: 10, kd: 0.05, heal: 0.05 }, fx: '最大ブレイクゲージ+10・ブレイクゲージ削り+5%・回復量+5%', sys: '循環', combo: ['構築', '循環', '観測', '干渉'], books: ['構築', '循環', '観測', '干渉'], tier: 3, req: [] },
 ];
 SR.ctreeNode = function (id) { return SR.ctree.find(function (n) { return n.id === id; }); };
 // 覚えた能力の星の合計（自分で編成のときだけ戦闘に効く）
@@ -341,7 +341,7 @@ SR.canLearn = function (tree, who, id) {
   if (a.owner === who) return SR.growth.hasU(who, id);
   return true;
 };
-// 現象。技が起こす現象で、敵ごとに体力ダメージの効き方が変わる
+// 現象。技が起こす現象で、敵ごとにHPダメージの効き方が変わる
 SR.phenomena = ['炎', '雷', '冷気', '光', '衝撃'];
 (function () {
   var S = SR.skills;
@@ -357,10 +357,10 @@ SR.phenomena = ['炎', '雷', '冷気', '光', '衝撃'];
 SR.phenomena.push('斬撃', '貫通', '強撃');   // 強撃：重さで叩き潰す（ツヴァイハンダー）
 SR.weapons = {
   N: { name: '刀', phen: '斬撃', note: '剣の技は斬撃' },
-  V: { name: 'ケインソード', phen: '貫通', note: 'ブレイブ攻撃・基本攻撃は貫通。不意を突く突きで、気力削り1.2倍' },
+  V: { name: 'ケインソード', phen: '貫通', note: 'ブレイブ攻撃・基本攻撃は貫通。不意を突く突きで、ブレイクゲージ削り1.2倍' },
   F: { name: 'フランベルジュ', phen: '斬撃', note: '斬撃の技は、裂傷中の相手に威力1.3倍（波打つ刃で傷が広がる）' },
   S: { name: 'レイピア', phen: '貫通', note: '貫通の技は、相手の「強い」を受けない（すき間を突く）' },
-  L: { name: 'ツヴァイハンダー', phen: '強撃', note: '強撃の技は気力削り1.2倍。そのぶん次の番が少し遅い' },
+  L: { name: 'ツヴァイハンダー', phen: '強撃', note: '強撃の技はブレイクゲージ削り1.2倍。そのぶん次の番が少し遅い' },
 };
 (function () {
   var S = SR.skills;
@@ -388,21 +388,21 @@ SR.passives = {
   '追撃の極意': ['N', 9, '無料追撃が1ターンに2回まで'],
   '返し崩し': ['N', 8, '無料反撃で相手をブレイクできる'],
   '反攻の冴え': ['N', 6, '無料反撃の威力が上がる（34→62）'],
-  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技の精神力消費が3割引'],
-  '連撃調整': ['V', 6, '連撃の気力削り1.3倍、精神力消費1.25倍'],
+  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技のMP消費が3割引'],
+  '連撃調整': ['V', 6, '連撃のブレイクゲージ削り1.3倍、MP消費1.25倍'],
   '照準共有': ['V', 5, '導機照準を仲間にもかけられる'],
-  '蓄積照準': ['V', 6, '同じ相手への連撃ほど気力削りが増える'],
-  '急所観測': ['V', 5, '解析した相手への気力削り1.2倍'],
+  '蓄積照準': ['V', 6, '同じ相手への連撃ほどブレイクゲージ削りが増える'],
+  '急所観測': ['V', 5, '解析した相手へのブレイクゲージ削り1.2倍'],
   '照準維持': ['V', 7, '照準が2回分続く'],
   '連撃継続': ['V', 7, '連撃中にブレイクさせた相手へ威力1.5倍'],
-  '残り火': ['F', 5, '炎撃を当てた相手の気力回復を抑える'],
-  '過熱': ['F', 7, '炎の威力1.4倍、精神力消費1.25倍'],
+  '残り火': ['F', 5, '炎撃を当てた相手のブレイクゲージ回復を抑える'],
+  '過熱': ['F', 7, '炎の威力1.4倍、MP消費1.25倍'],
   '火勢': ['F', 5, '炎技を続けるほど威力が上がる'],
-  '残熱回収': ['F', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
-  '勝ち鬨': ['N', 4, '敵がブレイクすると精神力8回復（だれが崩してもよい・1ターンに1回）'],
-  '集積回路': ['V', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
-  '静心': ['S', 4, '毎ターンの精神力回復+5'],
-  '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間の精神力8回復（1ターンに1回）'],
+  '残熱回収': ['F', 3, 'ブレイクさせるとMP12回復（1ターンに1回）'],
+  '勝ち鬨': ['N', 4, '敵がブレイクするとMP8回復（だれが崩してもよい・1ターンに1回）'],
+  '集積回路': ['V', 3, 'ブレイクさせるとMP12回復（1ターンに1回）'],
+  '静心': ['S', 4, '毎ターンのMP回復+5'],
+  '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間のMP8回復（1ターンに1回）'],
 };
 
 // 持ち込み構成（five-trial.cjs の kits）
@@ -429,14 +429,14 @@ SR.kits = {
 
 // 支援プリセット（five-trial の仮設定）
 SR.supportText = {
-  N: '気力の少ない前線一人の体力被ダメージを4%軽減（精神力8）',
-  V: '気力の少ない前線一人の、そのターンの技消費を2軽減（精神力8）',
-  F: '気力の少ない前線一人の、そのターンの体力への攻撃を4%強化（精神力8）',
-  S: '前線で体力の最も少ない一人を200回復（精神力10）',
-  L: '気力の少ない前線一人への、攻撃一発の気力ダメージを2軽減（精神力8）',
+  N: 'ブレイクゲージの少ない前線一人のHP被ダメージを4%軽減（MP8）',
+  V: 'ブレイクゲージの少ない前線一人の、そのターンの技消費を2軽減（MP8）',
+  F: 'ブレイクゲージの少ない前線一人の、そのターンのHPへの攻撃を4%強化（MP8）',
+  S: '前線でHPの最も少ない一人を200回復（MP10）',
+  L: 'ブレイクゲージの少ない前線一人への、攻撃一発のブレイクゲージダメージを2軽減（MP8）',
 };
 
-// 敵の種類（試作で追加。数値は仮）。aff は現象の効き方（1より小さいとその現象に強い・体力へのダメージだけ）。atk は攻撃の強さの倍率。
+// 敵の種類（試作で追加。数値は仮）。aff は現象の効き方（1より小さいとその現象に強い・HPへのダメージだけ）。atk は攻撃の強さの倍率。
 SR.enemyTypes = {
   shell: { aff: { 衝撃: 1.5, 貫通: 1.5, 強撃: 1.3, 冷気: 0.6, 斬撃: 0.6 }, img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
   beast: { img: 'js-bolt', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
@@ -451,18 +451,18 @@ SR.enemyTypes = {
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
 SR.encounters = {
-  normal: { era: 1, imgs: ['js-tree', 'js-mino', 'js-smoke'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
+  normal: { era: 1, imgs: ['js-tree', 'js-mino', 'js-smoke'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・ブレイクゲージ45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze', weak2: 'shock', speed: 66 } },
-  aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+  boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・ブレイクゲージ240（緊張感ありはHP2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze', weak2: 'shock', speed: 66 } },
+  aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・ブレイクゲージ260（緊張感ありはHP2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
     config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze', aff: { 冷気: 0.7, 光: 1.3 }, kPhen: { 光: 1.3 }, speed: 63 } },
-  fireResist: { era: 2, img: 'js-demon', name: '炎に強いボス', note: '炎の技の体力ダメージが0.55倍。フレア以外の現象で削る（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', weak2: 'bleed', kPhen: { 貫通: 1.3 }, atk: 0.96, speed: 66 } },
+  fireResist: { era: 2, img: 'js-demon', name: '炎に強いボス', note: '炎の技のHPダメージが0.55倍。フレア以外の現象で削る（緊張感ありはHP2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', weak2: 'bleed', kPhen: { 貫通: 1.3 }, atk: 0.96, speed: 66 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
   elements: { era: 2, name: '炎と氷', note: '炎が効きにくく冷気に弱い炎獣と、その逆の氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
   swarm: { era: 1, name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
-  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
+  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありはHP2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
 };
 
@@ -488,44 +488,44 @@ SR.typeBadge = function (id) {
 
 SR.describe = function (a) {
   if (!a) return '';
-  if (a.kind === 'wait') return '何もしない。精神力を温存する';
-  if (a.kind === 'defend') return 'このターン、受けるダメージと気力ダメージが半分';
+  if (a.kind === 'wait') return '何もしない。MPを温存する';
+  if (a.kind === 'defend') return 'このターン、受けるダメージとブレイクゲージダメージが半分';
   if (a.kind === 'scan') return '敵一体の弱点を調べる。分かった弱点は次の戦いからも見える';
   if (a.kind === 'attack') {
     var p = [];
     p.push(a.all ? '敵全体' : a.scatter ? '敵にばらまく' : '敵一体');
     if (a.hits) p.push(a.hits + '連撃');
-    p.push('気力削り' + a.kd);
+    p.push('ブレイクゲージ削り' + a.kd);
     p.push('威力' + a.hp * (SR.hpScale || 1));
-    if (a.brave) p.push('ブレイク可（気力を0にするとブレイク）'); else if (a.kind === 'attack') p.push('気力は1（あと一押し）までしか減らせない');
+    if (a.brave) p.push('ブレイク可（ブレイクゲージを0にするとブレイク）'); else if (a.kind === 'attack') p.push('ブレイクゲージは1（あと一押し）までしか減らせない');
     if (a.phen) p.push('現象：' + SR.phenText(a.phen));
     if (a.finisher) p.push('ブレイク中の相手に' + a.finisher + '倍');
     if (a.breakBonus) p.push('この技でブレイクさせると威力' + a.breakBonus + '倍');
-    if (a.desperate) p.push('自分の気力が少ないほど強い');
-    if (a.allK) p.push('残りの気力が多いほど強い（撃つと気力1）');
-    if (a.recoilTo) p.push('反動で体力が今の' + Math.round(a.recoilTo * 100) + '%まで減る');
-    if (a.teamRecoil) p.push('反動で前線の味方全員の体力が半分');
+    if (a.desperate) p.push('自分のブレイクゲージが少ないほど強い');
+    if (a.allK) p.push('残りのブレイクゲージが多いほど強い（撃つとブレイクゲージ1）');
+    if (a.recoilTo) p.push('反動でHPが今の' + Math.round(a.recoilTo * 100) + '%まで減る');
+    if (a.teamRecoil) p.push('反動で前線の味方全員のHPが半分');
     if (a.exhaust) p.push('次のターンは動けない');
     if (a.expose) p.push('次のターンの終わりまで無防備（受けるダメージ2倍・回復を受けつけない）');
     if (a.taunt) p.push('相手の攻撃を自分へ引きつける');
-    if (a.antiSpell) p.push('術を使う相手に気力削り2倍');
+    if (a.antiSpell) p.push('術を使う相手にブレイクゲージ削り2倍');
     return p.join('・');
   }
   return {
     cover: '前線の仲間一人をかばう（このターン）',
-    guard: '自分への気力ダメージを0.65倍（このターン）',
-    heal: a.allies ? '前線全員の体力を' + a.amount * (SR.hpScale || 1) + '回復' : '仲間一人の体力を' + a.amount * (SR.hpScale || 1) + '回復',
-    revive: '倒れた前線の仲間一人を、体力' + Math.round(a.amount * 100) + '%で起こす',
+    guard: '自分へのブレイクゲージダメージを0.65倍（このターン）',
+    heal: a.allies ? '前線全員のHPを' + a.amount * (SR.hpScale || 1) + '回復' : '仲間一人のHPを' + a.amount * (SR.hpScale || 1) + '回復',
+    revive: '倒れた前線の仲間一人を、HP' + Math.round(a.amount * 100) + '%で起こす',
     ward: '仲間一人に、次の反動・無防備・燃え尽きを打ち消す祈り（2ターン）。今の無防備も解く',
-    rally: '仲間一人の、反動で減った体力を戻し、無防備・燃え尽きを解く',
-    energy: '仲間一人の気力を' + a.amount + '回復',
+    rally: '仲間一人の、反動で減ったHPを戻し、無防備・燃え尽きを解く',
+    energy: '仲間一人のブレイクゲージを' + a.amount + '回復',
     protect: '仲間一人の被ダメージを0.7倍（2ターン）',
-    kProtect: '仲間一人への気力ダメージを0.65倍（2ターン）',
-    teamKProtect: '前線全員への気力ダメージを0.65倍（2ターン）',
-    kBarrier: '仲間一人への次の気力ダメージを0.35倍',
-    pressure: '敵一体の気力回復を4割に抑える（2ターン）',
+    kProtect: '仲間一人へのブレイクゲージダメージを0.65倍（2ターン）',
+    teamKProtect: '前線全員へのブレイクゲージダメージを0.65倍（2ターン）',
+    kBarrier: '仲間一人への次のブレイクゲージダメージを0.35倍',
+    pressure: '敵一体のブレイクゲージ回復を4割に抑える（2ターン）',
     analyze: '敵一体を解析する（急所観測で効果）',
-    aim: '次の攻撃の気力削り1.55倍',
+    aim: '次の攻撃のブレイクゲージ削り1.55倍',
     power: '仲間一人の次の攻撃の威力1.4倍',
     haste: '仲間一人の次の番を早める（順番の帯で前に来る）',
   }[a.kind] || '';
@@ -662,9 +662,9 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
 })();
 
 // ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
-// 戦いの経験値で上がる。上がると体力・最大気力・与えるダメージ・気力削りが少しずつ伸びる（数値は仮）。
+// 戦いの経験値で上がる。上がるとHP・最大ブレイクゲージ・与えるダメージ・ブレイクゲージ削りが少しずつ伸びる（数値は仮）。
 SR.LV_MAX = 50;
-SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01 };   // 1レベルごと：最大体力+4%・最大気力+2・体力ダメージ+2%・気力削り+1%
+SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01 };   // 1レベルごと：最大HP+4%・最大ブレイクゲージ+2・HPダメージ+2%・ブレイクゲージ削り+1%
 SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
 SR.level = (function () {
   var KEY = 'sr-battle-lv-v1', d;

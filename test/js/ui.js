@@ -12,7 +12,7 @@
   function kitNote(k) {
     return { standard: 'ナハトは崩し斬り・かばう・断ち込み。連携と回復のバランス型',
       counter: 'ナハトは誘い斬りで引きつけ、リベンジの反撃で崩す',
-      chase: 'ナハトの追撃を1ターン2回まで。連撃で気力を削って追撃',
+      chase: 'ナハトの追撃を1ターン2回まで。連撃でブレイクゲージを削って追撃',
       custom: '技の書で覚えた技は全部使える。パッシブだけコストで選ぶ（上限は時期で増える）' }[k];
   }
 
@@ -204,7 +204,7 @@
         if (a0.era > 1) t0 += '<span class="badge b-charge">' + (a0.era === 3 ? '終盤' : '中盤') + 'の技</span>';
         if (a0.phen) t0 += '<span class="badge b-sys">' + SR.phenText(a0.phen) + '</span>';
         if (lock) t0 += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
-        return '<div class="sk' + (lock ? ' locked' : ' on') + catClass(s) + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b><span class="c">' + (lock ? 'まだ使えない' : '使える') + '／精神力' + a0.cost + '</span>' +
+        return '<div class="sk' + (lock ? ' locked' : ' on') + catClass(s) + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b><span class="c">' + (lock ? 'まだ使えない' : '使える') + '／MP' + a0.cost + '</span>' +
           (t0 ? '<div>' + t0 + '</div>' : '') + stLine(a0, !!SR.tunes[pick.tune].status) + '<span class="d">' + SR.describe(a0) + '</span></div>';
       }
       var desc = passive ? SR.passives[s][2] : SR.describe(SR.skills[s]);
@@ -216,7 +216,7 @@
       if (a && a.phen) tags += '<span class="badge b-sys">' + SR.phenText(a.phen) + '</span>';
       if (lock) tags += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
       return '<button class="sk' + (on ? ' on' : '') + (lock ? ' locked' : '') + (a ? catClass(s) : ' t-pas') + '" data-nav data-lo="tog" data-id="' + s + '" data-tip="' + s + '" data-tipwho="' + id + '"' + (over ? ' disabled' : '') + '>' +
-        '<b>' + SR.skillName(s) + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／精神力' + a.cost : '') + '</span>' +
+        '<b>' + SR.skillName(s) + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／MP' + a.cost : '') + '</span>' +
         (tags ? '<div>' + tags + '</div>' : '') + (a ? stLine(a, !!SR.tunes[pick.tune].status) : '') + '<span class="d">' + desc + '</span></button>';
     }
     var order = function (a, b) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(a)) - ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(b)); };
@@ -353,10 +353,10 @@
     var ul = box || document.querySelector('#pg-help .rules'); if (!ul || ul.querySelector('.ichelp')) return;
     function row(icon, name, fx) { return '<div class="ic"><span class="ici">' + icon + '</span><b>' + name + '</b>' + (fx ? '<small>' + fx + '</small>' : '') + '</div>'; }
     var PH = { '炎': '燃やす', '雷': '電気を走らせる', '冷気': '冷やす・凍らせる', '光': 'まぶしい光', '衝撃': 'ぶつける力', '斬撃': '刀や剣で斬る', '貫通': '突き通す', '強撃': '重い一撃' };
-    var MK = [['brk', 'ブレイク', '気力が0になって崩れた／技の札ではブレイクできる技'], ['push', 'あと一押し', '気力が1。ブレイクできる技で崩せる'], ['charge', '溜め', '次の番に大技が来る'], ['big', '大技', '強い攻撃が来る。ブレイクで止められる'],
-      ['open', 'すき', '大技のあと。気力が削れやすい'], ['press', '重圧', '気力の回復が少なくなる'], ['shield', '防御', '受けるダメージが半分'], ['guard', '防護', 'ダメージを減らす守り'], ['kguard', '気力防護', '気力ダメージを減らす守り'],
-      ['exposed', '無防備', '受けるダメージ2倍・回復を受けない'], ['ember', '燃え尽き', '次の番は動けない'], ['pray', '守りの祈り', '反動や無防備を打ち消す'], ['aim', '照準', '次の攻撃の気力削りが増える'],
-      ['star', 'ねらい目', '弱点を突ける・よく効く・急所を突ける'], ['down', '効きにくい', 'この相手には体力ダメージが少ない'], ['all', '全体', '敵全体（味方全体）に届く'], ['unk', '弱点？', 'まだ弱点がわからない（調べるでわかる）']];
+    var MK = [['brk', 'ブレイク', 'ブレイクゲージが0になって崩れた／技の札ではブレイクできる技'], ['push', 'あと一押し', 'ブレイクゲージが1。ブレイクできる技で崩せる'], ['charge', '溜め', '次の番に大技が来る'], ['big', '大技', '強い攻撃が来る。ブレイクで止められる'],
+      ['open', 'すき', '大技のあと。ブレイクゲージが削れやすい'], ['press', '重圧', 'ブレイクゲージの回復が少なくなる'], ['shield', '防御', '受けるダメージが半分'], ['guard', '防護', 'ダメージを減らす守り'], ['kguard', '気力防護', 'ブレイクゲージダメージを減らす守り'],
+      ['exposed', '無防備', '受けるダメージ2倍・回復を受けない'], ['ember', '燃え尽き', '次の番は動けない'], ['pray', '守りの祈り', '反動や無防備を打ち消す'], ['aim', '照準', '次の攻撃のブレイクゲージ削りが増える'],
+      ['star', 'ねらい目', '弱点を突ける・よく効く・急所を突ける'], ['down', '効きにくい', 'この相手にはHPダメージが少ない'], ['all', '全体', '敵全体（味方全体）に届く'], ['unk', '弱点？', 'まだ弱点がわからない（調べるでわかる）']];
     // 1ページに4つずつ（スマホの横画面でも読める大きさのまま）
     var h = '';
     function group(title, rows) {
@@ -369,8 +369,8 @@
     group('アイコン：現象（暗い丸に色の形）', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
     group('アイコン：状態（色で塗った丸に白い形）', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
     group('アイコン：しるし', MK.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }));
-    group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる'),
-      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる'),
+    group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にするとブレイクゲージが大きく削れる'),
+      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技でブレイクゲージが多く削れる'),
       row('<span class="stexp">' + SR.statusIcon('burn') + '</span>', '金の枠の状態', 'その状態の相手に、威力が上がる技（技の札）')]);
     ul.insertAdjacentHTML('beforeend', h);
   }
@@ -481,7 +481,7 @@
         '<div class="rpn"><b>' + u.name + '</b><span>' + SR.uniqueName(u.id) + (front ? '' : '・控え') + '</span></div>' +
         '<div class="rpl"><em>Lv</em><b>' + (u.lv || 1) + '</b></div>' +
         '<div class="rpx">' + lvBar(u.id) + '</div>' +
-        '<div class="rps"><span class="hp">体力 <b>' + Math.round(u.maxHp) + '</b></span><span class="k">気力 <b>' + Math.round(u.maxK) + '</b></span><span class="m">精神力 <b>' + Math.round(u.maxMp) + '</b></span></div></div>';
+        '<div class="rps"><span class="hp">HP <b>' + Math.round(u.maxHp) + '</b></span><span class="k">ブレイクゲージ <b>' + Math.round(u.maxK) + '</b></span><span class="m">MP <b>' + Math.round(u.maxMp) + '</b></span></div></div>';
     }).join('');
     var G = SR.growth, info = $('menuInfo');
     if (info) info.innerHTML = '<div><span>お金</span><b>' + SR.moneyHTML(G.gold()) + '</b></div><div><span>時期</span><b>' + SR.eraName[G.era()] + '</b></div>';
@@ -500,7 +500,7 @@
       var pas = T.passivesOf(u).map(SR.skillName);
       return '<div class="stc"><div class="sf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="sn">' + u.name + '</div>' +
         '<div class="slv"><em>Lv</em><b>' + (u.lv || 1) + '</b></div><div class="sxp">' + lvBar(u.id) + '</div><div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
-        '<dl><dt class="hp">体力</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">気力</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">精神力</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
+        '<dl><dt class="hp">HP</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">ブレイクゲージ</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">MP</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
         '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div><button class="btn mini" data-nav data-lvup="' + u.id + '">Lv+1（試し）</button></div>';
     }).join('');
   }
@@ -619,7 +619,7 @@
     if (!B.weakKnown(e)) return '<span class="badge b-weak unk">？</span>';
     var ws = [e.weak].concat(e.weak2 ? [e.weak2] : []);
     return '<span class="badge b-weak" title="' + ws.map(function (s) { return SR.statuses[s].name; }).join('・') + 'で崩れやすい' + (e.weak2 ? '（片方で1.5倍・両方で2.5倍）' : '') + '">' + ws.map(function (s) { return SR.statusIcon(s); }).join('') + '</span>' +
-      (e.kPhen ? Object.keys(e.kPhen).map(function (p) { return '<span class="badge b-weak" title="' + p + 'の技で気力が' + e.kPhen[p] + '倍削れる">' + p + '</span>'; }).join('') : '');
+      (e.kPhen ? Object.keys(e.kPhen).map(function (p) { return '<span class="badge b-weak" title="' + p + 'の技でブレイクゲージが' + e.kPhen[p] + '倍削れる">' + p + '</span>'; }).join('') : '');
   }
   function stLine(a, on) { if (on === undefined) on = B && B.statusOn; if (!on) return ''; var h = ''; if (a.inflict) h += '<span class="stline">' + SR.statusIcon(a.inflict[0], a.inflict[1]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + 'ターン</span>'; if (a.exploit) h += '<span class="stline ex">' + SR.statusIcon(a.exploit[0]) + SR.statuses[a.exploit[0]].name + '中に' + a.exploit[1] + '倍' + '</span>'; return h ? '<div class="stl">' + h + '</div>' : ''; }
   function catClass(id) { var c = SR.category(id); return c === 'skillAtk' || c === 'brave' ? ' t-atk' : c === 'skillDef' || c === 'defend' || c === 'guard' ? ' t-def' : c === 'skillSup' ? ' t-sup' : ''; }
@@ -633,13 +633,13 @@
     return from > now ? '<b class="ghost" data-to="' + pct(now, max) + '" style="width:' + pct(from, max) + '%"></b>' : '';
   }
   function bars(u, v) {
-    // ブレイクで削れた最大体力は、バーの右端に斜線で残す
+    // ブレイクで削れた最大HPは、バーの右端に斜線で残す
     var mh = v.maxHp || u.maxHp, base = u.baseMaxHp || mh, mp = v.mp === undefined ? u.mp : v.mp;
     var cut = base - mh >= 1 ? '<s class="cut" style="width:' + pct(base - mh, base) + '%"></s>' : '';
     return '<div class="bar">' + ghost(u.id + 'h', v.hp, base) + '<i style="width:' + pct(v.hp, base) + '%;background:' + hpColor(v.hp / mh) + '"></i>' + cut + '</div>' +
       '<div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div>' +
       (u.hero ? '<div class="bar m">' + ghost(u.id + 'm', mp, u.maxMp) + '<i style="width:' + pct(mp, u.maxMp) + '%"></i></div>' : '') +
-      '<div class="nums"><span class="nh"><em>体力 </em>' + Math.round(v.hp) + (cut ? '<small>/' + Math.round(mh) + '</small>' : '') + '</span><span class="nk"><em>気力 </em>' + Math.round(v.k) + '</span>' +
+      '<div class="nums"><span class="nh"><em>HP </em>' + Math.round(v.hp) + (cut ? '<small>/' + Math.round(mh) + '</small>' : '') + '</span><span class="nk"><em>ブレイクゲージ </em>' + Math.round(v.k) + '</span>' +
       (u.hero ? '<span class="nmp"><em>精神 </em>' + Math.round(mp) + '</span>' : '') + '</div>';
   }
   // 下の帯用：ラベル・バー・数字を1行ずつ
@@ -647,8 +647,8 @@
     var mh = v.maxHp || u.maxHp, base = u.baseMaxHp || mh, mp = v.mp === undefined ? u.mp : v.mp;
     var cut = base - mh >= 1 ? '<s class="cut" style="width:' + pct(base - mh, base) + '%"></s>' : '';
     return '<div class="hr hp"><em>HP</em><div class="bar">' + ghost(u.id + 'h', v.hp, base) + '<i style="width:' + pct(v.hp, base) + '%;background:' + hpColor(v.hp / mh) + '"></i>' + cut + '</div><span>' + Math.round(v.hp) + '</span></div>' +
-      '<div class="hr kk"><em>気力</em><div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div></div>' +
-      '<div class="hr mm"><em>精神</em><div class="bar m">' + ghost(u.id + 'm', mp, u.maxMp) + '<i style="width:' + pct(mp, u.maxMp) + '%"></i></div></div>';
+      '<div class="hr kk"><em>ブレイクゲージ</em><div class="bar k">' + ghost(u.id + 'k', v.k, u.maxK) + '<i style="width:' + pct(v.k, u.maxK) + '%"></i></div></div>' +
+      '<div class="hr mm"><em>精神</em><div class="bar m">' + ghost(u.id + 'm', mp, u.maxMp) + '<i style="width:' + pct(mp, u.maxMp) + '%"></i></div><span>' + Math.round(mp) + '</span></div>';
   }
   function pickableIds() {
     if (st.mode === 'idle' || st.mode === 'menu' || st.mode === 'list') return B.actors().map(function (u) { return u.id; });
@@ -693,10 +693,10 @@
       var tags = '';
       if (v.brk) tags += '<span class="badge b-brk">ブレイク</span>';
       else if (v.hp > 0 && v.k <= 1) tags += '<span class="badge b-hit">あと一押し</span>';
-      if (e.brkN) tags += '<span class="badge b-hit" title="ブレイクした回数。最大気力-' + Math.round(B.tune.foeStack.k * e.brkN * 100) + '%・受けるダメージ+' + Math.round(B.tune.foeStack.dmg * e.brkN * 100) + '%">崩れ' + e.brkN + (e.brkN >= B.tune.foeStack.max ? '（最大）' : '') + '</span>';
+      if (e.brkN) tags += '<span class="badge b-hit" title="ブレイクした回数。最大ブレイクゲージ-' + Math.round(B.tune.foeStack.k * e.brkN * 100) + '%・受けるダメージ+' + Math.round(B.tune.foeStack.dmg * e.brkN * 100) + '%">崩れ' + e.brkN + (e.brkN >= B.tune.foeStack.max ? '（最大）' : '') + '</span>';
       if (e.charge === 1 && !v.brk) tags += '<span class="badge b-charge">溜め</span>';
       if (e.charge === 2 && !v.brk) tags += '<span class="badge b-charge hot">大技</span>';
-      Object.keys(e.aff || {}).forEach(function (s) { var m = e.aff[s]; if (m !== 1) tags += '<span class="badge b-sys' + (m > 1 ? ' good' : '') + '" title="' + s + 'の現象の体力ダメージ' + m + '倍">' + s + (m > 1 ? 'に弱い' : 'に強い') + '</span>'; });
+      Object.keys(e.aff || {}).forEach(function (s) { var m = e.aff[s]; if (m !== 1) tags += '<span class="badge b-sys' + (m > 1 ? ' good' : '') + '" title="' + s + 'の現象のHPダメージ' + m + '倍">' + s + (m > 1 ? 'に弱い' : 'に強い') + '</span>'; });
       if (e.pressure > 0) tags += '<span class="badge b-buff">重圧</span>';
       if (e.openK > 0) tags += '<span class="badge b-hit">すき</span>';
       (e.tags || []).forEach(function (tg) { tags += '<span class="badge b-form">' + tg + '</span>'; });
@@ -846,16 +846,16 @@
   function actorTabs() {
     var u = st.actor; if (!u) return '';
     return '<div class="atabs"><div class="atab on"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt="">' +
-      '<span><b>' + u.name + 'の番</b><small>精神力 ' + Math.round(u.mp) + '・気力 ' + Math.round(u.k) + '</small></span></div></div>';
+      '<span><b>' + u.name + 'の番</b><small>MP ' + Math.round(u.mp) + '・ブレイクゲージ ' + Math.round(u.k) + '</small></span></div></div>';
   }
-  // 気力がこの値以下になると、このターンのうちにブレイクされやすい
+  // ブレイクゲージがこの値以下になると、このターンのうちにブレイクされやすい
   function riskK() { return B.isBoss ? 40 : 15; }
   function costOf(u, id) { var o = B.options(u).find(function (x) { return x.id === id; }); return o ? o.cost || 0 : 0; }
   function warnHTML() {
     var w = [], u = st.actor;
     var ord = B.previewOrder(8), bi = ord.findIndex(function (o) { return o.label === '大技'; }), mine = ord.findIndex(function (o, i) { return i > 0 && u && o.id === u.id; });
     if (bi > 0) w.push(ord[bi].name + 'の大技が' + bi + '番あとに来る' + (mine < 0 || mine > bi ? '（' + (u ? u.name : '') + 'の次の番より先。防御するか、それまでにブレイクさせて止める）' : '（次の番でも間に合う）'));
-    if (u && u.k <= riskK()) w.push(u.name + 'は気力が残り' + Math.max(0, Math.round(u.k)) + '（ブレイクの危険。防御か交代を）');
+    if (u && u.k <= riskK()) w.push(u.name + 'はブレイクゲージが残り' + Math.max(0, Math.round(u.k)) + '（ブレイクの危険。防御か交代を）');
     return w.length ? '<div class="warnbox">' + w.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '</div>' : '';
   }
   var lastCmds = null;
@@ -892,11 +892,11 @@
     var h = actorTabs() + '<div class="phead">' + commonButtons() + '</div>' + warnHTML();
     h += boostRow(u);
     h += '<div class="menu4">' +
-      '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic" data-tip="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">' + (brave.cost ? '精神力' + brave.cost : '消費なし') + '</span><span class="d">気力を0にすればブレイク・' + SR.weapons[u.id].name + '（' + SR.weapons[u.id].phen + '）</span></button>' +
+      '<button class="big t-atk" data-nav data-first data-act="skill" data-id="basic" data-tip="basic"' + (brave.ok ? '' : ' disabled') + '>ブレイブ攻撃<span class="c">' + (brave.cost ? 'MP' + brave.cost : '消費なし') + '</span><span class="d">ブレイクゲージを0にすればブレイク・' + SR.weapons[u.id].name + '（' + SR.weapons[u.id].phen + '）</span></button>' +
       '<button class="big t-uni" data-nav data-act="list" data-id="unique"' + (nU ? '' : ' disabled') + '>' + SR.uniqueName(u.id) + '<span class="c">' + nU + '</span><span class="d">' + SR.names[u.id] + 'だけの技</span></button>' +
       (u.id === 'N' ? '' : '<button class="big t-com" data-nav data-act="list" data-id="common"' + (nC ? '' : ' disabled') + '>' + SR.COMMON_NAME + '<span class="c">' + nC + '</span><span class="d">技の書で覚えた技</span></button>') +
       '<button class="big t-def" data-nav data-act="skill" data-id="defend" data-tip="defend"' + (defend.ok ? '' : ' disabled') + '>防御<span class="c">消費なし</span><span class="d">次の番まで受けるダメージ半分・次の番が早い</span></button>' +
-      (scan ? '<button class="big" data-nav data-act="skill" data-id="scan" data-tip="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">' + (scan.cost ? '精神力' + scan.cost : '消費なし') + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
+      (scan ? '<button class="big" data-nav data-act="skill" data-id="scan" data-tip="scan"' + (scan.ok ? '' : ' disabled') + '>調べる<span class="c">' + (scan.cost ? 'MP' + scan.cost : '消費なし') + '</span><span class="d">敵の弱点が分かる</span></button>' : '') +
       '</div>';
     var pas = B.passivesOf(u);
     h += '<div class="hint">武器：' + SR.weapons[u.id].name + '（' + SR.weapons[u.id].note + '）</div>';
@@ -923,7 +923,7 @@
     return B.boostCfg && st.boost ? '　<span class="bnote">ブースト' + st.boost + '</span>' : '';
   }
   // ================= 技の詳しい説明（カーソルを乗せる・長押し） =================
-  // 戦闘中は、いまの番の人がその技を使ったときの見込みを敵ごとに出す（気力・体力・ブレイク・倒せるか）
+  // 戦闘中は、いまの番の人がその技を使ったときの見込みを敵ごとに出す（ブレイクゲージ・HP・ブレイク・倒せるか）
   // 戦闘中の技の説明：文字を少なく、バーとアイコンで見せる
   function tipBattle(a, u, id) {
     var cost = B.price(u, id) || 0, ph = SR.attackPhen ? SR.attackPhen(u, a) : a.phen;
@@ -946,10 +946,10 @@
       var ex = [];
       if (a.finisher) ex.push('ブレイク中に×' + a.finisher);
       if (a.breakBonus) ex.push('ブレイクさせると×' + a.breakBonus);
-      if (a.desperate) ex.push('気力が少ないほど強い');
-      if (a.allK) ex.push('気力が多いほど強い');
-      if (a.recoilTo) ex.push('反動：体力' + Math.round(a.recoilTo * 100) + '%に');
-      if (a.teamRecoil) ex.push('反動：前線の体力半分');
+      if (a.desperate) ex.push('ブレイクゲージが少ないほど強い');
+      if (a.allK) ex.push('ブレイクゲージが多いほど強い');
+      if (a.recoilTo) ex.push('反動：HP' + Math.round(a.recoilTo * 100) + '%に');
+      if (a.teamRecoil) ex.push('反動：前線のHP半分');
       if (a.exhaust) ex.push('次は動けない');
       if (a.expose) ex.push('しばらく無防備');
       if (a.taunt) ex.push('攻撃を引きつける');
@@ -981,7 +981,7 @@
     if (u && $('battle').classList.contains('hd')) return tipBattle(a, u, id);
     var wid = u ? u.id : who, cat = SR.typeLabel[SR.category(id)] || ({ light: '基本攻撃', brave: 'ブレイブ攻撃', defend: '防御', scan: '調べる' })[SR.category(id)] || '';
     var cost = u ? B.price(u, id) : a.cost;
-    var h = '<b>' + (a.label || a.id) + '</b><span class="tk">' + cat + '・精神力' + (cost || 0) + '・' + SR.weightLabel(a) + '</span>';
+    var h = '<b>' + (a.label || a.id) + '</b><span class="tk">' + cat + '・MP' + (cost || 0) + '・' + SR.weightLabel(a) + '</span>';
     h += '<div>' + SR.describe(a) + '</div>';
     if (a.link) h += '<div class="tl">' + a.with.map(function (c) { return SR.names[c] + '（段' + a.need[c] + '）'; }).join('・') + 'と・' + (a.join ? '合わせ技' : '力を借りる') + '</div><div class="tl">' + (SR.growth.hasLink(id) ? '使える' : SR.growth.linkWhy(id)) + '</div>';
     var ph = wid && SR.attackPhen ? SR.attackPhen({ id: wid }, a) : a.phen;
@@ -1001,7 +1001,7 @@
         if (r.kills && !a.scatter) notes.push('<em>倒せる</em>');
         if (r.aff > 1) notes.push('よく効く'); else if (r.aff < 1) notes.push('効きにくい');
         if (e.weak && B.weakKnown(e) && a.inflict && (a.inflict[0] === e.weak || a.inflict[0] === e.weak2)) notes.push('弱点の状態を付けられる');
-        h += '<tr><td>' + e.name + '</td><td>気力 ' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : kd))) + '</td><td>体力 -' + dmg.toLocaleString() + '</td><td>' + notes.join('・') + '</td></tr>';
+        h += '<tr><td>' + e.name + '</td><td>ブレイクゲージ ' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : kd))) + '</td><td>HP -' + dmg.toLocaleString() + '</td><td>' + notes.join('・') + '</td></tr>';
       });
       h += '</table><div class="tl sm">見込みはおおよそ。暗闇で外れることや、ブーストは入っていない</div>';
     }
@@ -1115,7 +1115,7 @@
     else { h = '<h3>' + B.unit(st.swapOut).name + 'と入れ替える人を選ぶ</h3>'; list = swapInCands(); }
     h += '<div class="who">';
     list.forEach(function (v) {
-      h += '<button class="btn" data-nav data-act="swapPick" data-id="' + v.id + '"><span>' + roleTag(v) + v.name + '</span><small>体力' + Math.round(v.hp) + '・気力' + Math.round(v.k) + '</small></button>';
+      h += '<button class="btn" data-nav data-act="swapPick" data-id="' + v.id + '"><span>' + roleTag(v) + v.name + '</span><small>HP' + Math.round(v.hp) + '・ブレイクゲージ' + Math.round(v.k) + '</small></button>';
     });
     return h + '</div><div class="hint">味方の番に1回、どちらか：<b>控えとの交代</b>（いまの番の人を下げると、入った人がこの番に動く）／<b>前線同士の並べ替え</b>（前衛ほど狙われやすい）。ブレイク中の人は動かせない。</div>' +
       '<div class="row"><button class="btn" data-nav data-back data-act="toMenu">やめる</button></div>';
@@ -1160,11 +1160,11 @@
     logLine(sw.front ? '並べ替えを取り消した' : '交代を取り消した（' + out.name + 'が戻る）', 's');
     openMenu(B.cur);
   }
-  // 交代で支援の対象が変わり、気力が足りなくなったコマンドを外す
+  // 交代で支援の対象が変わり、ブレイクゲージが足りなくなったコマンドを外す
   function checkCosts() {
     Object.keys(cmds).forEach(function (id) {
       var u = B.unit(id);
-      if (!B.available(u, cmds[id].skill)) { delete cmds[id]; logLine(u.name + 'のコマンドは精神力が足りなくなったので外した', 's'); }
+      if (!B.available(u, cmds[id].skill)) { delete cmds[id]; logLine(u.name + 'のコマンドはMPが足りなくなったので外した', 's'); }
     });
   }
   function setAuto(u) {
@@ -1279,7 +1279,7 @@
       var best = !hero && !f.statusTick && B.fxBest > 0 && f.dmg > B.fxTop;
       if (!hero && f.dmg > B.fxTop) B.fxTop = f.dmg;
       F.num(el, f.dmg, { hurt: hero, big: hero && fxs.big, best: best });
-      if (f.kdmg > 0) popup(el, '気力-' + f.kdmg, 'kd');
+      if (f.kdmg > 0) popup(el, 'ブレイクゲージ-' + f.kdmg, 'kd');
       if (!hero && !f.statusTick) {
         fxs.sum += f.dmg; fxs.n++;
         if (last && fxs.n >= 2) { var sm = fxs.sum, sn = fxs.n; setTimeout(function () { F.total($('enemyArea'), sm, sn); }, 260); hold = Math.max(hold, 900); fxs.sum = 0; fxs.n = 0; }
@@ -1287,9 +1287,9 @@
       }
     }
     if (f.heal) popup(el, '+' + f.heal, 'heal');
-    if (f.kheal) popup(el, '気力+' + f.kheal, 'heal');
-    if (f.mheal) popup(el, '精神力+' + f.mheal, 'mp');
-    if (f.maxCut) popup(el, '最大体力-' + f.maxCut, 'kd');
+    if (f.kheal) popup(el, 'ブレイクゲージ+' + f.kheal, 'heal');
+    if (f.mheal) popup(el, 'MP+' + f.mheal, 'mp');
+    if (f.maxCut) popup(el, '最大HP-' + f.maxCut, 'kd');
     if (f.revive) { F.revive(el); hold = Math.max(hold, 1000); }
     if (f.broke) { F.breakHit(el, hero); hold = Math.max(hold, hero ? 800 : 1150); }
     if (f.down) {
@@ -1566,14 +1566,14 @@
     var h = '<div class="hdrow">' + sw + '<button class="btn" data-nav data-act="auto">おまかせ</button><button class="btn" data-nav data-act="autoOn">自動</button></div>';
     var ord = B.previewOrder(8), bi = ord.findIndex(function (o) { return o.label === '大技'; }), ws = [];
     if (bi > 0) ws.push('大技まで' + bi);
-    if (u.k <= riskK()) ws.push('気力危険');
+    if (u.k <= riskK()) ws.push('ブレイクゲージ危険');
     if (ws.length) h += '<div class="hdwarn">' + ws.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>';
     h += boostRow(u);
     function bub(cls, act, id, title, sub, n, ok, first) {
       return '<button class="bub ' + cls + '" data-nav' + (first ? ' data-first' : '') + ' data-act="' + act + '" data-id="' + id + '"' + (act === 'skill' ? ' data-tip="' + id + '"' : '') + (ok ? '' : ' disabled') + '>' + (n !== null ? '<span class="n">' + n + '</span>' : '') + '<b>' + title + '</b><small>' + sub + '</small></button>';
     }
     h += '<div class="bubs">' +
-      bub('atk', 'skill', 'basic', '攻撃', (st.boost ? (1 + st.boost) + '回攻撃・' : 'ブレイブ攻撃・') + (brave.cost ? '精神力' + brave.cost : '消費なし'), null, brave.ok, true) +
+      bub('atk', 'skill', 'basic', '攻撃', (st.boost ? (1 + st.boost) + '回攻撃・' : 'ブレイブ攻撃・') + (brave.cost ? 'MP' + brave.cost : '消費なし'), null, brave.ok, true) +
       bub('', 'list', 'unique', SR.uniqueName(u.id), SR.names[u.id] + 'だけの技', nU, nU > 0) +
       (u.id === 'N' ? (nL ? bub('lnk', 'list', 'link', SR.LINK_NAME, '仲間と出す技', nL, nL > 0) : '') : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
       bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) +
