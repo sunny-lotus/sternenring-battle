@@ -1319,6 +1319,13 @@ svg.coin.cbig{width:18px;height:18px}
 #battle.hd #partyHud .hc{margin-top:12px}
 #battle.hd{touch-action:none}
 #battle.hd #panel,#icovl .iob{touch-action:pan-y}
+/* 前・中・後とフォームの札は、敵の名前の札（斜めの帯）と見分けがつくよう、丸い紋章と角丸の札にする */
+#battle.hd #partyHud .rl{transform:none!important;width:max(calc(var(--u)*2.3),22px);height:max(calc(var(--u)*2.3),22px);padding:0!important;border-radius:50%;display:grid!important;place-items:center;top:-13px!important;left:-6px!important;
+  font-family:"Shippori Mincho B1",serif;font-weight:800;color:#fff;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.35),rgba(0,0,0,0) 45%),var(--rlc,#4a5078)!important;
+  box-shadow:0 0 0 1.5px #f2d48a,0 0 0 3px rgba(10,10,28,.9),0 2px 6px rgba(0,0,0,.6)!important}
+#battle.hd #partyHud .rl.r0{--rlc:#b8323c}#battle.hd #partyHud .rl.r1{--rlc:#a8801e}#battle.hd #partyHud .rl.r2{--rlc:#2a6fb0}
+#battle.hd #partyHud .hn .fm{transform:none!important;border-radius:999px!important;top:-11px!important;padding:1px 10px!important;letter-spacing:.06em;box-shadow:0 0 0 1px rgba(255,255,255,.35),0 2px 6px rgba(0,0,0,.5)!important}
+#battle.hd #partyHud .hn{padding-left:6px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1484,14 +1491,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122l"></script>
-<script src="js/icons.js?v=t1122l"></script>
-<script src="js/engine.js?v=t1122l"></script>
-<script src="js/loadout.js?v=t1122l"></script>
-<script src="js/sound.js?v=t1122l"></script>
-<script src="js/fx.js?v=t1122l"></script>
-<script src="js/tree3d.js?v=t1122l"></script>
-<script src="js/ui.js?v=t1122l"></script>
-<script type="module" src="js/stage3d.js?v=t1122l"></script>
+<script src="js/data.js?v=t1122m"></script>
+<script src="js/icons.js?v=t1122m"></script>
+<script src="js/engine.js?v=t1122m"></script>
+<script src="js/loadout.js?v=t1122m"></script>
+<script src="js/sound.js?v=t1122m"></script>
+<script src="js/fx.js?v=t1122m"></script>
+<script src="js/tree3d.js?v=t1122m"></script>
+<script src="js/ui.js?v=t1122m"></script>
+<script type="module" src="js/stage3d.js?v=t1122m"></script>
 </body>
 </html>
