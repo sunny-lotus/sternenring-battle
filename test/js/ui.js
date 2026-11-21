@@ -296,12 +296,14 @@
       b.innerHTML = '<b>' + list[k].name + '</b><span class="small">' + (key === 'kit' ? kitNote(k) : (list[k].era ? '【' + ['', '序盤', '中盤', '終盤'][list[k].era] + '】' : '') + list[k].note) + '</span>';
       if (key === 'enc') {
         var e = list[k], t0 = e.party && SR.enemyTypes[e.party[0]], img = e.img || (e.imgs && e.imgs[0]) || (e.config && e.config.img) || (t0 && t0.img);
-        var d = DIFF[k] || 0, pips = '', best = 0;
+        var d = DIFF[k] || 0, pips = '', best = 0, rl = SR.recLv && SR.recLv[k];
+        var avgLv = SR.level ? ['N', 'V', 'F', 'S', 'L'].reduce(function (s, id) { return s + SR.level.lv(id); }, 0) / 5 : 1;   // 5人の平均Lv
         for (var i = 0; i < 5; i++) pips += '<i class="' + (i < d ? 'on' : '') + '"></i>';
         try { best = (JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {})[e.name] || 0; } catch (x) {}
         b.className += ' enc';
         b.innerHTML = (img ? '<img class="th" src="img/enemies/' + img + '.png" alt="">' : '<span class="th">？</span>') +
           '<span class="tx"><b>' + e.name + '</b><span class="meta">' + (e.era ? '<span class="badge b-form">' + ['', '序盤', '中盤', '終盤'][e.era] + '</span>' : '') +
+          (rl ? '<span class="reclv' + (avgLv < rl ? ' low' : '') + '">推奨Lv ' + rl + '</span>' : '') +
           (d ? '<span>難しさ<span class="dp">' + pips + '</span></span>' : '') + (best ? '<span class="bestd">自己ベスト ' + best.toLocaleString() + '</span>' : '') +
           '</span><span class="small">' + e.note + '</span></span>';
       }

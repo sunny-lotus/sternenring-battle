@@ -666,6 +666,8 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
 SR.LV_MAX = 50;
 SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01, spd: 0.5 };   // 1レベルごと：最大HP+4%・最大ブレイクゲージ+2・HPダメージ+2%・ブレイクゲージ削り+1%・素早さ+0.5（2026-11-22 サニー：素早さもLvで伸びる）
 SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
+// 2026-11-22 サニー：敵の推奨レベル（数値は仮。序盤Lv1〜10・中盤10〜20・終盤20〜のつもり）
+SR.recLv = { normal: 1, swarm: 2, boss: 6, shellSwift: 8, elements: 10, casters: 12, fireResist: 15, twins: 20, aoe: 25 };
 SR.level = (function () {
   var KEY = 'sr-battle-lv-v1', d;
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
