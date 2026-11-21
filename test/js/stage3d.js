@@ -89,7 +89,7 @@ function build() {
 
   scene.add(new THREE.HemisphereLight(0x9aa6ff, 0x202030, 1.0));
   const warm = new THREE.PointLight(0xffc98a, 22, 18, 1.6); warm.position.set(3.5, 3, 2.5); scene.add(warm);
-  const red = new THREE.PointLight(0xff5070, 6, 12, 1.6); red.position.set(-4, 2.2, 1); scene.add(red); SR._red = red;
+  const red = new THREE.PointLight(0xff5070, 2.5, 12, 1.6); red.position.set(-4, 2.2, 1); scene.add(red); SR._red = red;   // 2026-11-22 新しい敵の色が見えるよう弱めた（6→2.5）
   const tl = new THREE.PointLight(0xffa860, 25, 14, 1.4); tl.position.set(-7, 3.5, -12); scene.add(tl);
   const tr = new THREE.PointLight(0xffa860, 25, 14, 1.4); tr.position.set(8, 3.5, -11); scene.add(tr);
   const moon = new THREE.DirectionalLight(0xaabbff, .6); moon.position.set(-3, 8, 6); scene.add(moon);
@@ -130,6 +130,7 @@ function setup(list) {
     if (at) { t.repeat.set(1 / at.cols, 1 / at.rows); t.offset.set(0, 1 - (at.row + 1) / at.rows); }
     t.colorSpace = THREE.SRGBColorSpace; if (u.pixel) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; }
     const mat = new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: .4, roughness: 1 });
+    if (!u.hero) { mat.emissiveMap = t; mat.emissiveIntensity = .5; }   // 2026-11-22 敵は絵の色が照明に負けないよう、少し自分で光る
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat); m.geometry.translate(0, .5, 0); m.position.set(p[0], 0, p[1]); m.scale.set(h * .6, h, 1); scene.add(m);
     const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: SR._blob, transparent: true, depthWrite: false }));
     sh.rotation.x = -Math.PI / 2; sh.position.set(p[0], .01, p[1]); sh.scale.set(h * .7, h * .32, 1); scene.add(sh);
@@ -427,7 +428,7 @@ function frame() {
     if (s.brk) { u.m.rotateZ(u.hero ? -.12 : .12); }
     if (s.down) { u.m.material.opacity = .25; u.m.rotateZ(u.hero ? -1.2 : 1.2); y = .05; } else u.m.material.opacity = 1;
     u.m.material.color.setScalar(s.dim ? .55 : 1);
-    u.m.material.emissive = u.m.material.emissive || new THREE.Color(); u.m.material.emissive.setHex(s.active ? 0x161208 : s.target ? 0x200808 : 0x000000);
+    u.m.material.emissive = u.m.material.emissive || new THREE.Color(); u.m.material.emissive.setHex(u.hero ? (s.active ? 0x161208 : s.target ? 0x200808 : 0x000000) : (s.target ? 0xffc0b8 : s.active ? 0xfff0d8 : 0xffffff));
     if (u.at) { const f = Math.floor(t * u.at.fps + i * .7) % u.at.frames; u.m.material.map.offset.x = f / u.at.cols; }
     u.m.position.set(x, y + (u.yOff || 0), u.base[1]);
     const want = s.down ? 0 : s.target ? .95 : s.active ? .55 : 0;
@@ -436,7 +437,7 @@ function frame() {
   });
   ensureFx(); fxFrame(t, Math.min(.05, Math.max(0, t - (SR._fxT || t)))); SR._fxT = t;
   if (shakeA > .002) { camera.position.x += (Math.random() - .5) * shakeA; camera.position.y += (Math.random() - .5) * shakeA; }
-  SR._motes.rotation.y = t * .02; SR._red.intensity = 6 + Math.sin(t * 3) * 1.2;
+  SR._motes.rotation.y = t * .02; SR._red.intensity = 2.5 + Math.sin(t * 3) * .6;
   composer.render();
   if (onFrame) onFrame();
 }

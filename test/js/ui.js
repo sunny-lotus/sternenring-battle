@@ -1387,7 +1387,7 @@
       stageKey = key;
       SR.stage3d.setup(B.enemies.map(function (e) {
         var big = B.isBoss || e.type === 'twin', small = e.type === 'pup';
-        return { id: e.id, img: 'img/enemies/' + e.img + '.png', pixel: true, h: big ? 3.2 : small ? 1.5 : 2.2 };
+        return { id: e.id, img: 'img/enemies/' + e.img + '.png', pixel: true, h: (SR.ENEMY_H && SR.ENEMY_H[e.img]) || (big ? 3.2 : small ? 1.5 : 2.2) };
       }).concat(front.map(function (u) { return { id: u.id, hero: true, pos: u.pos, img: SR.PIX[u.id] ? SR.PIX[u.id].src : 'img/' + SR.img[u.id] + '_stand.png?v=4', pixel: !!SR.PIX[u.id], atlas: SR.PIX[u.id] ? SR.PIX[u.id].atlas : null, h: SR.PIX[u.id] ? (SR.PIX[u.id].h || 1.8) : 2.45 }; })));
       SR.stage3d.onFrame(placeUnits);
       SR.stage3d.start();

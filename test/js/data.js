@@ -774,3 +774,16 @@ SR.CUTIN = {};
 Object.keys(SR.img).forEach(function (id) { SR.CUTIN[id] = 'img/' + SR.img[id] + '_ready.png?v=2'; });
 // キャラごとのテーマ色（演出の光・魔法陣・カットインの帯など）2026-11-22
 SR.THEME = { N: '#a88cff', V: '#ffd27a', F: '#ff6a4a', S: '#8fc8ff', L: '#e8ecff' };
+// 2026-11-22：敵の絵を、ChatGPTで描いた絵から作ったドット絵（img/enemies/sr-*.png）に。
+// 通常戦A・B・Cは魔獣、ボス3体は星獣（サニー）。姿は試作用の仮。古い素材の名前から置きかえる
+SR.ENEMY_ART = { 'js-golem': 'sr-shell', 'js-bolt': 'sr-beast', 'js-wind': 'sr-swift', 'js-fire': 'sr-ember', 'js-ice': 'sr-frost', 'js-eye': 'sr-caster', 'js-angel': 'sr-healer',
+  'js-wolf': 'sr-pup', 'js-wolfg': 'sr-pup', 'js-troll': 'sr-twin1', 'js-trollb': 'sr-twin2', 'js-tree': 'sr-norma', 'js-mino': 'sr-normb', 'js-smoke': 'sr-normc',
+  'js-prince': 'sr-boss1', 'js-demon': 'sr-bossfire', 'js-lord': 'sr-bossaoe' };
+// 戦場での高さ（ドット絵の高さもこれに合わせて作った：高さ×80マス）
+SR.ENEMY_H = { 'sr-beast': 1.9, 'sr-shell': 2.0, 'sr-swift': 2.1, 'sr-ember': 1.9, 'sr-frost': 1.9, 'sr-caster': 2.0, 'sr-healer': 2.6, 'sr-pup': 1.25, 'sr-twin1': 3.0, 'sr-twin2': 3.0,
+  'sr-norma': 1.9, 'sr-normb': 1.7, 'sr-normc': 1.4, 'sr-boss1': 2.8, 'sr-bossfire': 2.4, 'sr-bossaoe': 3.2 };
+(function () {
+  function sw(o) { if (!o) return; if (o.img && SR.ENEMY_ART[o.img]) o.img = SR.ENEMY_ART[o.img]; if (o.imgs) o.imgs = o.imgs.map(function (k) { return SR.ENEMY_ART[k] || k; }); }
+  Object.keys(SR.enemyTypes || {}).forEach(function (k) { sw(SR.enemyTypes[k]); });
+  Object.keys(SR.encounters || {}).forEach(function (k) { sw(SR.encounters[k]); });
+})();
