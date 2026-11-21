@@ -68,7 +68,7 @@
         var shape = n.stat ? '<circle r="7"/>' : '<path d="M0 -14 L4 -4 L14 0 L4 4 L0 14 L-4 4 L-14 0 L-4 -4 Z"/>';
         svg += '<g class="cn ' + st + (n.stat ? ' stat' : '') + (n.combo ? ' combo' : '') + (sel ? ' sel' : '') + '" transform="translate(' + p.x + ',' + p.y + ')" data-lo="sel" data-id="' + n.id + '">' +
           (n.combo ? [1, 2, 3].slice(0, n.combo.length - 1).map(function (k) { return '<circle class="cring" r="' + (13 + k * 4) + '"/>'; }).join('') : '') +
-          '<circle class="hit" r="22"/>' + (sel ? '<circle class="ring" r="19"/>' : '') + shape + '<text y="' + (n.stat ? 19 : 26) + '">' + n.id + '</text></g>';
+          '<circle class="hit" r="22"/>' + (sel ? '<circle class="ring" r="19"/>' : '') + shape + '<text y="' + (n.stat ? 19 : 26) + '">' + SR.skillName(n.id) + '</text></g>';
       });
       svg += '</svg>';
       var v3 = lo.view !== '2d';
@@ -85,7 +85,7 @@
         var sn = SR.ctreeNode(lo.sel);
         if (sn) {
           var sg = G.has(id, sn.id), sw = sg ? '' : G.why(id, sn.id);
-          h += '<div class="cdet"><b>' + sn.id + '</b><span class="badge ' + (sn.stat ? 'b-buff' : 'b-sys') + '">' + (sn.stat ? '能力の星' : sn.combo ? sn.combo.join('と') + 'の組み合わせ' : '技') + '</span>' +
+          h += '<div class="cdet"><b>' + SR.skillName(sn.id) + '</b><span class="badge ' + (sn.stat ? 'b-buff' : 'b-sys') + '">' + (sn.stat ? '能力の星' : sn.combo ? sn.combo.join('と') + 'の組み合わせ' : '技') + '</span>' +
             '<div class="d">' + (sn.stat ? sn.fx : SR.describe(SR.skills[sn.id])) + '</div>' +
             '<span class="small">' + sn.books.join('・') + 'の書・' + SR.bookTier[sn.tier] + '／経験値' + Math.round(SR.cumExp(sn.h)) + 'で覚える' + (sn.req.length ? '／前に「' + sn.req.join('」「') + '」' : '') + '</span>' +
             (sg ? '<span class="st">覚えた</span>' : '<span class="why">' + sw + '</span>') + '</div>';
@@ -110,7 +110,7 @@
         var cs = SR.ctree.filter(function (n) { return SR.skills[n.id]; }).sort(function (a, b) { return a.tier - b.tier || SR.baseSystems.indexOf(a.sys) - SR.baseSystems.indexOf(b.sys); });
         h += '<div class="clist">' + cs.map(function (n) {
           var got = G.has(id, n.id);
-          return '<div class="crow' + (got ? ' got' : '') + '" data-tip="' + n.id + '" data-tipwho="' + id + '" data-lo="sel" data-id="' + n.id + '"><b>' + n.id + '</b><span>' + (got ? '覚えた' : G.why(id, n.id)) + '</span></div>';
+          return '<div class="crow' + (got ? ' got' : '') + '" data-tip="' + n.id + '" data-tipwho="' + id + '" data-lo="sel" data-id="' + n.id + '"><b>' + SR.skillName(n.id) + '</b><span>' + (got ? '覚えた' : G.why(id, n.id)) + '</span></div>';
         }).join('') + '</div>';
       }
       h += '</div></div>';
@@ -118,7 +118,7 @@
       var uni = Object.keys(SR.skills).filter(function (s) { return SR.skills[s].owner === id; });
       h += '<div class="bk-full"><div class="small">サブクエスト・イベントで増える（どのクエストかは未定）。長押し（カーソルを乗せる）でくわしく出る。</div><div class="bk-grid">' + uni.map(function (s) {
         var start = SR.uniqueStart[id].indexOf(s) >= 0, got = G.hasU(id, s);
-        return '<div class="node' + (got ? ' got' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + s + '</b>' +
+        return '<div class="node' + (got ? ' got' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b>' +
           (start ? '<span class="st">最初から</span>' : got ? '<button class="btn mini" data-nav data-lo="uniq" data-id="' + s + '">覚えた（試し）→外す</button>'
             : '<button class="btn mini" data-nav data-lo="uniq" data-id="' + s + '">イベント → 覚えたことにする</button>') + '</div>';
       }).join('') + '</div></div>';
@@ -137,7 +137,7 @@
         var la = SR.skills[lo.sel];
         if (la && la.link) {
           var lg = G.hasLink(la.id);
-          h += '<div class="cdet"><b>' + la.id + '</b><span class="lk-f">' + faces(la) + '</span><span class="badge b-sys">' + (la.with.length + 1) + '人・' + (la.join ? '合わせ技' : '力を借りる') + '</span>' +
+          h += '<div class="cdet"><b>' + SR.skillName(la.id) + '</b><span class="lk-f">' + faces(la) + '</span><span class="badge b-sys">' + (la.with.length + 1) + '人・' + (la.join ? '合わせ技' : '力を借りる') + '</span>' +
             '<div class="d">' + SR.describe(la) + '</div>' +
             '<span class="small">' + la.with.map(function (c) { return SR.names[c] + 'との段' + la.need[c]; }).join('・') + 'で使える</span>' +
             (lg ? '<span class="st">使える</span>' : '<span class="why">' + G.linkWhy(la.id) + '</span>') + '</div>';
@@ -156,7 +156,7 @@
         var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s); });
         h += '<div class="clist">' + lks.map(function (s) {
           var a = SR.skills[s], got = G.hasLink(s);
-          return '<div class="crow' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N" data-lo="sel" data-id="' + s + '"><b>' + s + '</b><span class="lk-f">' + faces(a) + '</span><span>' + (got ? '使える' : G.linkWhy(s)) + '</span></div>';
+          return '<div class="crow' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N" data-lo="sel" data-id="' + s + '"><b>' + SR.skillName(s) + '</b><span class="lk-f">' + faces(a) + '</span><span>' + (got ? '使える' : G.linkWhy(s)) + '</span></div>';
         }).join('') + '</div>';
       }
       h += '</div></div>';
@@ -166,7 +166,7 @@
         '<span class="small">プリセット：</span>' + ['standard', 'counter', 'chase'].map(function (k) { return '<button class="btn mini" data-nav data-lo="tpl" data-id="' + k + '">' + SR.kits[k].name + '</button>'; }).join('') + '</div><div class="bk-grid">' +
         Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === id; }).map(function (s) {
           var start = (SR.passiveStart[id] || []).indexOf(s) >= 0, got = G.hasP(id, s), on = mine0.indexOf(s) >= 0, ap = SR.passives[s][1], over = !on && used0 + ap > cap0;
-          return '<div class="node' + (on ? ' got' : got ? ' can' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + s + '</b><span class="small">コスト' + ap + (start ? '・最初から' : got ? '・覚えた（試し）' : '・イベントで覚える') + '</span>' +
+          return '<div class="node' + (on ? ' got' : got ? ' can' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b><span class="small">コスト' + ap + (start ? '・最初から' : got ? '・覚えた（試し）' : '・イベントで覚える') + '</span>' +
             (got ? '<button class="btn mini' + (on ? '' : ' primary') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' + (on ? '外す' : over ? 'コストが足りない' : '付ける') + '</button>' +
               (start ? '' : '<button class="btn mini" data-nav data-lo="pas" data-id="' + s + '">覚えていないことにする</button>')
               : '<button class="btn mini" data-nav data-lo="pas" data-id="' + s + '">覚えたことにする</button>') + '</div>';
@@ -204,7 +204,7 @@
         if (a0.era > 1) t0 += '<span class="badge b-charge">' + (a0.era === 3 ? '終盤' : '中盤') + 'の技</span>';
         if (a0.phen) t0 += '<span class="badge b-sys">' + SR.phenText(a0.phen) + '</span>';
         if (lock) t0 += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
-        return '<div class="sk' + (lock ? ' locked' : ' on') + catClass(s) + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + s + '</b><span class="c">' + (lock ? 'まだ使えない' : '使える') + '／精神力' + a0.cost + '</span>' +
+        return '<div class="sk' + (lock ? ' locked' : ' on') + catClass(s) + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b><span class="c">' + (lock ? 'まだ使えない' : '使える') + '／精神力' + a0.cost + '</span>' +
           (t0 ? '<div>' + t0 + '</div>' : '') + stLine(a0, !!SR.tunes[pick.tune].status) + '<span class="d">' + SR.describe(a0) + '</span></div>';
       }
       var desc = passive ? SR.passives[s][2] : SR.describe(SR.skills[s]);
@@ -216,7 +216,7 @@
       if (a && a.phen) tags += '<span class="badge b-sys">' + SR.phenText(a.phen) + '</span>';
       if (lock) tags += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
       return '<button class="sk' + (on ? ' on' : '') + (lock ? ' locked' : '') + (a ? catClass(s) : ' t-pas') + '" data-nav data-lo="tog" data-id="' + s + '" data-tip="' + s + '" data-tipwho="' + id + '"' + (over ? ' disabled' : '') + '>' +
-        '<b>' + s + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／精神力' + a.cost : '') + '</span>' +
+        '<b>' + SR.skillName(s) + '</b><span class="c">' + (on ? '装備中・' : '') + 'コスト' + ap + (a ? '／精神力' + a.cost : '') + '</span>' +
         (tags ? '<div>' + tags + '</div>' : '') + (a ? stLine(a, !!SR.tunes[pick.tune].status) : '') + '<span class="d">' + desc + '</span></button>';
     }
     var order = function (a, b) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(a)) - ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(b)); };
@@ -242,13 +242,13 @@
       MATES.forEach(function (c) { var ns = lk.filter(function (s) { return SR.skills[s].with.length === 1 && SR.skills[s].with[0] === c; }); lcnt[c] = ns.filter(function (s) { return G2.hasLink(s); }).length + '/' + ns.length; lcap[c] = G2.linkEv(c) && G2.linkOpen() ? 3 : 0; lfil[c] = G2.linkOpen() ? bh(c) : 0; LBL[c] = SR.names[c]; });
       SR.tree3d.mount(c3, { era: G2.era(), pillars: MATES, label: LBL, colors: { V: [255, 225, 74], F: [255, 122, 58], S: [127, 208, 255], L: [255, 243, 196] }, count: lcnt, cap: lcap, fill: lfil, sel: lo.sel, nodes: lk.map(function (s) {
         var a = SR.skills[s], mx = Math.max.apply(null, a.with.map(function (c) { return a.need[c]; }));
-        return { id: s, sys: a.with[0], tier: mx, h: mx - 0.15, req: [], combo: a.with.length > 1 ? a.with : null, stat: false, state: G2.hasLink(s) ? 'got' : 'lock' }; }) },
+        return { id: s, label: SR.skillName(s), sys: a.with[0], tier: mx, h: mx - 0.15, req: [], combo: a.with.length > 1 ? a.with : null, stat: false, state: G2.hasLink(s) ? 'got' : 'lock' }; }) },
         function (id) { lo.sel = id; lo.lside = 'detail'; SR.sound.se('tick'); drawLoadout(); });
     } else     if (c3 && lo.who !== 'N') {
       var cnt = {}; SR.baseSystems.forEach(function (s) { var ns = SR.ctree.filter(function (n) { return n.sys === s; }); cnt[s] = ns.filter(function (n) { return SR.growth.has(lo.who, n.id); }).length + '/' + ns.length; });
       var cap = {}, fil = {}; SR.baseSystems.forEach(function (s) { cap[s] = SR.growth.books(s); fil[s] = SR.growth.fill(lo.who, s); });
       SR.tree3d.mount(c3, { era: SR.growth.era(), fav: SR.tree.start[lo.who], count: cnt, cap: cap, fill: fil, sel: lo.sel, nodes: SR.ctree.map(function (n) {
-        return { id: n.id, sys: n.sys, tier: n.tier, h: n.h, req: n.req, combo: n.combo, stat: !!n.stat, state: SR.growth.has(lo.who, n.id) ? 'got' : SR.growth.why(lo.who, n.id) ? 'lock' : 'can' }; }) },
+        return { id: n.id, label: SR.skillName(n.id), sys: n.sys, tier: n.tier, h: n.h, req: n.req, combo: n.combo, stat: !!n.stat, state: SR.growth.has(lo.who, n.id) ? 'got' : SR.growth.why(lo.who, n.id) ? 'lock' : 'can' }; }) },
         function (id) { lo.sel = id; lo.side = 'detail'; SR.sound.se('tick'); var pg = $('pg-book'), y = pg ? pg.scrollTop : 0; drawLoadout(); if (pg) pg.scrollTop = y; });
     }
     bookBadge();
@@ -932,7 +932,8 @@
   document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('[data-tip]')) e.preventDefault(); });
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '" data-tip="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
-    h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? o.cost : '0') + '</span>';
+    var nm = a.label || a.id;
+    h += '<b' + (nm.length > 6 ? ' class="nlong"' : '') + '>' + nm + '</b><span class="c">' + (o.cost ? o.cost : '0') + '</span>';
     if (a.link) h += '<span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('') + '</span>';
     var tags = SR.typeBadge(o.id), foes = B.living();
     if (B.statusOn && a.inflict && foes.some(function (e) { return (e.weak === a.inflict[0] || e.weak2 === a.inflict[0]) && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
@@ -1183,7 +1184,7 @@
           lg[f] = (lg[f] || 0) + (big ? GC.focusBoss : GC.focusNormal);
           Object.keys(lg).forEach(function (s) { var got = G.addExp(w, s, Math.round(lg[s] * mult)); if (got > 0) parts.push(s + '+' + got + (s === f ? '（重点）' : '')); });
           if (parts.length) res.lines.push(SR.names[w] + '：' + parts.join('　'));
-          SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + n.id + '」を覚えた！'); });
+          SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
         B.grown = res;

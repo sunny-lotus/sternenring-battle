@@ -178,20 +178,20 @@ window.SR = window.SR || {};
     skill: function (id, who, targetEl) {
       var p = at(targetEl), i;
       if (id === '業火' || id === '灰燼') {
-        SR.fx.cutin(who, id, '#ff7a1a'); add('fxfire', '', 1250);
+        SR.fx.cutin(who, SR.skillName(id), '#ff7a1a'); add('fxfire', '', 1250);
         for (i = 0; i < 26; i++) add('fxember', '', 1700, rnd(0, p.w), p.h - rnd(0, 40), { '--dx': rnd(-50, 50) + 'px', '--dy': -rnd(160, p.h) + 'px', '--dl': rnd(0, .5).toFixed(2) + 's' });
         setTimeout(function () { quake(3); }, 250);
       } else if (id === '星落とし') {
-        SR.fx.cutin(who, id, '#7fb8ff'); add('fxdark', '', 1300);
+        SR.fx.cutin(who, SR.skillName(id), '#7fb8ff'); add('fxdark', '', 1300);
         for (i = 0; i < 16; i++) add('fxstar', '', 1400, rnd(p.w * .08, p.w * .92), rnd(p.h * .12, p.h * .5), { '--dl': (0.15 + i * 0.045).toFixed(2) + 's' });
         setTimeout(function () { quake(3); add('fxflash', '', 400); }, 800);
       } else if (id === '決死の一閃') {
-        SR.fx.cutin(who, id, '#fff');
+        SR.fx.cutin(who, SR.skillName(id), '#fff');
         add('fxdark', '', 1000);
         add('fxslash', '', 1100, null, p.y, { '--dl': '.45s', '--rt': '-14deg', '--sc': '#fff' });
         setTimeout(function () { add('fxflash', '', 450); quake(3); }, 650);
       } else if (id === '捨て身斬り') {
-        SR.fx.cutin(who, id, '#ff4a4a');
+        SR.fx.cutin(who, SR.skillName(id), '#ff4a4a');
         add('fxslash', '', 1000, null, p.y, { '--dl': '.35s', '--rt': '-28deg', '--sc': '#ff4a4a' });
         add('fxslash', '', 1100, null, p.y, { '--dl': '.5s', '--rt': '28deg', '--sc': '#ff4a4a' });
         setTimeout(function () { add('fxflash red', '', 400); quake(3); }, 600);

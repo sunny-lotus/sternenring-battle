@@ -144,7 +144,7 @@ SR.tree3d = (function () {
         var fs = Math.max(11, Math.min(20, q.s * 0.12)), ty = q.y + r + fs + 1;
         ctx.font = (got ? '700 ' : '') + fs + 'px sans-serif'; ctx.textAlign = 'center';
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,10,26,.85)'; ctx.strokeText(n.id, q.x, ty);
-        ctx.fillStyle = got ? '#f6e2a8' : can ? '#ffffff' : '#a9aed0'; ctx.fillText(n.id, q.x, ty);
+        ctx.fillStyle = got ? '#f6e2a8' : can ? '#ffffff' : '#a9aed0'; ctx.fillText(n.label || n.id, q.x, ty);
         ctx.restore();
       } });
     });
