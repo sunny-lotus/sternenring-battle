@@ -366,8 +366,8 @@
         h += '<li class="ichelp"><b>' + title + part + '</b><div class="icgrid">' + rows.slice(i, i + per).join('') + '</div></li>';
       }
     }
-    group('アイコン：現象', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
-    group('アイコン：状態', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
+    group('アイコン：現象（暗い丸に色の形）', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
+    group('アイコン：状態（色で塗った丸に白い形）', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
     group('アイコン：しるし', MK.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }));
     group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる'),
       row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる'),

@@ -76,3 +76,16 @@ SR.iconizeTags = function (html) {
     return SR.markIcon(m, ttl ? ttl.slice(8, -1) : txt, cls.replace(/badge/, '').trim());
   });
 };
+// 2026-11-22 サニー：炎・冷気・光・雷 と 燃焼・凍結・目眩・感電 は「同じ形で色ちがい」にする。
+// 現象＝暗い丸の上に色の形／状態＝色で塗った丸の上に白い形（反転）。
+(function () {
+  function g(inner) { return '<g transform="translate(10 10) scale(.74) translate(-10 -10)">' + inner + '</g>'; }
+  SR.statusSVG.burn = '<circle cx="10" cy="10" r="9.2" fill="#d9481a" stroke="#ffd0a0" stroke-width=".8"/>' +
+    g('<path d="M10 2C11.5 5.2 15.4 7.4 14.9 12 14.5 15.3 12.4 17.4 10 17.4 7.1 17.4 5.1 15.3 5.1 12.2 5.1 9.9 6.4 8.4 7.4 7.2 7.6 8.8 8.3 10 9.3 10.4 8.9 7.5 9.3 4.6 10 2Z" fill="#fff4e0"/><path d="M10 10c.9 1.6 2.2 2.5 2 4.3-.2 1.3-1 2-2 2-1.1 0-1.9-.8-1.9-1.9 0-1.1.8-1.8 1.3-2.4.1.9.5 1.4.8 1.5-.3-1-.4-2.2-.2-3.5z" fill="#ff9a4a"/>');
+  SR.statusSVG.freeze = '<circle cx="10" cy="10" r="9.2" fill="#2a86c8" stroke="#d6f2ff" stroke-width=".8"/>' +
+    g('<g stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M10 2.5v15M3.5 6.2l13 7.6M3.5 13.8l13-7.6"/><path d="M8.2 4l1.8 1.8L11.8 4M8.2 16l1.8-1.8 1.8 1.8"/></g>');
+  SR.statusSVG.daze = '<circle cx="10" cy="10" r="9.2" fill="#c99a00" stroke="#fff3b0" stroke-width=".8"/>' +
+    g('<path d="M10 1.8l1.7 6.5 6.5 1.7-6.5 1.7L10 18.2l-1.7-6.5L1.8 10l6.5-1.7z" fill="#fffbe8"/><circle cx="10" cy="10" r="2.2" fill="#c99a00"/>');
+  SR.statusSVG.shock = '<circle cx="10" cy="10" r="9.2" fill="#7b4fd6" stroke="#e6d6ff" stroke-width=".8"/>' +
+    g('<path d="M11.5 1.5L4.5 11h4.6L7.3 18.5 15.5 8.4h-4.8L12.9 1.5z" fill="#ffffff" stroke-linejoin="round"/>');
+})();
