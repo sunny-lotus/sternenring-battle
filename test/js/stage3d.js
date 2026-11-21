@@ -124,7 +124,10 @@ function setup(list) {
     const p = u.hero ? HERO_SLOT[u.pos] : es[enemies.indexOf(u)];
     if (!p) return;
     const h = u.h || (u.hero ? 2.4 : 2.1);
-    const t = loader.load(u.img, tt => { const ar = tt.image.width / tt.image.height; m.scale.set(h * ar, h, 1); });
+    // atlas：ドット絵のコマ割り（cols×rows）。row の列を、frames コマ・fps でくり返す
+    const at = u.atlas, cell = at ? h / at.fill : h;
+    const t = loader.load(u.img, tt => { const ar = at ? 1 : tt.image.width / tt.image.height; m.scale.set(cell * ar, cell, 1); });
+    if (at) { t.repeat.set(1 / at.cols, 1 / at.rows); t.offset.set(0, 1 - (at.row + 1) / at.rows); }
     t.colorSpace = THREE.SRGBColorSpace; if (u.pixel) { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; }
     const mat = new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: .4, roughness: 1 });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat); m.geometry.translate(0, .5, 0); m.position.set(p[0], 0, p[1]); m.scale.set(h * .6, h, 1); scene.add(m);
@@ -132,7 +135,7 @@ function setup(list) {
     sh.rotation.x = -Math.PI / 2; sh.position.set(p[0], .01, p[1]); sh.scale.set(h * .7, h * .32, 1); scene.add(sh);
     const rn = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: SR._rune, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: u.hero ? 0xffd27a : 0xff5a64, opacity: 0 }));
     rn.rotation.x = -Math.PI / 2; rn.position.set(p[0], .02, p[1]); rn.scale.setScalar(h * 1.15); scene.add(rn);
-    units[u.id] = { m, sh, rn, h, base: p, hero: u.hero, bob: u.hero ? 0 : .8 + Math.random() * .6, hitT: -9, state: {} };
+    units[u.id] = { m, sh, rn, h, at, yOff: at ? -cell * at.foot : 0, base: p, hero: u.hero, bob: u.hero ? 0 : .8 + Math.random() * .6, hitT: -9, state: {} };
   });
 }
 function sync(states) {
@@ -275,7 +278,8 @@ function frame() {
     if (s.down) { u.m.material.opacity = .25; u.m.rotateZ(u.hero ? -1.2 : 1.2); y = .05; } else u.m.material.opacity = 1;
     u.m.material.color.setScalar(s.dim ? .55 : 1);
     u.m.material.emissive = u.m.material.emissive || new THREE.Color(); u.m.material.emissive.setHex(s.active ? 0x161208 : s.target ? 0x200808 : 0x000000);
-    u.m.position.set(x, y, u.base[1]);
+    if (u.at) { const f = Math.floor(t * u.at.fps + i * .7) % u.at.frames; u.m.material.map.offset.x = f / u.at.cols; }
+    u.m.position.set(x, y + (u.yOff || 0), u.base[1]);
     const want = s.down ? 0 : s.target ? .95 : s.active ? .55 : 0;
     u.rn.material.opacity += (want - u.rn.material.opacity) * .15; u.rn.visible = u.rn.material.opacity > .01 && u.m.visible;
     u.rn.rotation.z = t * (s.target ? .6 : .25) * (u.hero ? -1 : 1); u.rn.scale.setScalar(u.h * (1.15 + (s.target ? Math.sin(t * 4) * .05 : 0)));
