@@ -138,6 +138,7 @@ SR.Battle = function (opts) {
     if (!dst.hero && dst.openK > 0) kd *= C.openK;   // 大技・全体攻撃の直後のすき
     if (!dst.hero && dst.lonelyK && enemies.some(function (x) { return x !== dst && x.type === dst.type && x.hp <= 0; })) kd *= dst.lonelyK;   // 片方が倒れるとブレイクゲージがゆるむ
     if (src.hero && !dst.hero && dst.kPhen) SR.phenList(o.phen).forEach(function (p) { if (dst.kPhen[p]) kd *= dst.kPhen[p]; });   // 現象の急所：ブレイクゲージに効く
+    if (src.hero && !dst.hero && dst.anaK > 0) kd *= 1.3;   // 2026-11-22 アナライズ：解析した相手は崩れやすい
     if (!wasBroken) {
       if (dst.hero && dst.id === 'N' && dst.form === 'brave') kd *= 1.25;
       if (dst.kProtect > 0) kd *= 0.65;
@@ -163,6 +164,7 @@ SR.Battle = function (opts) {
     if (dst.hero && dst.id === 'N' && dst.form === 'revenge' && !broken(dst)) amount *= 0.6;
     if (dst.exposed > 0) amount *= 2;
     if (dst.protect > 0) amount *= 0.7;
+    if (dst.vuln > 0) amount *= 1.25;   // 2026-11-22 脆化法
     if (dst.defend > 0) amount *= SR.defendRate;
     if (dst.supportGuard) amount *= 0.96;
     if (dst.hero) amount *= 1 - bon(dst, 'guard');   // 守りの型
@@ -178,6 +180,15 @@ SR.Battle = function (opts) {
     if (dst.stopped) { dst.stopped = false; stat.stops = (stat.stops || 0) + 1; emit('溜めが崩れた！ ' + dst.name + 'の大技を止めた', { target: dst.id, stop: true }, 1000); }
     if (dst.hp === 0) emit(dst.name + ' は倒れた', { target: dst.id, down: true }, 700);
     if (o.inflict && dst.hp > 0) addStatus(dst, o.inflict[0], o.inflict[1]);
+    // 2026-11-22 挟撃の策：仕掛けた相手に味方の攻撃が当たると、前線のもう一人が追い打ち（1回だけ）
+    if (src.hero && !dst.hero && dst.flank && !o.label && dst.hp > 0) {
+      dst.flank = false;
+      var mate = front().filter(function (v) { return v !== src && v.hp > 0 && !broken(v); })[0];
+      if (mate) {
+        emit(mate.name + 'の挟撃！（無料の追い打ち）', { actor: mate.id, target: dst.id }, 700);
+        hit(mate, dst, 16, 34, true, { label: '挟撃', phen: SR.weapons[mate.id] ? SR.weapons[mate.id].phen : null });
+      }
+    }
     var n = heroes[0];
     if (src.hero && src !== n && !wasBroken && previous > 1 && dst.k <= 1 && !broken(dst) && dst.hp > 0 && n.hp > 0 && n.pos < 3 &&
         !broken(n) && n.form === 'brave' && chaseCount < (has(n, '追撃の極意') ? 2 : 1)) {
@@ -207,15 +218,24 @@ SR.Battle = function (opts) {
   this.downFront = downFront;
   function linkReady(a) { return !a.link || a.with.every(function (c) { var v = unit(c); return v && v.hp > 0 && !broken(v); }); }
   this.linkReady = function (id) { return linkReady(skills[id] || {}); };
-  function available(u, id) { if (skills[id] && !linkReady(skills[id])) return false; if (skills[id] && skills[id].kind === 'revive' && !downFront().length) return false; return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.mp >= price(u, skills[id]); }
-  this.price = function (u, id) { return price(u, skills[id]); };
+  // 二段構えの2回目は、技のMPが2倍
+  function priceNow(u, a) { return price(u, a) * (u.twinSecond ? 2 : 1); }
+  function available(u, id) {
+    var a = skills[id];
+    if (a && !linkReady(a)) return false;
+    if (a && a.kind === 'revive' && !downFront().length) return false;
+    if (a && a.needBroken && !living().some(broken)) return false;   // ブレイクのあとの切り札
+    if (a && a.kind === 'overclock' && !front().some(function (v) { return v !== u && v.hp > 0 && !broken(v); })) return false;
+    return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.mp >= priceNow(u, a);
+  }
+  this.price = function (u, id) { return priceNow(u, skills[id]); };
   this.available = available;
 
   // 使える技の一覧（UI用）
   this.options = function (u) {
     var ss = statusSkillOf(u);
     var ids = ['basic'].concat(ss ? [ss] : [], u.abilities.filter(function (s) { return skills[s]; }), ['defend'], statusOn ? ['scan'] : []);
-    return ids.map(function (id) { return { id: id, skill: skills[id], cost: price(u, skills[id]), ok: available(u, id) }; });
+    return ids.map(function (id) { return { id: id, skill: skills[id], cost: priceNow(u, skills[id]), ok: available(u, id) }; });
   };
   this.passivesOf = function (u) { return u.abilities.filter(function (s) { return SR.passives[s]; }); };
 
@@ -224,7 +244,9 @@ SR.Battle = function (opts) {
     var a = skills[id];
     if (a.kind === 'attack') return a.all || a.scatter ? 'none' : 'enemy';
     if (a.kind === 'analyze' || a.kind === 'pressure' || a.kind === 'scan') return 'enemy';
-    if (a.kind === 'cover') return 'allyOther';
+    if (['vuln', 'slow', 'seal', 'flank'].indexOf(a.kind) >= 0) return 'enemy';
+    if (a.kind === 'bless') return 'ally';
+    if (a.kind === 'cover' || a.kind === 'overclock') return 'allyOther';
     if (a.kind === 'aim') return has(u, '照準共有') ? 'ally' : 'none';
     if (a.kind === 'heal') return a.allies ? 'none' : 'ally';
     if (a.kind === 'revive') return 'allyDown';
@@ -307,6 +329,14 @@ SR.Battle = function (opts) {
     if (!(a.recoilTo || a.expose || a.exhaust)) return;
     if (u.ward > 0) { u.ward = 0; emit(u.name + 'は守りの祈りで反動を打ち消した', { target: u.id }, 700); return; }    var why = [];
     if (a.recoilTo) { var lost = Math.round(u.hp * (1 - a.recoilTo)); u.hp = Math.max(1, u.hp - lost); u.recoilLost = lost; u.recoilLeft = 2; why.push('HP-' + lost); }    if (a.expose) { u.exposed = 2; why.push('次の番が終わるまで無防備（受けるダメージ2倍・回復を受けつけない）'); }    if (a.exhaust) { u.exhausted = 1; why.push('次の番は動けない'); }    emit(u.name + '　' + (a.label || a.id) + 'の反動　' + why.join('・'), { target: u.id, dmg: a.recoilTo ? u.recoilLost : 0 }, 800);  }
+  // 2026-11-22 コンボ：攻撃のときに効いている補助・弱体の数。2つ以上重なると威力が跳ね上がる（1つだけでは増えない）
+  function comboN(u, e, aimed) {
+    if (!u.hero || !e || e.hero) return 0;
+    return (e.vuln > 0) + (e.anaK > 0) + (e.sealK > 0) + (weakOnCount(e) ? 1 : 0) + (u.might > 0) + (u.bless > 0) + (u.power ? 1 : 0) + (aimed ? 1 : 0);
+  }
+  var COMBO_MUL = [1, 1, 1.1, 1.3, 1.6, 2.0];
+  function comboMul(n) { return COMBO_MUL[Math.min(5, n)]; }
+  this.comboN = function (uid, eid) { var u = unit(uid), e = unit(eid); return comboN(u, e, u && u.aim > 0); };
   function perform(u, a, target) {
     var tname = target ? target.name : '';
     emit(u.name + '：' + (a.label || a.id) + (u.boostN ? '（ブースト' + u.boostN + (a.id === 'basic' ? '・' + (1 + u.boostN) + '回攻撃' : '・威力×' + u.boostMul) + '）' : '') + (tname && SR_TARGETED(a) ? ' → ' + tname : ''), { actor: u.id, skill: a.id, boost: u.boostN || 0 }, 650);
@@ -323,9 +353,14 @@ SR.Battle = function (opts) {
       });
       return;
     }
-    if (a.kind === 'ward') { target.ward = 2; target.exposed = 0; emit(target.name + 'に守りの祈り（次の反動・無防備・燃え尽きを打ち消す）', { target: target.id }, 600); return; }
+    if (a.kind === 'ward') {
+      target.ward = 2; target.exposed = 0;
+      var bad = Object.keys(target.st || {})[0]; if (bad) delete target.st[bad];   // 2026-11-22 悪い状態も1つ解く
+      emit(target.name + 'に守りの祈り（次の反動・無防備・燃え尽きを打ち消す' + (bad ? '・' + SR.statuses[bad].name + 'が解けた' : '') + '）', { target: target.id }, 600); return;
+    }
     if (a.kind === 'rally') {
       var back = target.recoilLeft > 0 ? target.recoilLost || 0 : 0; target.recoilLost = 0; target.exposed = 0; target.exhausted = 0;
+      var kb = target.k; recover(target, 25); if (target.k > kb) emit(target.name + '　ブレイクゲージ+' + Math.round(target.k - kb), { target: target.id, kheal: Math.round(target.k - kb) }, 380);   // 2026-11-22
       if (back) { var hb = target.hp; target.hp = Math.min(target.maxHp, target.hp + back); emit(target.name + 'を立て直した　HP+' + Math.round(target.hp - hb) + '（無防備も解けた）', { target: target.id, heal: Math.round(target.hp - hb) }, 600); }
       else emit(target.name + 'を立て直した（無防備・燃え尽きが解けた）', { target: target.id }, 600);
       return;
@@ -350,7 +385,24 @@ SR.Battle = function (opts) {
     if (a.kind === 'teamKProtect') { front().forEach(function (v) { if (v.hp > 0) v.kProtect = 2; }); return; }
     if (a.kind === 'kBarrier') { target.barrier = true; return; }
     if (a.kind === 'pressure') { target.pressure = 2; return; }
-    if (a.kind === 'analyze') { target.analyzed = true; return; }
+    if (a.kind === 'analyze') {   // 2026-11-22 弱点がわかり、2ターン崩れやすくなる
+      target.analyzed = true; target.anaK = 2; if (target.weak) SR.weakMemo.add(weakKey(target));
+      emit(target.name + 'を解析した（2ターン、ブレイクゲージ削り1.3倍' + (target.weak ? '・弱点は' + SR.statuses[target.weak].name : '') + '）', { target: target.id, weak: !!target.weak }, 800); return;
+    }
+    // ---- 2026-11-22 補助・弱体・2回続けて動く ----
+    if (a.kind === 'vuln') { target.vuln = 2; emit(target.name + 'は脆くなった（2ターン、受けるダメージ1.25倍）', { target: target.id }, 600); return; }
+    if (a.kind === 'slow') { target.at += iv(target) * 0.6; emit(target.name + 'の動きが鈍った（次の番が遅れる）', { target: target.id }, 600); return; }
+    if (a.kind === 'seal') { target.sealK = 2; emit(target.name + 'に封じの聖印（2ターン、ブレイクゲージが回復しない）', { target: target.id }, 600); return; }
+    if (a.kind === 'flank') { target.flank = true; emit(target.name + 'を挟み撃ちにする構え（次に攻撃が当たると追い打ち）', { target: target.id }, 600); return; }
+    if (a.kind === 'might') { front().forEach(function (v) { if (v.hp > 0) v.might = 2; }); emit('陽だまりの加護（前線全員、2ターン威力1.15倍）', { actor: u.id }, 600); return; }
+    if (a.kind === 'bless') { target.bless = 2; emit(target.name + 'に祝福（次の2回の攻撃の威力1.3倍）', { target: target.id }, 600); return; }
+    if (a.kind === 'zanshin') { u.zanshin = true; emit(u.name + 'は残心の構え（次の番、刀剣術を2回続けて振る）', { target: u.id }, 600); return; }
+    if (a.kind === 'twin') { u.twinNext = true; emit(u.name + 'は二段構え（次の番、2回続けて動ける）', { target: u.id }, 600); return; }
+    if (a.kind === 'overclock') {
+      if (!target || target === u || target.hp <= 0 || broken(target)) { emit('動かせる仲間がいなかった', null, 500); return; }
+      target.at = now + 0.001; target.quick = true; self.lastWeight += 0.5;
+      emit(target.name + 'をオーバークロック！（すぐもう一度動ける）', { target: target.id }, 700); return;
+    }
     if (a.kind === 'aim') { target.aim = has(u, '照準維持') ? 2 : 1; return; }
     if (a.kind === 'power') { target.power = true; return; }
     if (a.kind === 'haste') { if (target === u) u.hasteSelf = true; else { target.at = now + Math.max(0, target.at - now) * 0.35; emit(target.name + 'の番が早まった', { target: target.id }, 450); } return; }
@@ -359,7 +411,7 @@ SR.Battle = function (opts) {
     var aimed = u.aim > 0;
     if (a.fire) u.fireStreak = (u.fireStreak || 0) + 1; else if (u.id === 'F') u.fireStreak = 0;
     var targets = a.all ? living() : [target], hits = (a.hits || 1) + (a.id === 'basic' ? (u.boostN || 0) : 0);
-    var targetHits = new Map(), brokeInSeq = new Set();
+    var targetHits = new Map(), brokeInSeq = new Set(), comboShown = false;
     for (var h = 0; h < hits; h++) {
       var set = a.scatter ? [living()[h % Math.max(1, living().length)]] : targets;
       set.forEach(function (e) {
@@ -384,6 +436,14 @@ SR.Battle = function (opts) {
         if (a.desperate) hp *= 1 + (1 - u.k / u.maxK) * .45;
         if (a.allK) hp *= 1 + u.k / u.maxK * 1.5;   // 決死の一閃：残りのブレイクゲージが多いほど強い（撃つとブレイクゲージ0）
         if (u.power) hp *= 1.4;
+        if (u.might > 0) hp *= 1.15;     // 陽だまりの加護
+        if (u.bless > 0) hp *= 1.3;      // 祝福
+        if (u.zanHalf) hp *= 0.7;        // 残心の2回目
+        var cn = comboN(u, e, aimed);
+        if (cn >= 2) {
+          hp *= comboMul(cn); if (cn >= 3) kd *= 1.15;
+          if (!comboShown) { comboShown = true; emit('コンボ×' + cn + '！ 威力' + comboMul(cn) + '倍', { target: e.id, combo: cn }, 600); }
+        }
         if (u.supportPower) hp *= 1.04;
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
         var willBreak = !broken(e) && a.brave && e.k <= kd;
@@ -397,6 +457,7 @@ SR.Battle = function (opts) {
     }
     applyRisk(u, a);
     if (aimed) u.aim--; u.power = false;
+    if (u.bless > 0) u.bless--;
   }
   // ---- ブースト：1ターンに1たまる（最大2）。使ったターンの次はたまらない。威力だけ上がり、回数は増えない ----
   var boostCfg = tune.boost || null;
@@ -404,7 +465,7 @@ SR.Battle = function (opts) {
   function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy' || a.kind === 'revive'); }
   this.boostable = boostable;
 
-  function SR_TARGETED(a) { return !(a.all || a.scatter || a.kind === 'wait' || a.kind === 'defend' || a.kind === 'guard' || a.kind === 'teamKProtect' || (a.kind === 'heal' && a.allies)); }
+  function SR_TARGETED(a) { return !(a.all || a.scatter || a.kind === 'wait' || a.kind === 'defend' || a.kind === 'guard' || a.kind === 'teamKProtect' || a.kind === 'might' || a.kind === 'zanshin' || a.kind === 'twin' || (a.kind === 'heal' && a.allies)); }
 
   // ================= アクティブカウント（2026-11-21 手元の試作） =================
   // 1回の番で動くのは1人だけ。素早さが高いほど番が早く、何度も回ってくる。
@@ -414,7 +475,7 @@ SR.Battle = function (opts) {
   this.iv = iv;
   // はじめの順番：速い人ほど早い。同じなら味方が先
   heroes.concat(enemies).forEach(function (u, i) { u.at = iv(u) * 0.6 + i * 0.01; u.turns = u.turns || 0; });
-  var TICK = ['kProtect', 'protect', 'defend', 'exposed', 'ward', 'recoilLeft', 'openK'];
+  var TICK = ['kProtect', 'protect', 'defend', 'exposed', 'ward', 'recoilLeft', 'openK', 'vuln', 'anaK', 'sealK', 'might'];
 
   function queue() { return heroes.concat(enemies).filter(function (u) { return u.hp > 0; }); }
   function chargeDue(e, turns) { return !e.noCharge && (isBoss ? turns % 3 : (turns + enemies.indexOf(e)) % 3) === 2; }
@@ -430,15 +491,19 @@ SR.Battle = function (opts) {
     if (u.id === 'N') { chaseCount = 0; counterCount = 0; }
     if (cover && cover.protector === u) cover = null;
     if (taunt && taunt.u === u) taunt = null;
+    // 2026-11-22 すぐもう一度動く番（オーバークロック・二段構え）は、回復も効き目の残りも進まない
+    var quick = !!u.quick; u.quick = false;
     // ブレイクゲージ・MP・ブーストの回復（その人の番ごと）
-    if (u.hero && !broken(u)) {
+    if (u.hero && !broken(u) && !quick) {
       if (u.turns > 0) { recover(u, tune.recovery); u.mp = Math.min(u.maxMp, u.mp + (tune.mpRecovery || 0) + (has(u, '静心') ? 5 : 0) + bon(u, 'mp')); }
       if (boostCfg && u.turns > 0 && !u.boostLast) u.bp = Math.min(boostCfg.max, u.bp + 1);
       u.boostLast = false;
     }
-    if (!u.hero && !broken(u)) u.k = Math.min(u.maxK, u.k + Math.round((u.pressure > 0 ? u.regen * .4 : u.regen) * ((u.weak && hasSt(u, u.weak)) || (u.weak2 && hasSt(u, u.weak2)) ? SR.statusFx.weakRegen : 1)));
-    if (u.pressure > 0) u.pressure--;
-    TICK.forEach(function (k) { if (u[k] > 0) u[k]--; });
+    if (!u.hero && !broken(u) && !(u.sealK > 0)) u.k = Math.min(u.maxK, u.k + Math.round((u.pressure > 0 ? u.regen * .4 : u.regen) * ((u.weak && hasSt(u, u.weak)) || (u.weak2 && hasSt(u, u.weak2)) ? SR.statusFx.weakRegen : 1)));   // 封じの聖印のあいだは回復しない
+    if (!quick) {
+      if (u.pressure > 0) u.pressure--;
+      TICK.forEach(function (k) { if (u[k] > 0) u[k]--; });
+    }
     if (broken(u)) {   // ブレイク明け：この番は休み、ブレイクゲージが全回復
       u.brk = false; u.k = u.maxK;
       if (!u.hero) u.released = true;
@@ -473,6 +538,10 @@ SR.Battle = function (opts) {
     if (u.hasteSelf) { w *= 0.5; u.hasteSelf = false; }
     u.at = now + iv(u) * w;
     if (u.brkLate) { u.at += iv(u) * C.brkDelay; u.brkLate = false; }
+    if (u.twinGo && u.hp > 0 && !broken(u)) {   // 2026-11-22 二段構え：続けてもう一度
+      u.twinGo = false; u.at = now + 0.001; u.quick = true; u.twinSecond = true;
+      emit(u.name + 'の二段構え！ 続けてもう一度動ける（技のMPは2倍）', { target: u.id }, 600);
+    } else u.twinGo = false;
     // 前線が全員倒れたら、控えが飛び出す
     if (tune.status && heroes.filter(function (v) { return v.pos < 3; }).every(function (v) { return v.hp <= 0; })) {
       var downs = heroes.filter(function (v) { return v.pos < 3; }).sort(function (a, b) { return a.pos - b.pos; });
@@ -493,8 +562,10 @@ SR.Battle = function (opts) {
     var a = skills[c.skill];
     if (!available(u, c.skill)) a = skills.wait;
     var target = c.target ? (typeof c.target === 'string' ? unit(c.target) : c.target) : null;
-    if (!target) target = a.kind === 'attack' || a.kind === 'analyze' || a.kind === 'pressure' || a.kind === 'scan' ? living().slice().sort(function (x, y) { return x.k - y.k; })[0] : a.kind === 'revive' ? downFront()[0] : u;
-    var cost = price(u, a); u.mp -= cost; u.discount = false;
+    var foeKind = ['attack', 'analyze', 'pressure', 'scan', 'vuln', 'slow', 'seal', 'flank'].indexOf(a.kind) >= 0;
+    if (!target) target = foeKind ? living().slice().sort(function (x, y) { return x.k - y.k; })[0] : a.kind === 'revive' ? downFront()[0] : a.kind === 'overclock' ? front().filter(function (v) { return v !== u && v.hp > 0 && !broken(v); })[0] : u;
+    var second = !!u.twinSecond;
+    var cost = priceNow(u, a); u.mp -= cost; u.discount = false; u.twinSecond = false;
     if (a.form) u.form = a.form;
     if (a.kind === 'defend') u.defend = 1;
     var bn = boostable(a.id) && a !== skills.wait ? Math.max(0, Math.min(c.boost || 0, u.bp)) : 0;
@@ -503,6 +574,15 @@ SR.Battle = function (opts) {
     u.boostN = bn; u.boostMul = bn ? boostCfg.mult[bn] : 1;
     var wasDown = downFront().slice();
     perform(u, a, target);
+    // 2026-11-22 残心：刀剣術の攻撃を、続けてもう一太刀（2回目は威力0.7倍）
+    if (u.zanshin && a.kind === 'attack' && (a.owner === 'N' || a.id === 'basic') && u.hp > 0 && living().length) {
+      u.zanshin = false;
+      var t2 = target && target.hp > 0 && !target.hero ? target : living().slice().sort(function (x, y) { return x.k - y.k; })[0];
+      emit(u.name + 'の残心　もう一太刀！', { target: u.id }, 500);
+      u.zanHalf = true; perform(u, a, t2); u.zanHalf = false;
+    }
+    // 二段構え：構えた次の番の行動が終わったら、続けてもう一度（2回目の行動では続かない）
+    if (u.twinNext && a.kind !== 'twin' && !second) { u.twinNext = false; u.twinGo = true; }
     if (a.link) {
       a.with.forEach(function (c) {
         var v = unit(c); if (!v) return;
@@ -686,12 +766,17 @@ SR.Battle = function (opts) {
     if (a.finisher && broken(e)) hp *= a.finisher;
     if (a.exploit && hasSt(e, a.exploit[0])) hp *= a.exploit[1];
     if (u.power) hp *= 1.4;
+    if (u.might > 0) hp *= 1.15; if (u.bless > 0) hp *= 1.3;           // 2026-11-22 補助
+    if (e.anaK > 0) kd *= 1.3;
+    if (u.zanshin && (a.owner === 'N' || a.id === 'basic')) hp *= 1.7;  // 残心：2回目（0.7倍）も見込む
+    var cn = comboN(u, e, u.aim > 0); if (cn >= 2) { hp *= comboMul(cn); if (cn >= 3) kd *= 1.15; }
     var dc = tune.dmg || { base: 0.25, slope: 0.75, broken: 1.5 };
     var breaks = !broken(e) && !!a.brave && e.k <= kd;
     var mul = broken(e) || breaks ? dc.broken : dc.base + dc.slope * (1 - Math.max(0, e.k - kd / 2) / e.maxK);
     if (a.breakBonus && breaks) hp *= a.breakBonus;
     if (e.brkN && tune.foeStack) mul *= 1 + tune.foeStack.dmg * e.brkN;
     if (hasSt(e, 'freeze')) mul *= SR.statusFx.freeze;
+    if (e.vuln > 0) mul *= 1.25;   // 脆化法
     var dmg = hp * mul * S;
     return { kd: kd, dmg: dmg, breaks: breaks, kills: dmg >= e.hp, phen: ph };
   }
@@ -770,12 +855,23 @@ SR.Battle = function (opts) {
       if (a.kind === 'cover') { var cv = team.filter(function (v) { return v !== u; }).sort(function (x, y) { return x.hp - y.hp; })[0]; if (cv && th.foes.length && cv.hp < (th.big ? bigN : hitN) && u.hp > cv.hp * 1.5) add(o.id, cv, 55 - mpPen, 'cover'); return; }
       if (a.kind === 'guard') { if (th.foes.length && u.k < 50) add(o.id, null, 20 + (50 - u.k) * 0.5 - mpPen, 'guard'); return; }
       if (a.kind === 'aim') { if (!u.aim && alive.some(function (e) { return !broken(e); })) add(o.id, u, 18 - mpPen, 'aim'); return; }
-      if (a.kind === 'analyze') { var an = alive.filter(function (e) { return !e.analyzed && !broken(e); })[0]; if (an && has(u, '急所観測')) add(o.id, an, 16 - mpPen, 'analyze'); return; }
+      if (a.kind === 'analyze') { var an = alive.filter(function (e) { return !(e.anaK > 0) && !broken(e); }).sort(function (x, y) { return (bossish(y) ? 1 : 0) - (bossish(x) ? 1 : 0); })[0]; if (an) add(o.id, an, 12 + (bossish(an) ? 18 : 0) + (an.weak && !weakKnown(an) ? 8 : 0) + (has(u, '急所観測') ? 6 : 0) - mpPen, 'analyze'); return; }
+      // ---- 2026-11-22 補助・弱体・2回続けて動く：組み合わせの場面で点が上がる ----
+      var anyBrk = alive.some(broken), boss = alive.some(bossish), strong = function (v) { return ['N', 'F', 'L'].indexOf(v.id) >= 0; };
+      if (a.kind === 'vuln') { var vt = alive.filter(function (e) { return !(e.vuln > 0); }).sort(function (x, y) { return y.hp - x.hp; })[0]; if (vt) add(o.id, vt, 8 + (bossish(vt) ? 22 : 0) + (broken(vt) || vt.k < vt.maxK * .35 ? 16 : 0) - mpPen, 'vuln'); return; }
+      if (a.kind === 'slow') { var sl = alive.filter(function (e) { return e.charge === 1 && !broken(e); })[0]; if (sl) add(o.id, sl, 30 - mpPen, 'slow'); return; }
+      if (a.kind === 'seal') { var se = alive.filter(function (e) { return !broken(e) && !(e.sealK > 0) && e.k < e.maxK * .6; }).sort(function (x, y) { return x.k / x.maxK - y.k / y.maxK; })[0]; if (se) add(o.id, se, 16 + (bossish(se) ? 16 : 0) + (weakOnCount(se) ? 10 : 0) - mpPen, 'seal'); return; }
+      if (a.kind === 'flank') { var fl = alive.filter(function (e) { return !e.flank && !broken(e); }).sort(function (x, y) { return x.k - y.k; })[0]; if (fl && team.length >= 3) add(o.id, fl, 18 + (bossish(fl) ? 10 : 0) - mpPen, 'flank'); return; }
+      if (a.kind === 'might') { if (!team.some(function (v) { return v.might > 0; })) add(o.id, null, 6 + team.filter(strong).length * 7 + (boss ? 10 : 0) + (anyBrk ? 8 : 0) - mpPen, 'might'); return; }
+      if (a.kind === 'bless') { var bl = team.filter(function (v) { return v !== u && strong(v) && !(v.bless > 0) && !broken(v); })[0]; if (bl) add(o.id, bl, 18 + (anyBrk ? 18 : 0) + (boss ? 8 : 0) - mpPen, 'bless'); return; }
+      if (a.kind === 'zanshin') { if (!u.zanshin) add(o.id, null, 10 + (alive.some(function (e) { return broken(e) || e.k < e.maxK * .35; }) ? 22 : 0) - mpPen, 'zanshin'); return; }
+      if (a.kind === 'twin') { if (!u.twinNext && u.mp >= 45) add(o.id, null, 20 + (anyBrk ? 16 : 0) + (boss ? 6 : 0) - mpPen, 'twin'); return; }
+      if (a.kind === 'overclock') { var oc = team.filter(function (v) { return v !== u && strong(v) && !broken(v) && v.mp >= 30; }).sort(function (x, y) { return (y.bless || 0) + (y.power ? 1 : 0) - (x.bless || 0) - (x.power ? 1 : 0); })[0]; if (oc) add(o.id, oc, 14 + (anyBrk ? 30 : 0) + (oc.bless > 0 || oc.power ? 14 : 0) - mpPen, 'overclock'); return; }
       if (a.kind === 'pressure') { var pr = alive.filter(function (e) { return !broken(e) && !(e.pressure > 0); }).sort(function (x, y) { return x.k / x.maxK - y.k / y.maxK; })[0]; if (pr && bossish(pr)) add(o.id, pr, 18 - mpPen, 'pressure'); return; }
       if (a.kind === 'power') { var pw = team.filter(function (v) { return v !== u && !v.power && !broken(v); })[0]; if (pw && alive.some(broken)) add(o.id, pw, 22 - mpPen, 'power'); return; }
       if (a.kind === 'haste') { var hv = team.filter(function (v) { return v !== u && !broken(v); }).sort(function (x, y) { return y.maxK - x.maxK; })[0]; if (hv && (th.big || alive.some(broken))) add(o.id, hv, 20 - mpPen, 'haste'); return; }
-      if (a.kind === 'ward') { var wv = team.filter(function (v) { return v.exposed > 0 || v.exhausted; })[0]; if (wv) add(o.id, wv, 45 - mpPen, 'ward'); return; }
-      if (a.kind === 'rally') { var rv = team.filter(function (v) { return v.recoilLeft > 0 || v.exposed > 0; })[0]; if (rv) add(o.id, rv, 40 - mpPen, 'rally'); return; }
+      if (a.kind === 'ward') { var wv = team.filter(function (v) { return v.exposed > 0 || v.exhausted; })[0]; if (wv) { add(o.id, wv, 45 - mpPen, 'ward'); return; } var sv = team.filter(function (v) { return Object.keys(v.st || {}).length; })[0]; if (sv) add(o.id, sv, 16 + Object.keys(sv.st).length * 4 - mpPen, 'ward'); return; }
+      if (a.kind === 'rally') { var rv = team.filter(function (v) { return v.recoilLeft > 0 || v.exposed > 0; })[0]; if (rv) { add(o.id, rv, 40 - mpPen, 'rally'); return; } var kv = team.filter(function (v) { return !broken(v) && v.k < v.maxK * .45; }).sort(function (x, y) { return x.k - y.k; })[0]; if (kv && th.foes.length) add(o.id, kv, 14 + (1 - kv.k / kv.maxK) * 20 - mpPen, 'rally'); return; }
     });
     if (!cands.length) return { skill: 'defend' };
     cands.forEach(function (c) { c.s *= 0.93 + random() * 0.14; });   // 人らしい迷い

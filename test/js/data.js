@@ -787,3 +787,56 @@ SR.ENEMY_H = { 'sr-beast': 1.9, 'sr-shell': 2.0, 'sr-swift': 2.1, 'sr-ember': 1.
   Object.keys(SR.enemyTypes || {}).forEach(function (k) { sw(SR.enemyTypes[k]); });
   Object.keys(SR.encounters || {}).forEach(function (k) { sw(SR.encounters[k]); });
 })();
+// ---- 2026-11-22 補助・弱体・2回続けて動く技（サニー：単体で強すぎる技はやめる。組み合わせで伸びるのはOK）----
+// 数値は仮。どれも1つだけ使っても得は小さく、ほかの技と組むと大きく伸びる
+skill('脆化法', 'common', 4, 16, { kind: 'vuln' });                 // 敵一体：2ターン、受けるダメージ1.25倍
+skill('鈍化法', 'common', 3, 14, { kind: 'slow' });                 // 敵一体：次の番を遅らせる
+skill('残心', 'N', 4, 16, { kind: 'zanshin' });                     // 次の番、刀剣術の攻撃を2回続けて振る（2回目は威力0.7倍）
+skill('オーバークロック', 'V', 6, 34, { kind: 'overclock' });         // 仲間一人を、すぐもう一度動かす。ヴォルト自身の次の番は遅れる
+skill('陽だまりの加護', 'F', 5, 28, { kind: 'might' });               // 前線全員：2ターン、威力1.15倍
+skill('祝福', 'S', 4, 20, { kind: 'bless' });                         // 仲間一人：次の2回の攻撃の威力1.3倍
+skill('封じの聖印', 'S', 4, 18, { kind: 'seal' });                    // 敵一体：2ターン、ブレイクゲージが回復しない
+skill('挟撃の策', 'L', 4, 18, { kind: 'flank' });                     // 敵一体：次に味方の攻撃が当たると、前線のもう一人が追い打ち
+skill('二段構え', 'L', 5, 22, { kind: 'twin' });                      // 次の番、2回続けて動ける（2回目の技はMP2倍）
+SR.ctree.push(
+  { id: '脆化法', sys: '干渉', combo: ['干渉', '観測'], books: ['干渉', '観測'], tier: 2, req: ['衝撃'] },
+  { id: '鈍化法', sys: '循環', combo: ['循環', '干渉'], books: ['循環', '干渉'], tier: 3, req: ['加速'] });
+// 1つで強すぎた技を弱める（試し打ちで使われすぎていた）
+SR.skills['分散連射'].hits = 4;            // 6回→4回
+SR.skills['集中火力'].kd = 48;             // 66→48
+SR.skills['五人の一太刀'].needBroken = true; // ブレイク中の敵がいるときだけ使える（ブレイクのあとの切り札）
+// 新しい技と、直した技の説明（SR.describe に足す）
+(function () {
+  var base = SR.describe, T = {
+    vuln: '敵一体：2ターン、受けるダメージ1.25倍（ほかの攻撃と組むと伸びる）',
+    slow: '敵一体の次の番を遅らせる（順番の帯で後ろへ）',
+    zanshin: '次の番、刀剣術の攻撃を2回続けて振る（2回目は威力0.7倍）',
+    overclock: '仲間一人を、すぐもう一度動かす。ヴォルト自身の次の番は遅れる',
+    might: '前線全員：2ターン、威力1.15倍',
+    bless: '仲間一人：次の2回の攻撃の威力1.3倍',
+    seal: '敵一体：2ターン、ブレイクゲージが回復しない',
+    flank: '敵一体：次に味方の攻撃が当たると、前線のもう一人が追い打ちする',
+    twin: '次の番、2回続けて動ける（2回目の技はMP2倍）',
+    analyze: '敵一体の弱点を調べ、2ターン、その敵へのブレイクゲージ削りを1.3倍にする',
+    ward: '仲間一人に、次の反動・無防備・燃え尽きを打ち消す祈り（2ターン）。今の無防備と、悪い状態を1つ解く',
+    rally: '仲間一人の、反動で減ったHPを戻し、無防備・燃え尽きを解く。ブレイクゲージも25戻す'
+  };
+  SR.describe = function (a) {
+    if (a && T[a.kind]) return T[a.kind];
+    var s = base(a);
+    if (a && a.needBroken) s += '・ブレイク中の敵がいるときだけ使える';
+    return s;
+  };
+})();
+// 新しい技の経験値の体系
+(function () {
+  var base = SR.actionExp;
+  SR.actionExp = function (a) {
+    if (a && !SR.ctreeNode(a.id)) {
+      if (['vuln', 'slow', 'seal', 'flank'].indexOf(a.kind) >= 0) return ['干渉', SR.growthCfg.expSkill];
+      if (['might', 'bless', 'overclock', 'twin', 'zanshin'].indexOf(a.kind) >= 0) return ['循環', SR.growthCfg.expSkill];
+    }
+    return base(a);
+  };
+})();
+SR.skills['分散連射'].kd = 10;   // 2026-11-22 試し打ち2回目：まだ使われすぎ（12→10）
