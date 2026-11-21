@@ -132,7 +132,7 @@
         return '<button class="btn mini' + (lside === b[0] ? ' sel' : '') + '" data-nav data-lo="lside" data-id="' + b[0] + '">' + b[1] + '</button>';
       }).join('') + '</div><div class="sbody">';
       if (!open) h += '<div class="lk-note">連携技は終盤に手に入る（上の「時期」を終盤にすると試せる）</div>';
-      function faces(a) { return a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg" alt="' + SR.names[c] + '">'; }).join(''); }
+      function faces(a) { return a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg?v=2" alt="' + SR.names[c] + '">'; }).join(''); }
       if (lside === 'detail') {
         var la = SR.skills[lo.sel];
         if (la && la.link) {
@@ -146,7 +146,7 @@
         var MAXB = SR.bondLv[2] + 20;
         h += '<div class="lk-bonds">' + SR.LINK_MATES.map(function (c) {
           var v = G.bond(c), ev = G.linkEv(c), lv = G.bondLvOf(c);
-          return '<div class="lk-b"><img src="img/' + SR.img[c] + '_face.jpg" alt=""><b>' + SR.names[c] + '</b><span class="lk-lv">段' + lv + '</span>' +
+          return '<div class="lk-b"><img src="img/' + SR.img[c] + '_face.jpg?v=2" alt=""><b>' + SR.names[c] + '</b><span class="lk-lv">段' + lv + '</span>' +
             '<span class="xb"><i style="width:' + (ev ? Math.max(3, v / MAXB * 100) : 0) + '%"></i><s style="left:' + (SR.bondLv[1] / MAXB * 100) + '%"></s><s style="left:' + (SR.bondLv[2] / MAXB * 100) + '%"></s></span>' +
             '<small>' + (ev ? '親密度 ' + v : 'イベント未定') + '</small>' +
             '<button class="btn mini" data-nav data-lo="lev" data-id="' + c + '">' + (ev ? '開いた（試し）→戻す' : 'イベント → 開いたことにする') + '</button>' +
@@ -396,7 +396,7 @@
   function drawDevMenu() {
     var box = $('devMenu'); if (!box) return;
     var G = SR.growth, O = ['N', 'V', 'F', 'S', 'L'], SYS = SR.baseSystems, MAXE = Math.round(SR.cumExp(3));
-    function face(id) { return '<span class="dvf"><img src="img/' + SR.img[id] + '_face.jpg" alt=""></span><b class="dvn">' + SR.names[id] + '</b>'; }
+    function face(id) { return '<span class="dvf"><img src="img/' + SR.img[id] + '_face.jpg?v=2" alt=""></span><b class="dvn">' + SR.names[id] + '</b>'; }
     var h = '<div class="row dvtabs">' + [['lv', 'レベル'], ['gold', 'お金'], ['exp', 'スキルの経験値'], ['bond', '親密度（連携技）']].map(function (t) {
       return '<button class="btn mini' + (devTab === t[0] ? ' sel' : '') + '" data-nav data-dv="tab" data-id="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div><div class="dvbody">';
@@ -477,7 +477,7 @@
     var P; try { P = partyNow(); } catch (e) { box.innerHTML = ''; return; }
     box.innerHTML = P.list.map(function (u) {
       var front = u.pos < 3;
-      return '<div class="rpm' + (front ? '' : ' res') + '"><div class="rpf"><img src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div>' +
+      return '<div class="rpm' + (front ? '' : ' res') + '"><div class="rpf"><img src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div>' +
         '<div class="rpn"><b>' + u.name + '</b><span>' + SR.uniqueName(u.id) + (front ? '' : '・控え') + '</span></div>' +
         '<div class="rpl"><em>Lv</em><b>' + (u.lv || 1) + '</b></div>' +
         '<div class="rpx">' + lvBar(u.id) + '</div>' +
@@ -498,7 +498,7 @@
       var nM = u.id === 'N' ? 0 : SR.ctree.filter(function (n) { return SR.skills[n.id] && G.has(u.id, n.id); }).length;
       var nL = u.id === 'N' ? Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && G.hasLink(s); }).length : 0;
       var pas = T.passivesOf(u).map(SR.skillName);
-      return '<div class="stc"><div class="sf"><img src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div><div class="sn">' + u.name + '</div>' +
+      return '<div class="stc"><div class="sf"><img src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div><div class="sn">' + u.name + '</div>' +
         '<div class="slv"><em>Lv</em><b>' + (u.lv || 1) + '</b></div><div class="sxp">' + lvBar(u.id) + '</div><div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
         '<dl><dt class="hp">HP</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">ブレイクゲージ</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">MP</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
         '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div><button class="btn mini" data-nav data-lvup="' + u.id + '">Lv+1（試し）</button></div>';
@@ -736,11 +736,11 @@
         else if (ordNo[u.id]) cmdLine = '<div class="cmd">' + (ordNo[u.id][0] - 1) + '番あと</div>';
       }
       if (res) {
-        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div><div>' +
+        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div><div>' +
           '<div class="nm">' + role + u.name + '</div>' + tags + bars(u, v) + '</div>';
         addOrd(d, u.id); ra.appendChild(d);
       } else {
-        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div>' +
+        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div>' +
           '<div class="nm">' + role + u.name + '</div><div>' + tags + '</div>' + bars(u, v) + cmdLine;
         addOrd(d, u.id); pa.appendChild(d);
       }
@@ -773,7 +773,7 @@
         else if (o.label === '溜め') { tag += ' 溜め'; tcls += ' warm'; }
         else if (o.label === '全体攻撃') tag += ' 全体';
       } else {
-        icon = '<img src="img/' + SR.img[o.id] + '_face.jpg" alt="">';
+        icon = '<img src="img/' + SR.img[o.id] + '_face.jpg?v=2" alt="">';
         tag = o.kind === 'support' ? '支援' : '';
       }
       if (o.label.indexOf('ブレイク明け') === 0) tag = '休み';
@@ -845,7 +845,7 @@
   // いまの番の人
   function actorTabs() {
     var u = st.actor; if (!u) return '';
-    return '<div class="atabs"><div class="atab on"><img src="img/' + SR.img[u.id] + '_face.jpg" alt="">' +
+    return '<div class="atabs"><div class="atab on"><img src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt="">' +
       '<span><b>' + u.name + 'の番</b><small>MP ' + Math.round(u.mp) + '・ブレイクゲージ ' + Math.round(u.k) + '</small></span></div></div>';
   }
   // ブレイクゲージがこの値以下になると、このターンのうちにブレイクされやすい
@@ -928,7 +928,7 @@
   function tipBattle(a, u, id) {
     var cost = B.price(u, id) || 0, ph = SR.attackPhen ? SR.attackPhen(u, a) : a.phen;
     var h = '<div class="tbh"><b>' + (a.label || a.id) + '</b><span class="tcost">' + cost + '</span></div><div class="tbi">';
-    if (a.link) h += '<span class="tchip"><span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg" alt="">'; }).join('') + '</span>' + (a.join ? '合わせ技' : '力を借りる') + '</span>';
+    if (a.link) h += '<span class="tchip"><span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg?v=2" alt="">'; }).join('') + '</span>' + (a.join ? '合わせ技' : '力を借りる') + '</span>';
     if (a.kind === 'attack') {
       h += '<span class="tchip">' + SR.markIcon(a.all || a.scatter ? 'all' : 'aim', '') + (a.all ? '全体' : a.scatter ? 'ばらまき' : '一体') + (a.hits ? ' ×' + a.hits : '') + '</span>';
       SR.phenList(ph).forEach(function (p) { h += '<span class="tchip">' + SR.phenIcon(p) + p + '</span>'; });
@@ -1062,7 +1062,7 @@
     h += '<b' + (nm.length > 7 ? ' class="nlong xl"' : nm.length > 4 ? ' class="nlong"' : '') + '>' + nm + '</b>';
     var costH = '<span class="c' + (nm.length > 6 ? ' inrow' : '') + '">' + (o.cost ? o.cost : '0') + '</span>';   // 名前が長い技は、数字をアイコンの行の右はしへ
     if (nm.length <= 6) h += costH;
-    if (a.link) h += '<span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg" alt="' + SR.names[c] + '">'; }).join('') + '</span>';
+    if (a.link) h += '<span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_face.jpg?v=2" alt="' + SR.names[c] + '">'; }).join('') + '</span>';
     var tags = SR.typeBadge(o.id), foes = B.living();
     if (B.statusOn && a.inflict && foes.some(function (e) { return (e.weak === a.inflict[0] || e.weak2 === a.inflict[0]) && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
     if (B.statusOn && a.exploit && foes.some(function (e) { return e.st && e.st[a.exploit[0]] > 0; })) tags = '<span class="badge b-hit">今が狙い目</span>' + tags;
@@ -1446,14 +1446,14 @@
       tags += stIcons(v.st);
       if (res) {
         d.className = 'unit reserve' + (v.hp <= 0 ? ' down' : '');
-        d.innerHTML = '<div class="pic"><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div><div><div class="nm">' + u.name + '</div>' + bars(u, v) + '</div>';
+        d.innerHTML = '<div class="pic"><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div><div><div class="nm">' + u.name + '</div>' + bars(u, v) + '</div>';
         ra.appendChild(d);
       } else {
         d.className = 'unit hero hdu' + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '');
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
         d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + SR.iconizeTags(tags) + '</div></div>';
         pa.appendChild(d);
-        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_face.jpg" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + '<span class="lvt">Lv' + (u.lv || 1) + '</span>' + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
+        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_face.jpg?v=2" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + '<span class="lvt">Lv' + (u.lv || 1) + '</span>' + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }
       if (can.indexOf(u.id) >= 0 && !(st.mode !== 'target' && st.mode.indexOf('swap') < 0 && st.actor === u)) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(u.id); }; }
     });
@@ -1472,7 +1472,7 @@
       if (o.kind === 'enemy') {
         icon = beastSVG(B.unit(o.id));
         if (o.label === '大技') { tag = '大技'; hot = true; } else if (o.label === '溜め') { tag = '溜め'; hot = true; }
-      } else { icon = '<img src="img/' + SR.img[o.id] + '_face.jpg" alt="">'; tag = o.kind === 'support' ? '支援' : ''; }
+      } else { icon = '<img src="img/' + SR.img[o.id] + '_face.jpg?v=2" alt="">'; tag = o.kind === 'support' ? '支援' : ''; }
       if (o.label.indexOf('ブレイク明け') === 0 || o.label === '動けない') tag = '休み';
       return '<div class="oc o-' + o.kind + (i === 0 ? ' cur' : '') + '" style="opacity:' + Math.max(.4, 1 - i * .08).toFixed(2) + '" title="' + o.name + '：' + o.label + '"><div class="oi">' + icon + '</div>' + (tag ? '<span' + (hot ? ' class="hot"' : '') + '>' + tag + '</span>' : '') + '</div>';
     }).join('') + '</div>';
