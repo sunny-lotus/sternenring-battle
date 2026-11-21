@@ -198,7 +198,9 @@ SR.Battle = function (opts) {
   this.weakKnown = weakKnown;
   function downFront() { return heroes.filter(function (v) { return v.hp <= 0; }).sort(function (a, b) { return a.pos - b.pos; }); }   // 倒れている仲間（前線が先）
   this.downFront = downFront;
-  function available(u, id) { if (skills[id] && skills[id].kind === 'revive' && !downFront().length) return false; return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.mp >= price(u, skills[id]); }
+  function linkReady(a) { return !a.link || a.with.every(function (c) { var v = unit(c); return v && v.hp > 0 && !broken(v); }); }
+  this.linkReady = function (id) { return linkReady(skills[id] || {}); };
+  function available(u, id) { if (skills[id] && !linkReady(skills[id])) return false; if (skills[id] && skills[id].kind === 'revive' && !downFront().length) return false; return (id === 'basic' || id === 'scan' || id === 'wait' || id === 'light' || id === 'defend' || has(u, id) || id === statusSkillOf(u)) && u.mp >= price(u, skills[id]); }
   this.price = function (u, id) { return price(u, skills[id]); };
   this.available = available;
 
@@ -494,6 +496,14 @@ SR.Battle = function (opts) {
     u.boostN = bn; u.boostMul = bn ? boostCfg.mult[bn] : 1;
     var wasDown = downFront().slice();
     perform(u, a, target);
+    if (a.link) {
+      a.with.forEach(function (c) {
+        var v = unit(c); if (!v) return;
+        if (a.join && v.pos < 3) v.at += iv(v) * 0.35;   // 合わせ技：いっしょに動いたぶん、次の番が少し遅い
+        if (SR.growth && SR.growth.addBond) SR.growth.addBond(c, SR.BOND_PER_USE);
+        var bl = self.bondLog || (self.bondLog = {}); bl[c] = (bl[c] || 0) + SR.BOND_PER_USE;
+      });
+    }
     if (u.id !== 'N') { var ex = SR.actionExp(a); if (ex) { var lg = self.expLog[u.id] || (self.expLog[u.id] = {}); lg[ex[0]] = (lg[ex[0]] || 0) + ex[1]; } }   // 行動で体系の経験値
     u.boostN = 0; u.boostMul = 1;
     // 起き上がった人は、少しあとに番が来る

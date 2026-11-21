@@ -12,7 +12,7 @@ SR.loadout = (function () {
   function pool(id) {
     var act = Object.keys(SR.skills).filter(function (s) {
       var o = SR.skills[s].owner;
-      return o === id || (id !== 'N' && o === 'common');
+      return o === id || (id !== 'N' && o === 'common') || (id === 'N' && o === 'link');
     });
     var pas = Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === id; });
     return { act: act, pas: pas };

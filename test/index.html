@@ -1087,6 +1087,33 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #tip.hdtip .tchip:first-child::before{border-left:3px solid #e8c372}
 #tip.hdtip .tchip.brk::before{background:linear-gradient(180deg,rgba(30,110,170,.85),rgba(10,40,80,.92))}
 #tip.hdtip .tbi{gap:0!important;margin-left:4px}
+/* ===== 技の書：ナハトの連携技（仲間4人の柱） ===== */
+.lk-note{margin:4px 0 8px;padding:6px 12px;border-left:3px solid #e8c372;background:rgba(232,195,114,.12);color:#f6e2a8}
+.lk-pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.lk-col{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;background:linear-gradient(165deg,rgba(44,36,88,.6),rgba(10,10,28,.75));border:1px solid rgba(232,195,114,.35);border-radius:3px;--pc:#e8c372}
+.lk-col.c-V{--pc:#ffe14a}.lk-col.c-F{--pc:#ff7a3a}.lk-col.c-S{--pc:#7fd0ff}.lk-col.c-L{--pc:#fff3c4}
+.lk-col.off{opacity:.6}
+.lk-face{width:44px;height:44px;transform:rotate(45deg);overflow:hidden;border:1.5px solid var(--pc);border-radius:3px;margin:6px 0}
+.lk-face img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;transform:rotate(-45deg) scale(1.45)}
+.lk-nm{font-family:"Shippori Mincho B1",serif;font-weight:800;color:#f6e2a8}
+.lk-p{position:relative;width:34px;height:150px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.25);transform:skewY(-8deg);margin:6px 0}
+.lk-fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,var(--pc),rgba(255,255,255,.85));box-shadow:0 0 14px var(--pc);opacity:.85;transition:height .4s}
+.lk-t{position:absolute;left:-8px;right:-8px;height:0;border-top:1px dashed rgba(255,255,255,.45)}
+.lk-t b{position:absolute;right:-16px;top:-8px;font-size:11px;color:#9aa0c8}
+.lk-t.on{border-top:2px solid #fff}.lk-t.on b{color:#ffd27a}
+.lk-v{font-size:12px;color:#c9cfee}
+.lk-col .btn.mini{font-size:11px;padding:2px 6px;width:100%}
+.lk-list .lk-n{display:flex;flex-direction:column;gap:2px}
+.lk-f{display:flex;gap:2px}
+.lk-f img{width:22px;height:22px;border-radius:50%;object-fit:cover;object-position:50% 20%;border:1px solid rgba(232,195,114,.6)}
+.lk-k{font-size:11px;color:#ffd27a}
+/* 戦闘：連携技の札に仲間の顔 */
+#battle.hd #panel .sk .lkf{display:inline-flex;gap:1px;margin-left:4px;vertical-align:middle}
+#battle.hd #panel .sk .lkf img{width:max(calc(var(--u)*1.7),17px);height:max(calc(var(--u)*1.7),17px);border-radius:50%;object-fit:cover;object-position:50% 20%;border:1px solid #f2d48a}
+#battle.hd #panel .sk.t-lnk{--sc:#ffd27a}
+#tip.hdtip .tchip .lkf img{width:1.4em;height:1.4em;border-radius:50%;object-fit:cover;object-position:50% 20%;border:1px solid #f2d48a;margin-right:1px}
+.lk-pillars{gap:8px;margin-bottom:8px}.lk-col{padding:5px 6px;gap:3px}.lk-face{width:32px;height:32px;margin:4px 0}.lk-p{height:78px;width:28px;margin:4px 0}.lk-col .btn.mini{padding:1px 6px}
+.lk-list{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:5px!important}.lk-list .lk-n{padding:4px 6px!important}.lk-list .lk-n b{font-size:13px}.lk-list .lk-n .small{font-size:10px;line-height:1.3}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1216,14 +1243,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121n"></script>
-<script src="js/icons.js?v=t1121n"></script>
-<script src="js/engine.js?v=t1121n"></script>
-<script src="js/loadout.js?v=t1121n"></script>
-<script src="js/sound.js?v=t1121n"></script>
-<script src="js/fx.js?v=t1121n"></script>
-<script src="js/tree3d.js?v=t1121n"></script>
-<script src="js/ui.js?v=t1121n"></script>
-<script type="module" src="js/stage3d.js?v=t1121n"></script>
+<script src="js/data.js?v=t1121o"></script>
+<script src="js/icons.js?v=t1121o"></script>
+<script src="js/engine.js?v=t1121o"></script>
+<script src="js/loadout.js?v=t1121o"></script>
+<script src="js/sound.js?v=t1121o"></script>
+<script src="js/fx.js?v=t1121o"></script>
+<script src="js/tree3d.js?v=t1121o"></script>
+<script src="js/ui.js?v=t1121o"></script>
+<script type="module" src="js/stage3d.js?v=t1121o"></script>
 </body>
 </html>

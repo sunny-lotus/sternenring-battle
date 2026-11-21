@@ -337,6 +337,7 @@ SR.growth = (function () {
 SR.canLearn = function (tree, who, id) {
   var a = SR.skills[id]; if (!a) return SR.passives[id] ? SR.growth.hasP(who, id) : true;
   if (a.owner === 'common') return who !== 'N' && SR.growth.has(who, id);
+  if (a.owner === 'link') return who === 'N' && SR.growth.hasLink(id);
   if (a.owner === who) return SR.growth.hasU(who, id);
   return true;
 };
@@ -535,3 +536,65 @@ SR.describe = function (a) {
 SR.COMMON_NAME = '魔法';
 SR.UNIQUE_NAMES = { N: '刀剣術', V: '導機術', F: '黒魔術', S: '祈祷術', L: '大剣術' };   // 2026-11-21 先生が決定。フレアの黒魔術は「魔女の禁忌」から
 SR.uniqueName = function (id) { return SR.UNIQUE_NAMES[id] || '固有技'; };
+
+// ---- ナハトの連携技（2026-11-21 先生の設計）----
+// ・4本の柱は仲間4人（ヴォルト・フレア・セレナ・リヒト）。それぞれとの親密度が経験値。
+// ・その仲間に関するイベント／サブクエストで、はじめての連携技が使えるようになる（どのイベントかは未定）。
+// ・連携技を使うたびに、いっしょに出した仲間との親密度が上がり、次の技や3人・4人・5人の連携技が開く。
+// ・ほかのイベントやサブクエストでも親密度が上がることがある。連携技はもともと終盤に手に入る。
+// ・二人で出す「合わせ技」（join）と、ナハトが仲間の力を借りる技（lend）がある。
+// ・技の名前と数値は仮。ナハト自身は魔法を乗せない（刀の技）。仲間の力の色（現象）が乗る。
+SR.LINK_NAME = '連携技';
+SR.LINK_MATES = ['V', 'F', 'S', 'L'];
+SR.bondLv = [0, 40, 100];   // 親密度の段：1＝イベントで開く／2＝40／3＝100（柱の目もり）
+SR.BOND_PER_USE = 8;        // 1回使うと、いっしょに出した仲間それぞれ +8
+function link(id, cost, need, join, props) { skill(id, 'link', 0, cost, Object.assign({ link: true, need: need, join: join, with: Object.keys(need) }, props)); }
+// 二人（ナハト＋1人）
+link('雷光斬り', 20, { V: 1 }, false, { kind: 'attack', kd: 26, hp: 60, phen: '雷' });
+link('照準一閃', 26, { V: 2 }, true, { kind: 'attack', kd: 46, hp: 64, phen: ['斬撃', '雷'] });
+link('焔纏い斬り', 22, { F: 1 }, false, { kind: 'attack', kd: 16, hp: 84, phen: '炎' });
+link('炎嵐双撃', 32, { F: 2 }, true, { kind: 'attack', kd: 16, hp: 62, all: true, phen: ['斬撃', '炎'] });
+link('氷刃', 20, { S: 1 }, false, { kind: 'attack', kd: 28, hp: 50, phen: '冷気', inflict: ['freeze', 2] });
+link('守り刃', 28, { S: 2 }, true, { kind: 'heal', amount: 150, allies: true });
+link('光刃', 22, { L: 1 }, false, { kind: 'attack', kd: 22, hp: 72, phen: '光' });
+link('双剣交差', 30, { L: 2 }, true, { kind: 'attack', kd: 34, hp: 46, hits: 2, phen: ['斬撃', '強撃'] });
+// 三人以上
+link('雷炎の太刀', 34, { V: 2, F: 2 }, true, { kind: 'attack', kd: 30, hp: 120, phen: ['雷', '炎'] });
+link('白光の守り', 30, { S: 2, L: 2 }, true, { kind: 'teamKProtect' });
+link('四方斬り', 40, { V: 2, F: 2, L: 2 }, true, { kind: 'attack', kd: 24, hp: 90, all: true, phen: ['斬撃', '雷', '炎', '光'] });
+link('五人の一太刀', 50, { V: 3, F: 3, S: 3, L: 3 }, true, { kind: 'attack', kd: 60, hp: 200, brave: true, phen: ['斬撃', '雷', '炎', '冷気', '光'] });
+SR.isLink = function (id) { return !!SR.skills[id] && SR.skills[id].owner === 'link'; };
+
+// 親密度と、イベントで開いたかどうか（この端末に保存）
+(function () {
+  var G = SR.growth, KEY = 'sr-battle-bond-v1', b;
+  function fresh() { return { bond: { V: 0, F: 0, S: 0, L: 0 }, ev: { V: false, F: false, S: false, L: false } }; }
+  try { b = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!b || !b.bond) b = fresh();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch (e) {} }
+  G.linkOpen = function () { return G.era() >= 3; };          // 連携技は終盤から
+  G.bond = function (c) { return b.bond[c] || 0; };
+  G.linkEv = function (c) { return !!b.ev[c]; };
+  G.toggleLinkEv = function (c) { b.ev[c] = !b.ev[c]; save(); };
+  G.addBond = function (c, n) { if (!b.ev[c]) return; b.bond[c] = Math.min(SR.bondLv[2] + 20, (b.bond[c] || 0) + n); save(); };
+  // その仲間との段（0〜3）。イベントで1、親密度で2・3
+  G.bondLvOf = function (c) { if (!b.ev[c]) return 0; var v = b.bond[c] || 0; return v >= SR.bondLv[2] ? 3 : v >= SR.bondLv[1] ? 2 : 1; };
+  G.hasLink = function (id) {
+    var a = SR.skills[id]; if (!a || !a.link || !G.linkOpen()) return false;
+    return a.with.every(function (c) { return G.bondLvOf(c) >= a.need[c]; });
+  };
+  G.linkWhy = function (id) {
+    var a = SR.skills[id]; if (!a) return '';
+    if (!G.linkOpen()) return '終盤に手に入る';
+    if (G.hasLink(id)) return '';
+    return a.with.map(function (c) {
+      var lv = G.bondLvOf(c), nd = a.need[c];
+      if (lv >= nd) return '';
+      if (!b.ev[c]) return SR.names[c] + 'のイベント';
+      return SR.names[c] + 'との親密度あと' + Math.max(0, SR.bondLv[nd - 1] - (b.bond[c] || 0));
+    }).filter(Boolean).join('・');
+  };
+  var ua = G.unlockAll, rs = G.reset;
+  G.unlockAll = function () { ua(); SR.LINK_MATES.forEach(function (c) { b.ev[c] = true; b.bond[c] = SR.bondLv[2]; }); save(); };
+  G.reset = function () { rs(); b = fresh(); save(); };
+})();

@@ -24,9 +24,9 @@
   //   ユニーク・パッシブ：小さな札を並べる。くわしい説明は長押し（カーソルを乗せる）で出る
   function bookHTML(id, charTabs) {
     var G = SR.growth, era = G.era();
-    var tab = lo.btab || 'common'; if (id === 'N' && tab === 'common') tab = 'unique';
-    var h = '<div class="bk-top">' + charTabs + '<div class="row btabs">' + [['common', SR.COMMON_NAME], ['unique', SR.uniqueName(id)], ['passive', 'パッシブ']].map(function (b) {
-      return '<button class="btn' + (tab === b[0] ? ' sel' : '') + '" data-nav data-lo="btab" data-id="' + b[0] + '"' + (id === 'N' && b[0] === 'common' ? ' disabled' : '') + '>' + b[1] + '</button>';
+    var tab = lo.btab || 'common'; if (id === 'N' && tab === 'common') tab = 'link'; if (id !== 'N' && tab === 'link') tab = 'common';
+    var h = '<div class="bk-top">' + charTabs + '<div class="row btabs">' + (id === 'N' ? [['unique', SR.uniqueName(id)], ['link', SR.LINK_NAME], ['passive', 'パッシブ']] : [['common', SR.COMMON_NAME], ['unique', SR.uniqueName(id)], ['passive', 'パッシブ']]).map(function (b) {
+      return '<button class="btn' + (tab === b[0] ? ' sel' : '') + '" data-nav data-lo="btab" data-id="' + b[0] + '">' + b[1] + '</button>';
     }).join('') + '</div><div class="row bk-era"><span class="small">時期</span>' + [1, 2, 3].map(function (n) {
       return '<button class="btn mini' + (era === n ? ' sel' : '') + '" data-nav data-lo="era" data-id="' + n + '">' + SR.eraName[n] + '</button>';
     }).join('') + '<span class="gold">金貨 <b>' + G.gold() + '</b></span></div></div>';
@@ -121,6 +121,28 @@
         return '<div class="node' + (got ? ' got' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + s + '</b>' +
           (start ? '<span class="st">最初から</span>' : got ? '<button class="btn mini" data-nav data-lo="uniq" data-id="' + s + '">覚えた（試し）→外す</button>'
             : '<button class="btn mini" data-nav data-lo="uniq" data-id="' + s + '">イベント → 覚えたことにする</button>') + '</div>';
+      }).join('') + '</div></div>';
+    } else if (tab === 'link') {
+      // ---- ナハトの連携技：4本の柱は仲間4人。親密度で色がたまる ----
+      var MAXB = SR.bondLv[2] + 20, open = G.linkOpen();
+      h += '<div class="bk-full lk">';
+      if (!open) h += '<div class="lk-note">連携技は終盤に手に入る（上の「時期」を終盤にすると試せる）</div>';
+      h += '<div class="lk-pillars">' + SR.LINK_MATES.map(function (c) {
+        var v = G.bond(c), ev = G.linkEv(c), lv = G.bondLvOf(c);
+        var marks = [0, SR.bondLv[1], SR.bondLv[2]].map(function (t, i) { return '<i class="lk-t' + (lv > i ? ' on' : '') + '" style="bottom:' + (t / MAXB * 100) + '%"><b>' + (i + 1) + '</b></i>'; }).join('');
+        return '<div class="lk-col c-' + c + (ev ? '' : ' off') + '"><div class="lk-face"><img src="img/' + SR.img[c] + '_serious.jpg" alt=""></div><div class="lk-nm">' + SR.names[c] + '</div>' +
+          '<div class="lk-p"><div class="lk-fill" style="height:' + (ev ? Math.max(4, v / MAXB * 100) : 0) + '%"></div>' + marks + '</div>' +
+          '<div class="lk-v">' + (ev ? '親密度 ' + v : 'イベント未定') + '</div>' +
+          '<button class="btn mini" data-nav data-lo="lev" data-id="' + c + '">' + (ev ? '開いた（試し）→戻す' : 'イベント → 開いたことにする') + '</button>' +
+          (ev ? '<button class="btn mini" data-nav data-lo="lbond" data-id="' + c + '">親密度 +20（試し）</button>' : '') + '</div>';
+      }).join('') + '</div>';
+      var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s); });
+      h += '<div class="bk-grid lk-list">' + lks.map(function (s) {
+        var a = SR.skills[s], got = G.hasLink(s), why = G.linkWhy(s);
+        var faces = a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('');
+        return '<div class="node lk-n' + (got ? ' got' : ' lock') + '" data-tip="' + s + '" data-tipwho="N"><span class="lk-f">' + faces + '</span><b>' + s + '</b>' +
+          '<span class="lk-k">' + (a.with.length + 1) + '人・' + (a.join ? '合わせ技' : '力を借りる') + '</span>' +
+          '<span class="small">' + (got ? '使える' : why) + '</span></div>';
       }).join('') + '</div></div>';
     } else {
       var L0 = SR.loadout, mine0 = (lo.set && lo.set[id]) || [], cap0 = L0.cap(), used0 = L0.used(mine0);
@@ -229,6 +251,8 @@
     else if (act === 'ggold') SR.growth.addGold(500);
     else if (act === 'gall') SR.growth.unlockAll();
     else if (act === 'uniq') SR.growth.toggleU(lo.who, id);
+    else if (act === 'lev') SR.growth.toggleLinkEv(id);
+    else if (act === 'lbond') SR.growth.addBond(id, 20);
     else if (act === 'era') SR.growth.setEra(+id);
     else if (act === 'greset') SR.growth.reset();
     else if (act === 'tpl') lo.set = SR.loadout.fromKit(id);
@@ -685,7 +709,7 @@
   function menuHTML() {
     var u = st.actor, opts = B.options(u);
     var brave = opts.find(function (o) { return o.id === 'basic'; });
-    var nU = opts.filter(function (o) { return SR.isSkill(o.id) && !SR.isCommon(o.id); }).length, nC = opts.filter(function (o) { return SR.isSkill(o.id) && SR.isCommon(o.id); }).length;
+    var nU = opts.filter(function (o) { return SR.isSkill(o.id) && !SR.isCommon(o.id) && !SR.isLink(o.id); }).length, nC = opts.filter(function (o) { return SR.isSkill(o.id) && SR.isCommon(o.id); }).length, nL = opts.filter(function (o) { return SR.isLink(o.id); }).length;
     var defend = opts.find(function (o) { return o.id === 'defend'; });
     var scan = opts.find(function (o) { return o.id === 'scan'; });
     var h = actorTabs() + '<div class="phead">' + commonButtons() + '</div>' + warnHTML();
@@ -727,6 +751,7 @@
   function tipBattle(a, u, id) {
     var cost = B.price(u, id) || 0, ph = SR.attackPhen ? SR.attackPhen(u, a) : a.phen;
     var h = '<div class="tbh"><b>' + (a.label || a.id) + '</b><span class="tcost">' + cost + '</span></div><div class="tbi">';
+    if (a.link) h += '<span class="tchip"><span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="">'; }).join('') + '</span>' + (a.join ? '合わせ技' : '力を借りる') + '</span>';
     if (a.kind === 'attack') {
       h += '<span class="tchip">' + SR.markIcon(a.all || a.scatter ? 'all' : 'aim', '') + (a.all ? '全体' : a.scatter ? 'ばらまき' : '一体') + (a.hits ? ' ×' + a.hits : '') + '</span>';
       SR.phenList(ph).forEach(function (p) { h += '<span class="tchip">' + SR.phenIcon(p) + p + '</span>'; });
@@ -856,6 +881,7 @@
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '" data-tip="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
     h += '<b>' + (a.label || a.id) + '</b><span class="c">' + (o.cost ? o.cost : '0') + '</span>';
+    if (a.link) h += '<span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('') + '</span>';
     var tags = SR.typeBadge(o.id), foes = B.living();
     if (B.statusOn && a.inflict && foes.some(function (e) { return (e.weak === a.inflict[0] || e.weak2 === a.inflict[0]) && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
     if (B.statusOn && a.exploit && foes.some(function (e) { return e.st && e.st[a.exploit[0]] > 0; })) tags = '<span class="badge b-hit">今が狙い目</span>' + tags;
@@ -878,14 +904,16 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
-    h = actorTabs() + '<div class="row" style="margin-top:0">' + ['unique', 'common'].filter(function (k) { return k === 'unique' || u.id !== 'N'; }).map(function (k) { return '<button class="btn' + (st.list === k ? ' sel' : '') + '" data-nav data-act="list" data-id="' + k + '">' + (k === 'unique' ? SR.uniqueName(u.id) : SR.COMMON_NAME) + '</button>'; }).join('') + '</div>' + boostRow(u) +
+    h = actorTabs() + '<div class="row" style="margin-top:0">' + (u.id === 'N' ? ['unique'].concat(opts.some(function (o) { return SR.isLink(o.id); }) ? ['link'] : []) : ['unique', 'common']).map(function (k) { return '<button class="btn' + (st.list === k ? ' sel' : '') + '" data-nav data-act="list" data-id="' + k + '">' + (k === 'unique' ? SR.uniqueName(u.id) : k === 'link' ? SR.LINK_NAME : SR.COMMON_NAME) + '</button>'; }).join('') + '</div>' + boostRow(u) +
       '<div class="row cattabs">' + [['all', '全部'], ['skillAtk', '攻撃'], ['skillDef', '守備'], ['skillSup', '回復・補助']].map(function (c) { return '<button class="btn' + ((st.cat || 'all') === c[0] ? ' sel' : '') + '" data-nav data-act="cat" data-id="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
     var sk = opts.filter(function (o) { return SR.isSkill(o.id) && (!st.cat || st.cat === 'all' || SR.category(o.id) === st.cat); }).sort(function (a, b) { return rank(a) - rank(b); });
-    var uni = sk.filter(function (o) { return !SR.isCommon(o.id); }), com = sk.filter(function (o) { return SR.isCommon(o.id); });
+    var uni = sk.filter(function (o) { return !SR.isCommon(o.id) && !SR.isLink(o.id); }), com = sk.filter(function (o) { return SR.isCommon(o.id); }), lnk = sk.filter(function (o) { return SR.isLink(o.id); });
+    if (st.list === 'link') { uni = []; com = []; } else lnk = [];
+    if (lnk.length) h += '<div class="grp">' + SR.LINK_NAME + '</div><div class="list">' + lnk.map(skillButton).join('') + '</div>';
     if (st.list !== 'common' && uni.length) h += '<div class="grp">' + SR.uniqueName(u.id) + '</div><div class="list">' + uni.map(skillButton).join('') + '</div>';
     if (st.list !== 'unique' && com.length) h += '<div class="grp">' + SR.COMMON_NAME + '</div><div class="list">' + com.map(skillButton).join('') + '</div>';
-    if (!(st.list === 'common' ? com : st.list === 'unique' ? uni : sk).length) h += '<div class="small">この種類の技はまだない。</div>';
+    if (!(st.list === 'link' ? lnk : st.list === 'common' ? com : st.list === 'unique' ? uni : sk).length) h += '<div class="small">この種類の技はまだない。</div>';
     return h + '<div class="row"><button class="btn" data-nav data-back data-act="toMenu">戻る</button></div>';
   }
   function targetHTML() {
@@ -1308,7 +1336,7 @@
   // 吹き出しの選択肢（右はし）
   function menuHTML() {
     var u = st.actor, opts = B.options(u);
-    var nU = opts.filter(function (o) { return SR.isSkill(o.id) && !SR.isCommon(o.id); }).length, nC = opts.filter(function (o) { return SR.isSkill(o.id) && SR.isCommon(o.id); }).length;
+    var nU = opts.filter(function (o) { return SR.isSkill(o.id) && !SR.isCommon(o.id) && !SR.isLink(o.id); }).length, nC = opts.filter(function (o) { return SR.isSkill(o.id) && SR.isCommon(o.id); }).length, nL = opts.filter(function (o) { return SR.isLink(o.id); }).length;
     var brave = opts.find(function (o) { return o.id === 'basic'; }), defend = opts.find(function (o) { return o.id === 'defend'; }), scan = opts.find(function (o) { return o.id === 'scan'; });
     var sw = B.swapped ? '<button class="btn" data-nav data-act="unswap">' + (B.swapped.front ? '並べ替え' : '交代') + 'を取り消す</button>' : '<button class="btn" data-nav data-act="swap"' + (swapOutCands().length ? '' : ' disabled') + '>交代</button>';
     var h = '<div class="hdrow">' + sw + '<button class="btn" data-nav data-act="auto">おまかせ</button><button class="btn" data-nav data-act="autoOn">自動</button></div>';
@@ -1323,7 +1351,7 @@
     h += '<div class="bubs">' +
       bub('atk', 'skill', 'basic', '攻撃', (st.boost ? (1 + st.boost) + '回攻撃・' : 'ブレイブ攻撃・') + (brave.cost ? '精神力' + brave.cost : '消費なし'), null, brave.ok, true) +
       bub('', 'list', 'unique', SR.uniqueName(u.id), SR.names[u.id] + 'だけの技', nU, nU > 0) +
-      (u.id === 'N' ? '' : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
+      (u.id === 'N' ? (nL ? bub('lnk', 'list', 'link', SR.LINK_NAME, '仲間と出す技', nL, nL > 0) : '') : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
       bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) +
       (scan ? bub('', 'skill', 'scan', '調べる', '敵の弱点がわかる', null, scan.ok) : '') + '</div>';
     return h;
