@@ -369,8 +369,8 @@
     group('アイコン：現象（暗い丸に色の形）', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
     group('アイコン：状態（色で塗った丸に白い形）', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
     group('アイコン：しるし', MK.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }));
-    group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にするとブレイクゲージが大きく削れる'),
-      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技でブレイクゲージが多く削れる'),
+    group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い輪の状態（弱点）', 'その敵の弱点。この状態にするとブレイクゲージが大きく削れる'),
+      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象（急所）', 'その敵の急所。この現象の技でブレイクゲージが多く削れる'),
       row('<span class="stexp">' + SR.statusIcon('burn') + '</span>', '金の枠の状態', 'その状態の相手に、威力が上がる技（技の札）')]);
     ul.insertAdjacentHTML('beforeend', h);
   }
@@ -526,7 +526,7 @@
     for (var i = 0; i < 140; i++) h += '<circle cx="' + (rnd() * 1200).toFixed(1) + '" cy="' + (rnd() * 520).toFixed(1) + '" r="' + (rnd() * 1.4 + .3).toFixed(2) + '" opacity="' + (rnd() * .7 + .2).toFixed(2) + '"/>';
     if (g) g.innerHTML = h;
     var p0 = null; try { p0 = sessionStorage.getItem('sr-page'); } catch (e) {}
-    if (p0 && document.getElementById('pg-' + p0)) { $('title').setAttribute('data-page', p0); setTimeout(function () { try { if (p0 === 'menu') drawMenu(); else if (p0 === 'status') drawStatus(); else if (p0 === 'dev') drawDevMenu(); } catch (e) {} }, 0); }
+    if (p0 && document.getElementById('pg-' + p0)) { $('title').setAttribute('data-page', p0); setTimeout(function () { try { if (p0 === 'menu') drawMenu(); else if (p0 === 'status') drawStatus(); else if (p0 === 'dev') drawDevMenu(); else if (p0 === 'help') paginateHelp(); else if (p0 === 'book') drawLoadout(); } catch (e) {} }, 0); }
   })();
 
   function start() {
