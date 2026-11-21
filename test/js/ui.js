@@ -773,18 +773,38 @@
     var th = tipEl.offsetHeight, x = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
     var y = r.top - th - 8; if (y < 8) y = Math.min(window.innerHeight - th - 8, r.bottom + 8);
     tipEl.style.left = x + 'px'; tipEl.style.top = Math.max(8, y) + 'px';
+    if (el.closest('#battle.hd #panel')) {   // 右はしの吹き出し・技の札は、押す所をかくさないよう左に出す
+      tw = Math.min(380, Math.max(200, r.left - 18)); tipEl.style.width = tw + 'px'; th = tipEl.offsetHeight;
+      tipEl.style.left = Math.max(8, r.left - tw - 10) + 'px'; tipEl.style.top = Math.max(8, Math.min(window.innerHeight - th - 8, r.top + r.height / 2 - th / 2)) + 'px';
+    }
   }
-  function hideTip() { tipEl.classList.add('hidden'); tipFor = null; }
+  function hideTip() { tipEl.classList.add('hidden'); tipFor = null; document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); }); }
   document.addEventListener('pointerover', function (e) { if (e.pointerType !== 'mouse') return; var el = e.target.closest && e.target.closest('[data-tip]'); if (el && el !== tipFor) showTip(el); else if (!el && tipFor) hideTip(); });
   document.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse') return;
     var el = e.target.closest && e.target.closest('[data-tip]'); clearTimeout(tipTimer); if (!el) { hideTip(); return; }
     var sx = e.clientX, sy = e.clientY;
     tipTimer = setTimeout(function () { showTip(el); tipSuppress = true; }, 450);   // 長押しで出す（そのときは押したことにしない）
-    function cancel(ev) { if (ev.type === 'pointermove' && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return; clearTimeout(tipTimer); document.removeEventListener('pointermove', cancel); document.removeEventListener('pointerup', cancel); document.removeEventListener('pointercancel', cancel); if (ev.type !== 'pointermove' && tipFor) setTimeout(hideTip, 1600); }
+    function cancel(ev) { if (ev.type === 'pointermove' && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return; clearTimeout(tipTimer); document.removeEventListener('pointermove', cancel); document.removeEventListener('pointerup', cancel); document.removeEventListener('pointercancel', cancel); if (ev.type !== 'pointermove' && tipFor) setTimeout(function () { if (!document.querySelector('#battle .armed')) hideTip(); }, 1600); }
     document.addEventListener('pointermove', cancel); document.addEventListener('pointerup', cancel); document.addEventListener('pointercancel', cancel);
   });
   document.addEventListener('click', function (e) { if (tipSuppress) { tipSuppress = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  // タッチでは、技は1回目で説明、2回目で繰り出す（マウスはカーソルを乗せれば説明が出るので1回で出す）
+  var lastPtr = 'mouse';
+  document.addEventListener('pointerdown', function (e) { lastPtr = e.pointerType || 'mouse'; }, true);
+  document.addEventListener('keydown', function () { lastPtr = 'key'; }, true);
+  document.addEventListener('click', function (e) {
+    if (lastPtr !== 'touch' && lastPtr !== 'pen') return;
+    var el = e.target.closest && e.target.closest('#battle [data-act="skill"][data-tip]');
+    if (!el || el.disabled) return;
+    if (tipFor !== el) {
+      e.stopPropagation(); e.preventDefault();
+      document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); });
+      showTip(el); el.classList.add('armed');
+      tipEl.insertAdjacentHTML('beforeend', '<div class="tapagain">もう一度タップで決定</div>');
+      if (SR.sound && SR.sound.se) SR.sound.se('ok');
+    } else { hideTip(); }
+  }, true);
   document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('[data-tip]')) e.preventDefault(); });
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '" data-tip="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
@@ -799,7 +819,7 @@
     if (ph && a.kind === 'attack') { var ms = foes.map(function (e) { return SR.affMul(e, ph, pc); }), am = ms.length ? Math.max.apply(null, ms) : 1, an = ms.length ? Math.min.apply(null, ms) : 1; tags += '<span class="badge b-sys">' + SR.phenText(ph) + '</span>'; if (am > 1) tags = '<span class="badge b-hit">よく効く相手がいる</span>' + tags; else if (an < 1 && foes.length === 1) tags += '<span class="badge b-risk">効きにくい</span>'; if (foes.some(function (e) { return e.kPhen && SR.phenList(ph).some(function (p) { return e.kPhen[p]; }); })) tags = '<span class="badge b-hit">急所を突ける</span>' + tags; }
     if (a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') tags += '<span class="badge ' + (SR.weight(a) < 1 ? 'b-buff' : 'b-charge') + '">' + wl + '</span>';
-    if (tags) h += '<div>' + tags + '</div>';
+    if (tags) h += '<div class="sktags">' + SR.iconizeTags(tags) + '</div>';
     h += stLine(a);
     if (a.kind === 'attack') {
       var hits = a.hits || 1;
@@ -1131,7 +1151,7 @@
         var r = B.estimate(st.actor.id, tgtSkill, e.id);
         if (r) est = '<div class="est">' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : r.kd))) + (r.breaks ? ' <b>BREAK</b>' : '') + '　-' + Math.round(r.dmg).toLocaleString() + (r.kills ? ' <b>KO</b>' : '') + (r.aff > 1 ? ' ▲' : r.aff < 1 ? ' ▼' : '') + '</div>';
       }
-      d.innerHTML = '<div class="spr">' + beastSVG(e) + '</div><div class="lab"><span class="nm">' + e.name + '</span>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + bars(e, v) + '<div class="tgs">' + tags + '</div>' + est + '</div>';
+      d.innerHTML = '<div class="spr">' + beastSVG(e) + '</div><div class="lab"><span class="nm">' + e.name + '</span>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + bars(e, v) + '<div class="tgs">' + SR.iconizeTags(tags) + '</div>' + est + '</div>';
       var lp = lastPos[d.id]; if (lp) { d.style.width = lp[0]; d.style.height = lp[1]; d.style.left = lp[2]; d.style.top = lp[3]; }
       if (can.indexOf(e.id) >= 0) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(e.id); }; }
       ea.appendChild(d);
@@ -1159,7 +1179,7 @@
       } else {
         d.className = 'unit hero hdu' + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '');
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
-        d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + tags + '</div></div>';
+        d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + SR.iconizeTags(tags) + '</div></div>';
         pa.appendChild(d);
         hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }

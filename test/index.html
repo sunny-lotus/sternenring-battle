@@ -983,6 +983,26 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #battle.hd.m-swap #bottom{bottom:2%!important;top:9%!important}#battle.hd.m-swap #cutin{display:none!important}
 #battle.hd #panel .who{flex-wrap:nowrap!important}#battle.hd #panel .who>.btn{width:auto!important;flex:none!important}
 #battle.hd #partyHud .hc{width:max(calc(var(--u)*18),172px)}#battle.hd #partyHud .hn .fm{font-size:max(calc(var(--u)*.75),9px);padding:0 4px;margin-left:3px}
+/* ===== アイコン（現象・しるし・弱点） ===== */
+#battle.hd .phi,#battle.hd .mki{display:inline-grid;place-items:center;width:max(calc(var(--u)*1.9),18px);height:max(calc(var(--u)*1.9),18px);vertical-align:middle;margin:0 1px}
+#battle.hd .phi svg,#battle.hd .mki svg{width:84%;height:84%;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.8))}
+#battle.hd .phi{border-radius:50%;background:radial-gradient(circle,#2a2550 0%,#14122e 70%);box-shadow:0 0 0 1px rgba(232,195,114,.55)}
+#battle.hd .phi.kp{box-shadow:0 0 0 2px #ff5a64,0 0 6px rgba(255,90,100,.8)}
+#battle.hd .mki.b-hit svg{filter:drop-shadow(0 0 3px rgba(255,210,122,.9))}
+#battle.hd .mki.hot{animation:mkhot .8s ease-in-out infinite}
+@keyframes mkhot{50%{transform:scale(1.25)}}
+#battle.hd .badge.b-weak{display:inline-flex;align-items:center;gap:1px;padding:1px 3px!important;background:rgba(60,8,16,.85)!important;border:1.5px solid #ff5a64!important;border-radius:50%!important;box-shadow:0 0 6px rgba(255,90,100,.7);color:transparent}
+#battle.hd .badge.b-weak .sti{width:max(calc(var(--u)*1.5),15px);height:max(calc(var(--u)*1.5),15px)}
+#battle.hd .hdu .lab .tgs{gap:3px;align-items:center}
+#battle.hd #panel .sk .sktags{display:flex;gap:2px;align-items:center;margin:2px 0}
+#battle.hd #panel .sk .mki{display:none}
+#battle.hd #panel .sk .mki.b-hit,#battle.hd #panel .sk .mki.b-risk{display:inline-grid}
+#battle.hd #panel .sk .phi,#battle.hd #panel .sk .mki{width:max(calc(var(--u)*1.7),17px);height:max(calc(var(--u)*1.7),17px)}
+.tapagain{margin-top:6px;padding-top:5px;border-top:1px solid rgba(232,195,114,.4);text-align:center;color:#ffd27a;font-weight:800;letter-spacing:.08em}
+#battle.hd .armed{outline:2px solid #fff3c4;outline-offset:1px;animation:armed .9s ease-in-out infinite}
+@keyframes armed{50%{outline-color:#ffb43c}}
+#battle.hd .bub.armed{background:linear-gradient(90deg,rgba(138,100,32,.45) 0%,rgba(168,120,40,.85) 50%,rgba(70,48,10,.95) 100%)!important;color:#fff6dc}
+#battle.hd #panel .sk .sktags .badge{display:none!important}#battle.hd #panel .sk .sktags .badge.b-form{display:inline-block!important}#battle.hd #panel .sk .sktags .badge.b-form:not([class*=x])~.badge{display:none}#battle.hd #panel .sk .mki.b-form{display:inline-grid}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1112,14 +1132,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121d"></script>
-<script src="js/icons.js?v=t1121d"></script>
-<script src="js/engine.js?v=t1121d"></script>
-<script src="js/loadout.js?v=t1121d"></script>
-<script src="js/sound.js?v=t1121d"></script>
-<script src="js/fx.js?v=t1121d"></script>
-<script src="js/tree3d.js?v=t1121d"></script>
-<script src="js/ui.js?v=t1121d"></script>
-<script type="module" src="js/stage3d.js?v=t1121d"></script>
+<script src="js/data.js?v=t1121e"></script>
+<script src="js/icons.js?v=t1121e"></script>
+<script src="js/engine.js?v=t1121e"></script>
+<script src="js/loadout.js?v=t1121e"></script>
+<script src="js/sound.js?v=t1121e"></script>
+<script src="js/fx.js?v=t1121e"></script>
+<script src="js/tree3d.js?v=t1121e"></script>
+<script src="js/ui.js?v=t1121e"></script>
+<script type="module" src="js/stage3d.js?v=t1121e"></script>
 </body>
 </html>
