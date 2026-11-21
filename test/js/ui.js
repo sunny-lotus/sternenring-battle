@@ -1527,6 +1527,27 @@
     return h + '</div><div class="swnote">前衛ほど狙われやすい</div><div class="row"><button class="btn" data-nav data-back data-act="toMenu">やめる</button></div>';
   }
 
+  // カメラ：画面の左側（ボタンや札のない所）をドラッグすると回る。ダブルタップで元にもどす
+  (function () {
+    var drag = null, lastTap = 0;
+    var SKIP = 'button,.hdu,#panel,#partyHud,#reserveArea,#order,.sndbox,#icoBtn,#icovl,#tip,#banner,#topline,#intro,.bub';
+    document.addEventListener('pointerdown', function (e) {
+      var bt = $('battle'); if (!bt || bt.classList.contains('hidden') || !bt.classList.contains('hd') || !SR.stage3d || !SR.stage3d.drag) return;
+      if (e.target.closest && e.target.closest(SKIP)) return;
+      if (!bt.contains(e.target)) return;
+      var r = bt.getBoundingClientRect(); if (e.clientX > r.left + r.width * .6) return;   // 左側だけ
+      var now = Date.now(); if (now - lastTap < 320) { SR.stage3d.resetView(); lastTap = 0; return; } lastTap = now;
+      drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    }, true);
+    document.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+      SR.stage3d.drag(-dx * .006, dy * .004);
+    }, true);
+    function end(e) { if (drag && e.pointerId === drag.id) drag = null; }
+    document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true);
+  })();
+
   // 吹き出しの選択肢（右はし）
   function menuHTML() {
     var u = st.actor, opts = B.options(u);

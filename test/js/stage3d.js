@@ -192,6 +192,10 @@ function cast(id) {   // 技を出す人のまわりに光
   sparks(u.m.position.x, u.h * .3, u.base[1], 30, u.hero ? ['#ffe08a', '#ffffff'] : ['#ff5a64', '#ffb0a0'], 2.2);
   ring(u.m.position.x, u.base[1], u.hero ? '#ffd27a' : '#ff5a64', 2.2, .5);
 }
+// カメラを手で回す（dx・dy はラジアン）。reset で元にもどす
+let tYaw = 0, tPitch = 0, uYaw = 0, uPitch = 0; const dv = new THREE.Vector3();
+function drag(dx, dy) { tYaw = Math.max(-1.4, Math.min(1.4, tYaw + dx)); tPitch = Math.max(-.35, Math.min(.6, tPitch + dy)); }
+function resetView() { tYaw = 0; tPitch = 0; }
 function intro(sec) { introT0 = clock.getElapsedTime(); introDur = sec || 3; }
 function fxFrame(t, dt) {
   if (spk) {
@@ -254,7 +258,14 @@ function frame() {
     const q = (t - introT0) / introDur, e = q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2, a = (1 - e) * 2.4, R = 8.5 + 5 * e;
     camP.set(Math.sin(a) * R + .6 * e, 6.5 - 4 * e, Math.cos(a) * R); camL.set(-3 + 3.4 * e, 1.2 + .7 * e, -2.5 * e);
   } else { camP.lerp(tP, k); camL.lerp(tL, k); }
-  camera.position.copy(camP); camera.lookAt(camL);
+  // 手で回したぶん（左側のドラッグ）。見ている点のまわりを回る
+  uYaw += (tYaw - uYaw) * .2; uPitch += (tPitch - uPitch) * .2;
+  if (Math.abs(uYaw) > .001 || Math.abs(uPitch) > .001) {
+    dv.copy(camP).sub(camL); var r = dv.length(), a = Math.atan2(dv.x, dv.z) + uYaw, el = Math.asin(Math.max(-.95, Math.min(.95, dv.y / r))) + uPitch;
+    el = Math.max(.05, Math.min(1.1, el));
+    camera.position.set(camL.x + Math.sin(a) * Math.cos(el) * r, camL.y + Math.sin(el) * r, camL.z + Math.cos(a) * Math.cos(el) * r);
+  } else camera.position.copy(camP);
+  camera.lookAt(camL);
   Object.keys(units).forEach((id, i) => {
     const u = units[id], s = u.state || {};
     u.m.quaternion.copy(camera.quaternion);
@@ -278,5 +289,5 @@ function frame() {
 function start() { if (!scene) build(); resize(); if (!running) { running = true; frame(); } }
 function stop() { running = false; }
 
-SR.stage3d = { setup, sync, hit, cast, intro, rect, focus, shot, setCamMode, start, stop, resize, onFrame: (cb) => { onFrame = cb; } };
+SR.stage3d = { setup, sync, hit, cast, intro, drag, resetView, rect, focus, shot, setCamMode, start, stop, resize, onFrame: (cb) => { onFrame = cb; } };
 if (SR.stage3dReady) SR.stage3dReady();

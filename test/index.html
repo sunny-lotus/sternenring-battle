@@ -1310,6 +1310,15 @@ svg.coin.cbig{width:18px;height:18px}
 .money.mnum .ag{color:#dfe6f5;text-shadow:0 0 5px rgba(220,230,255,.45)}
 .money.mnum .cu{color:#e89a5c;text-shadow:0 0 5px rgba(230,140,80,.45)}
 .money.mnum b+b{margin-left:1px}
+/* 状態アイコンが二重に傾いて楕円になっていたのを直す（傾けもどすのは1回だけ） */
+#battle.hd .hdu .lab .tgs>.badge .sti svg,#battle.hd #panel .sk .sktags>.stinf .sti svg,#battle.hd #panel .sk .sktags>.stexp .sti svg,#battle.hd .hdu .lab .tgs>.badge .phi svg{transform:none!important}
+/* 前・中・後は窓の左上の外に */
+#battle.hd #partyHud .rl{top:-15px!important;left:6px!important;padding:1px 7px!important;font-size:max(calc(var(--u)*.85),11px)!important}
+#battle.hd #partyHud .hn .fm{top:-15px!important}
+#battle.hd #partyHud{bottom:max(1.5%,6px)}
+#battle.hd #partyHud .hc{margin-top:12px}
+#battle.hd{touch-action:none}
+#battle.hd #panel,#icovl .iob{touch-action:pan-y}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1475,14 +1484,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122j"></script>
-<script src="js/icons.js?v=t1122j"></script>
-<script src="js/engine.js?v=t1122j"></script>
-<script src="js/loadout.js?v=t1122j"></script>
-<script src="js/sound.js?v=t1122j"></script>
-<script src="js/fx.js?v=t1122j"></script>
-<script src="js/tree3d.js?v=t1122j"></script>
-<script src="js/ui.js?v=t1122j"></script>
-<script type="module" src="js/stage3d.js?v=t1122j"></script>
+<script src="js/data.js?v=t1122k"></script>
+<script src="js/icons.js?v=t1122k"></script>
+<script src="js/engine.js?v=t1122k"></script>
+<script src="js/loadout.js?v=t1122k"></script>
+<script src="js/sound.js?v=t1122k"></script>
+<script src="js/fx.js?v=t1122k"></script>
+<script src="js/tree3d.js?v=t1122k"></script>
+<script src="js/ui.js?v=t1122k"></script>
+<script type="module" src="js/stage3d.js?v=t1122k"></script>
 </body>
 </html>
