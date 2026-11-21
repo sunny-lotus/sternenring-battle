@@ -636,7 +636,7 @@
   function commonButtons() {
     var s = B.swapped
       ? '<button class="btn" data-nav data-act="unswap">' + (B.swapped.front ? '並べ替え' : '交代') + 'を取り消す</button>'
-      : '<button class="btn" data-nav data-act="swap"' + (swapOutCands().length ? '' : ' disabled') + '>交代<span class="lg">・並べ替え</span></button>';
+      : '<button class="btn" data-nav data-act="swap"' + ((st.actor && B.heroes.some(function (v) { return B.canSwap(st.actor.id, v.id); }) ? '' : ' disabled')) + '>交代<span class="lg">・並べ替え</span></button>';
     return '<div class="row">' + s +
       '<button class="btn" data-nav data-act="auto">おまかせ<span class="lg">（この番）</span></button>' +
       '<button class="btn" data-nav data-act="autoOn">自動で進める</button></div>';
@@ -900,7 +900,7 @@
     i = i < 0 ? 0 : (i + dir + list.length) % list.length;
     openMenu(list[i]);
   }
-  function startSwap() { if (B.swapped) return unswap(); if (!swapOutCands().length) return; st.mode = 'swap1'; st.swapOut = null; draw(); }
+  function startSwap() { if (B.swapped) return unswap(); if (!st.actor) return; st.swapOut = st.actor.id; if (!swapInCands().length) return; st.mode = 'swap2'; draw(); }
 
   $('panel').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-act]'); if (!b || b.disabled) return;
@@ -1161,7 +1161,7 @@
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
         d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + tags + '</div></div>';
         pa.appendChild(d);
-        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn">' + u.name + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
+        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }
       if (can.indexOf(u.id) >= 0 && !(st.mode !== 'target' && st.mode.indexOf('swap') < 0 && st.actor === u)) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(u.id); }; }
     });
@@ -1228,6 +1228,16 @@
     return '<div class="bst lv' + n + '"><span class="bt">ブースト</span><span class="gems">' + g + '</span><span class="be">' + eff + '</span></div>';
   }
 
+  // 交代：番の人だけが、控えと入れ替わるか、前線の中で場所を入れ替える
+  function swapHTML() {
+    var u = B.unit(st.swapOut), list = swapInCands();
+    var h = '<div class="tghead">' + u.name + '（' + ROLE[u.pos] + '）と入れ替え</div><div class="who">';
+    list.forEach(function (v) {
+      h += '<button class="btn tgt swp" data-nav data-act="swapPick" data-id="' + v.id + '"><span>' + roleTag(v) + v.name + '</span></button>';
+    });
+    return h + '</div><div class="swnote">前衛ほど狙われやすい</div><div class="row"><button class="btn" data-nav data-back data-act="toMenu">やめる</button></div>';
+  }
+
   // 吹き出しの選択肢（右はし）
   function menuHTML() {
     var u = st.actor, opts = B.options(u);
@@ -1255,7 +1265,7 @@
   function draw(snap) {
     renderField(snap);
     drawCutin();
-    $('battle').classList.toggle('res', st.mode === 'result'); $('battle').classList.toggle('m-list', st.mode === 'list'); $('battle').classList.toggle('m-target', st.mode === 'target'); $('battle').setAttribute('data-boost', st.mode === 'menu' || st.mode === 'list' || st.mode === 'target' ? st.boost || 0 : 0);
+    $('battle').classList.toggle('res', st.mode === 'result'); $('battle').classList.toggle('m-list', st.mode === 'list'); $('battle').classList.toggle('m-target', st.mode === 'target'); $('battle').classList.toggle('m-swap', st.mode === 'swap1' || st.mode === 'swap2'); $('battle').setAttribute('data-boost', st.mode === 'menu' || st.mode === 'list' || st.mode === 'target' ? st.boost || 0 : 0);
     var p = $('panel'), h = '', m = st.mode;
     if (m === 'idle') h = idleHTML();
     else if (m === 'menu') h = menuHTML();

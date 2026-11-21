@@ -576,6 +576,7 @@ SR.Battle = function (opts) {
   this.canSwap = function (id1, id2) {
     var a = unit(id1), b = unit(id2);
     if (self.curKind !== 'hero' || self.swapped || !a || !b || a === b || !a.hero || !b.hero || (broken(a) && a.hp > 0) || (broken(b) && b.hp > 0)) return false;
+    if (a !== self.cur && b !== self.cur) return false;   // 交代・並べ替えは、番の人が入れ替わるときだけ
     if (a.pos < 3 && b.pos < 3) return true;
     if (a.pos >= 3 && b.pos >= 3) return false;
     var res = a.pos >= 3 ? a : b;

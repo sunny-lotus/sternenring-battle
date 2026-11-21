@@ -965,6 +965,24 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #battle.hd #panel .sk .badge.b-form{display:inline-block}
 #battle.hd .hero .lab .b-form{display:none}
 #battle.hd #partyHud .hn{white-space:nowrap;overflow:hidden}
+/* ===== 前衛・中衛・後衛 ===== */
+#battle.hd #partyHud .rl{display:inline-block;padding:0 4px;margin-right:5px;font-size:.78em;font-weight:800;color:#fff;transform:skewX(-12deg);vertical-align:1px}
+#battle.hd #partyHud .rl{background:#4a5078;box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+#battle.hd #partyHud .rl.r0{background:linear-gradient(135deg,#ff7b80,#8a1a24)}
+#battle.hd #partyHud .rl.r1{background:linear-gradient(135deg,#ffd27a,#8a6420)}
+#battle.hd #partyHud .rl.r2{background:linear-gradient(135deg,#7fd0ff,#1d5d9a)}
+#battle.hd #partyHud .rl{font-family:"Shippori Mincho B1",serif}
+#battle.hd #partyHud .rl{text-indent:0}
+#battle.hd #partyHud .rl::first-letter{}
+#battle.hd #partyHud .rl{line-height:1}
+#battle.hd #panel .swp{border-left-color:#e8c372!important;color:#f6e2a8}
+#battle.hd #panel .swp .role{display:inline-block;font-size:.6em;padding:1px 6px;margin-right:8px;vertical-align:3px;transform:skewX(-12deg);color:#fff;background:#4a5078;letter-spacing:.05em}
+#battle.hd #panel .swp .role.r0{background:#a8323c}#battle.hd #panel .swp .role.r1{background:#8a6420}#battle.hd #panel .swp .role.r2{background:#1d5d9a}#battle.hd #panel .swp .role.r3{background:#3a4060}
+#battle.hd #panel .swnote{font-size:max(calc(var(--u)*.9),11px);color:#c9cfee;padding-right:6px}
+#battle.hd #panel .who{display:flex!important;flex-direction:column;align-items:flex-end;gap:5px;grid-template-columns:none!important}
+#battle.hd.m-swap #bottom{bottom:2%!important;top:9%!important}#battle.hd.m-swap #cutin{display:none!important}
+#battle.hd #panel .who{flex-wrap:nowrap!important}#battle.hd #panel .who>.btn{width:auto!important;flex:none!important}
+#battle.hd #partyHud .hc{width:max(calc(var(--u)*18),172px)}#battle.hd #partyHud .hn .fm{font-size:max(calc(var(--u)*.75),9px);padding:0 4px;margin-left:3px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1094,14 +1112,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121c"></script>
-<script src="js/icons.js?v=t1121c"></script>
-<script src="js/engine.js?v=t1121c"></script>
-<script src="js/loadout.js?v=t1121c"></script>
-<script src="js/sound.js?v=t1121c"></script>
-<script src="js/fx.js?v=t1121c"></script>
-<script src="js/tree3d.js?v=t1121c"></script>
-<script src="js/ui.js?v=t1121c"></script>
-<script type="module" src="js/stage3d.js?v=t1121c"></script>
+<script src="js/data.js?v=t1121d"></script>
+<script src="js/icons.js?v=t1121d"></script>
+<script src="js/engine.js?v=t1121d"></script>
+<script src="js/loadout.js?v=t1121d"></script>
+<script src="js/sound.js?v=t1121d"></script>
+<script src="js/fx.js?v=t1121d"></script>
+<script src="js/tree3d.js?v=t1121d"></script>
+<script src="js/ui.js?v=t1121d"></script>
+<script type="module" src="js/stage3d.js?v=t1121d"></script>
 </body>
 </html>
