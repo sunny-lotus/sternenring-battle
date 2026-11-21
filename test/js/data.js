@@ -767,4 +767,4 @@ SR.PIX = {
   V: { src: 'img/pix/volt_idle.png', atlas: { cols: 4, rows: 4, row: 1, frames: 4, fps: 4, fill: .68, foot: .13 } }
 };
 // カットインの大きな絵（新しい水彩があるキャラだけ）
-SR.CUTIN = { N: 'img/nacht_pencil.png' };
+SR.CUTIN = { N: 'img/nacht_ready.png' };   // 構えの絵
