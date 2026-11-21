@@ -1049,6 +1049,44 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #tip.hdtip .tr .ko{font-family:Cinzel,serif;font-weight:900;font-size:.85em;color:#2a1a00;background:linear-gradient(90deg,#ffcf5a,#ffe9a0);padding:0 4px;border-radius:2px}
 #tip.hdtip .tr .up{color:#9fe39a;font-size:.85em}#tip.hdtip .tr .dn{color:#9aa0c8;font-size:.85em}
 #tip.hdtip .tbd{color:#eef0ff}
+/* ===== アイコンは平行四辺形のタイルを隙間なく並べる ===== */
+/* 説明の窓の札 */
+#tip.hdtip .tbi{gap:0;padding-left:6px}
+#tip.hdtip .tchip{position:relative;transform:skewX(-18deg);margin:0 -1px 0 0;padding:3px 12px 3px 6px;border-radius:0;border:none;border-left:1px solid rgba(255,240,200,.25);
+  background:linear-gradient(180deg,rgba(70,60,130,.75),rgba(24,20,56,.85));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.35)}
+#tip.hdtip .tchip:nth-child(even){background:linear-gradient(180deg,rgba(56,48,110,.75),rgba(18,16,46,.85))}
+#tip.hdtip .tchip>*{transform:skewX(18deg)}
+#tip.hdtip .tchip:first-child{border-left:3px solid #e8c372}
+#tip.hdtip .tchip:last-child{border-right:3px solid rgba(232,195,114,.6)}
+#tip.hdtip .tchip.brk{background:linear-gradient(180deg,rgba(30,110,170,.8),rgba(10,40,80,.9))}
+#tip.hdtip .tchip{font-size:.88em;letter-spacing:.03em}
+#tip.hdtip .tchip .phi,#tip.hdtip .tchip .mki,#tip.hdtip .tchip .sti{background:none!important;box-shadow:none!important}
+/* 技の札の小さなアイコン */
+#battle.hd #panel .sk .sktags{gap:0;padding-left:3px}
+#battle.hd #panel .sk .sktags>*{transform:skewX(-18deg);margin:0 -1px 0 0!important;border-radius:0!important;width:max(calc(var(--u)*2.2),22px)!important;height:max(calc(var(--u)*1.7),17px)!important;background:linear-gradient(180deg,rgba(70,60,130,.8),rgba(24,20,56,.9))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;border-left:1px solid rgba(255,240,200,.25)}
+#battle.hd #panel .sk .sktags>*:nth-child(even){background:linear-gradient(180deg,rgba(56,48,110,.8),rgba(18,16,46,.9))!important}
+#battle.hd #panel .sk .sktags>* svg{transform:skewX(18deg)}
+#battle.hd #panel .sk .sktags>.badge{width:auto!important;padding:0 7px!important;line-height:max(calc(var(--u)*1.7),17px);font-size:max(calc(var(--u)*.75),9px)!important;color:#eef0ff!important;border:none!important}
+#battle.hd #panel .sk .sktags>.badge>*{display:inline-block}
+#battle.hd #panel .sk .sktags>.mki.b-hit{background:linear-gradient(180deg,rgba(170,120,30,.9),rgba(80,50,8,.95))!important}
+/* 敵・味方の頭上のアイコン */
+#battle.hd .hdu .lab .tgs{gap:0!important}
+#battle.hd .hdu .lab .tgs>*{transform:skewX(-18deg);margin:0 -1px 0 0!important;border-radius:0!important;width:max(calc(var(--u)*2.3),22px)!important;height:max(calc(var(--u)*1.8),18px)!important;display:inline-grid!important;place-items:center;
+  background:linear-gradient(180deg,rgba(60,52,110,.85),rgba(18,16,46,.92))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;border:none!important;border-left:1px solid rgba(255,240,200,.25)!important;padding:0!important}
+#battle.hd .hdu .lab .tgs>* svg,#battle.hd .hdu .lab .tgs>*>.sti{transform:skewX(18deg)}
+#battle.hd .hdu .lab .tgs>.badge.b-weak{width:auto!important;padding:0 5px!important;background:linear-gradient(180deg,rgba(150,30,44,.9),rgba(60,8,16,.95))!important;border-left:3px solid #ff7b80!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 6px rgba(255,90,100,.5)!important}
+#battle.hd .hdu .lab .tgs>.badge.b-weak>*{transform:skewX(18deg)}
+#battle.hd .hdu .lab .tgs>.phi.kp{background:linear-gradient(180deg,rgba(150,30,44,.9),rgba(60,8,16,.95))!important}
+#battle.hd .hdu .lab .tgs>.badge:not(.b-weak){width:auto!important;padding:0 6px!important;font-size:max(calc(var(--u)*.75),9px)!important;color:#eef0ff}
+#battle.hd #panel .sk .sktags>.badge>span,#battle.hd .hdu .lab .tgs>.badge>span{transform:skewX(18deg)}
+#battle.hd .hero .lab .tgs>.b-form{display:none!important}
+#tip.hdtip .tchip{transform:none!important;background:none!important;box-shadow:none!important;border:none!important;isolation:isolate;margin:0 1px 0 0!important;padding:3px 13px 3px 9px!important}
+#tip.hdtip .tchip>*{transform:none!important}
+#tip.hdtip .tchip::before{content:"";position:absolute;inset:0;z-index:-1;transform:skewX(-18deg);background:linear-gradient(180deg,rgba(70,60,130,.8),rgba(24,20,56,.9));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.35);border-left:1px solid rgba(255,240,200,.3)}
+#tip.hdtip .tchip:nth-child(even)::before{background:linear-gradient(180deg,rgba(56,48,110,.8),rgba(18,16,46,.9))}
+#tip.hdtip .tchip:first-child::before{border-left:3px solid #e8c372}
+#tip.hdtip .tchip.brk::before{background:linear-gradient(180deg,rgba(30,110,170,.85),rgba(10,40,80,.92))}
+#tip.hdtip .tbi{gap:0!important;margin-left:4px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1178,14 +1216,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121j"></script>
-<script src="js/icons.js?v=t1121j"></script>
-<script src="js/engine.js?v=t1121j"></script>
-<script src="js/loadout.js?v=t1121j"></script>
-<script src="js/sound.js?v=t1121j"></script>
-<script src="js/fx.js?v=t1121j"></script>
-<script src="js/tree3d.js?v=t1121j"></script>
-<script src="js/ui.js?v=t1121j"></script>
-<script type="module" src="js/stage3d.js?v=t1121j"></script>
+<script src="js/data.js?v=t1121k"></script>
+<script src="js/icons.js?v=t1121k"></script>
+<script src="js/engine.js?v=t1121k"></script>
+<script src="js/loadout.js?v=t1121k"></script>
+<script src="js/sound.js?v=t1121k"></script>
+<script src="js/fx.js?v=t1121k"></script>
+<script src="js/tree3d.js?v=t1121k"></script>
+<script src="js/ui.js?v=t1121k"></script>
+<script type="module" src="js/stage3d.js?v=t1121k"></script>
 </body>
 </html>

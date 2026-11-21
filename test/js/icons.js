@@ -76,7 +76,7 @@ SR.iconizeTags = function (html) {
     if (/b-sys/.test(cls)) return txt.split('・').map(function (p) { return SR.phenIcon(p); }).join('');
     if (/b-weak/.test(cls) && SR.phenSVG[txt]) return SR.phenIcon(txt, 'kp" title="' + (ttl ? ttl.slice(8, -1) : txt + 'が急所'));
     if (SR.typeLabel && Object.keys(SR.typeLabel).some(function (k) { return SR.typeLabel[k] === txt; })) return '';   // 種類は札の色でわかる
-    var m = SR.MARK_OF[txt]; if (!m) return all;
+    var m = SR.MARK_OF[txt]; if (!m) return '<span class="badge ' + cls + '"' + (ttl || '') + '><span>' + txt + '</span></span>';
     return SR.markIcon(m, ttl ? ttl.slice(8, -1) : txt, cls.replace(/badge/, '').trim());
   });
 };
