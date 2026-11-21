@@ -773,10 +773,13 @@
     var th = tipEl.offsetHeight, x = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
     var y = r.top - th - 8; if (y < 8) y = Math.min(window.innerHeight - th - 8, r.bottom + 8);
     tipEl.style.left = x + 'px'; tipEl.style.top = Math.max(8, y) + 'px';
-    if (el.closest('#battle.hd #panel')) {   // 右はしの吹き出し・技の札は、押す所をかくさないよう左に出す
-      tw = Math.min(380, Math.max(200, r.left - 18)); tipEl.style.width = tw + 'px'; th = tipEl.offsetHeight;
-      tipEl.style.left = Math.max(8, r.left - tw - 10) + 'px'; tipEl.style.top = Math.max(8, Math.min(window.innerHeight - th - 8, r.top + r.height / 2 - th / 2)) + 'px';
-    }
+    tipEl.classList.toggle('hdtip', !!el.closest('#battle.hd'));
+    if (el.closest('#battle.hd')) {   // 戦闘中は、左の決まった場所に出す（押す所や敵をかくさない）
+      var br = $('battle').getBoundingClientRect();
+      tw = Math.min(420, Math.max(240, br.width * .38)); tipEl.style.width = tw + 'px';
+      tipEl.style.left = (br.left + br.width * .016) + 'px'; tipEl.style.top = (br.top + br.height * .13) + 'px';
+      tipEl.style.maxHeight = (br.height * .66) + 'px';
+    } else tipEl.style.maxHeight = '';
   }
   function hideTip() { tipEl.classList.add('hidden'); tipFor = null; document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); }); }
   document.addEventListener('pointerover', function (e) { if (e.pointerType !== 'mouse') return; var el = e.target.closest && e.target.closest('[data-tip]'); if (el && el !== tipFor) showTip(el); else if (!el && tipFor) hideTip(); });

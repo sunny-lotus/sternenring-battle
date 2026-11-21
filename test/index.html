@@ -1003,6 +1003,21 @@ input,textarea{-webkit-user-select:text;user-select:text}
 @keyframes armed{50%{outline-color:#ffb43c}}
 #battle.hd .bub.armed{background:linear-gradient(90deg,rgba(138,100,32,.45) 0%,rgba(168,120,40,.85) 50%,rgba(70,48,10,.95) 100%)!important;color:#fff6dc}
 #battle.hd #panel .sk .sktags .badge{display:none!important}#battle.hd #panel .sk .sktags .badge.b-form{display:inline-block!important}#battle.hd #panel .sk .sktags .badge.b-form:not([class*=x])~.badge{display:none}#battle.hd #panel .sk .mki.b-form{display:inline-grid}
+/* ===== 技の説明（戦闘中は左の定位置・半透明のガラス窓） ===== */
+#tip.hdtip{border-radius:3px;padding:12px 16px 12px 18px;font-size:max(calc(min(1vw,1.9vh)*1.05),12px);line-height:1.6;
+  background:linear-gradient(160deg,rgba(40,34,84,.62),rgba(10,10,28,.72) 65%);-webkit-backdrop-filter:blur(8px) saturate(1.2);backdrop-filter:blur(8px) saturate(1.2);
+  border:1px solid rgba(232,195,114,.55);border-left:3px solid #e8c372;box-shadow:0 10px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,240,200,.18);animation:tipin .18s ease-out}
+#tip.hdtip::before,#tip.hdtip::after{content:"";position:absolute;width:10px;height:10px;border:solid #f2d48a;pointer-events:none}
+#tip.hdtip::before{right:-1px;top:-1px;border-width:2px 2px 0 0}
+#tip.hdtip::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0}
+#tip.hdtip b{display:inline-block;font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:1.45em;letter-spacing:.08em;color:#f6e2a8;text-shadow:0 0 10px rgba(242,212,138,.5);margin:0 10px 4px 0}
+#tip.hdtip .tk{color:#c9cfee}
+#tip.hdtip .tl{color:#eef0ff}
+#tip.hdtip .est td{border-top-color:rgba(232,195,114,.18)}
+#tip.hdtip .tapagain{border-top-color:rgba(232,195,114,.4)}
+@keyframes tipin{from{opacity:0;transform:translateX(-12px)}}
+#tip.hdtip{background:linear-gradient(160deg,rgba(40,34,84,.5),rgba(10,10,28,.62) 65%)!important;line-height:1.5}
+#tip.hdtip .tapagain{position:sticky;bottom:-12px;margin:6px -16px -12px -18px;padding:6px 0;background:linear-gradient(180deg,rgba(30,24,60,.85),rgba(14,12,34,.95))}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1132,14 +1147,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121g"></script>
-<script src="js/icons.js?v=t1121g"></script>
-<script src="js/engine.js?v=t1121g"></script>
-<script src="js/loadout.js?v=t1121g"></script>
-<script src="js/sound.js?v=t1121g"></script>
-<script src="js/fx.js?v=t1121g"></script>
-<script src="js/tree3d.js?v=t1121g"></script>
-<script src="js/ui.js?v=t1121g"></script>
-<script type="module" src="js/stage3d.js?v=t1121g"></script>
+<script src="js/data.js?v=t1121h"></script>
+<script src="js/icons.js?v=t1121h"></script>
+<script src="js/engine.js?v=t1121h"></script>
+<script src="js/loadout.js?v=t1121h"></script>
+<script src="js/sound.js?v=t1121h"></script>
+<script src="js/fx.js?v=t1121h"></script>
+<script src="js/tree3d.js?v=t1121h"></script>
+<script src="js/ui.js?v=t1121h"></script>
+<script type="module" src="js/stage3d.js?v=t1121h"></script>
 </body>
 </html>
