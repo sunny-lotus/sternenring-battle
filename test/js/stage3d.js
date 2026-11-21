@@ -269,7 +269,7 @@ function phenFx(p, x, y, z, base, power) {
   } else if (p === '斬撃') {
     arc(x, y, z, lighten(base, .3), 2.8 * big, .3);
   } else if (p === '貫通') {
-    beam(x, y, z, lighten(base, .4), .28 * big, 6.5, Math.PI / 2 + (Math.random() - .5) * .25, .32);
+    beam(x, y, z, lighten(base, .4), .24 * big, 3.4, Math.PI / 2 + (Math.random() - .5) * .2, .3);
     sparks(x, y, z, Math.round(18 * big), [base, '#ffffff'], 5, 6, 0, .08, .6);
   } else if (p === '衝撃' || p === '強撃') {
     sparks(x, .15, z, Math.round(34 * big), ['#c8b090', '#8a7a64', '#e8dcc0', '#6a5a48'], 3.6, 14, 0, .03, 1);
@@ -390,7 +390,7 @@ const SHOTS = {
   wide:   { p: [.6, 2.5, 13.5], l: [.4, 1.9, -2.5], sway: .5 },
   party:  { p: [8.2, 2.3, 8.2], l: [-2.6, 1.5, -.4], sway: .25 },
   target: { p: [-.9, 3.1, 9.2], l: [-.9, .1, -1], sway: .15 },
-  strike: { p: [.2, 1.8, 8.6], l: [-3.2, 1.1, -.2], sway: .1 },
+  strike: { p: [-1.2, 2.0, 9.4], l: [-1.0, 1.0, -.2], sway: .1 },   // 2026-11-22 攻撃中：敵を画面の左側に（右はカットイン）
   enemy:  { p: [-6.6, 2.7, 7.6], l: [3, .7, .4], sway: .25 },   // 2026-11-22 少し引いて見下ろし、味方が下の帯に隠れないように
 };
 let shotName = 'wide', camMode = 'auto', focusX = 0;

@@ -16,7 +16,7 @@ window.SR = window.SR || {};
     '.fxnum.t4{font-size:50px;color:#ff8a2a;animation-duration:1.45s;text-shadow:0 3px 0 #000,0 0 14px #ff5a00,0 0 3px #000}',
     '.fxnum.t5{font-size:62px;color:#ffe066;animation-duration:1.7s;text-shadow:0 4px 0 #6b3b00,0 0 18px #ffb300,0 0 40px #ff8800,0 0 3px #000}',
     '.fxnum.hurt{color:#ff8d8d}.fxnum.hurt.t3,.fxnum.hurt.t4,.fxnum.hurt.t5{color:#ff4d4d;text-shadow:0 3px 0 #000,0 0 14px #c00000}',
-    '.fxnum.best{animation:fxnum 1.9s cubic-bezier(.2,.9,.3,1) forwards,fxhue .5s linear infinite;color:#ff5af0;text-shadow:0 4px 0 #1a0033,0 0 18px #7af,0 0 42px #f6f}',
+    '.fxnum.best{animation:fxnum 1.9s cubic-bezier(.2,.9,.3,1) forwards;color:#ffe9a8;text-shadow:0 3px 0 #3a2400,0 0 12px rgba(255,214,120,.75)}',   // 2026-11-22 虹色に回るのをやめて、落ち着いた金色に
     '.fxnum small{display:block;font-size:.34em;letter-spacing:2px;text-align:center;margin-bottom:-4px}',
     '@keyframes fxnum{0%{opacity:0;scale:2.6}10%{opacity:1;scale:.86}19%{scale:1.18}28%{scale:1}74%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-46px}}',
     '@keyframes fxhue{to{filter:hue-rotate(360deg)}}',
@@ -72,7 +72,7 @@ window.SR = window.SR || {};
     '@keyframes fxpillar{0%{opacity:0;scale:.1 1}20%{opacity:1;scale:1.2 1}60%{opacity:1;scale:1 1}100%{opacity:0;scale:.2 1}}',
     // ---- 勝利 ----
     '.result .maxhit b{display:inline-block;font-size:1.9em;color:#ffe066;text-shadow:0 0 14px #ffb300,0 3px 0 #5a3000;animation:fxslam .7s cubic-bezier(.2,1.4,.4,1) .15s both}',
-    '.result .maxhit .newbest{display:inline-block;animation:fxslam .6s cubic-bezier(.2,1.4,.4,1) .7s both,fxhue .8s linear infinite;color:#ff5af0}',
+    '.result .maxhit .newbest{display:inline-block;animation:fxslam .6s cubic-bezier(.2,1.4,.4,1) .7s both;color:#ffe08a}',
     '@keyframes fxslam{0%{opacity:0;scale:5}60%{opacity:1;scale:.9}100%{scale:1}}',
     '@media (max-width:640px){.fxnum.t5{font-size:50px}.fxnum.t4{font-size:42px}.fxword{font-size:44px}.fxcut b{font-size:28px}.fxcut{height:60px}.fxtotal.big{font-size:38px}.fxcrack{width:260px;height:260px}}',
     '@media (prefers-reduced-motion:reduce){.quake1,.quake2,.quake3{animation:none}.fxflash{display:none}}'
@@ -128,10 +128,14 @@ window.SR = window.SR || {};
       // 味方の帯（下）に重なるときは、帯の上まで持ち上げる
       var hud = document.getElementById('partyHud'), fr = field().getBoundingClientRect();
       if (hud && hud.offsetParent) { var top = hud.getBoundingClientRect().top - fr.top - 18 - t * 8; if (p.y + jy - 10 > top) p.y = top - jy + 10; }
+      // カットインが出ているときは、その絵より左に出す（絵と重ならないように）
+      var ci = document.querySelector('#cutin:not(.hidden) img');
+      if (ci && !o.hurt) { var cl = ci.getBoundingClientRect().left - fr.left + ci.getBoundingClientRect().width * .18, half = 40 + t * 22; if (p.x + jx + half > cl) p.x = cl - half - jx; }
       var cls = 'fxnum t' + t + (o.hurt ? ' hurt' : '') + (o.best ? ' best' : '');
       add(cls, (o.best ? '<small>自己ベスト！</small>' : '') + Math.round(v).toLocaleString(), 1900, clampX(p.x + jx, p.w, 30 + t * 14), Math.max(26, p.y + jy - 10));
       if (o.hurt) { if (t >= 3 || o.big) quake(o.big ? 3 : 2); }
-      else if (t >= 5 || o.best) { quake(3); add('fxflash gold', '', 500); }
+      else if (t >= 5) { quake(3); add('fxflash gold', '', 500); }
+      else if (o.best) quake(2);   // 自己ベストは、ゆれだけ（光らせない）
       else if (t >= 4) quake(2);
       else if (t >= 3) quake(1);
     },
