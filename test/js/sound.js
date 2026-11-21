@@ -15,9 +15,9 @@ SR.sound = (function () {
   var TRACKS = {
     normal: { first: 'audio/seika-no-kenbu_29_loop.wav' },
     boss: { first: 'audio/rinkai-no-yaiba_62_loop.wav', repeat: 'audio/rinkai-no-yaiba_62_repeat.wav' },
-    // メニュー：まなびクエストのメニュー曲「光のアルペジオ」（教材作成/manabiquest/音楽 の WAV）。
-    // 音は 0.05 秒から 26.20 秒まで。そのあと約1.5秒の完全な無音があるので、頭と末尾の無音だけ外して繰り返す（余韻は残す）
-    menu: { first: 'audio/menu-hikari-no-arpeggio.wav', trim: true }
+    // メニュー：まなびクエストのメニュー曲「光のアルペジオ」（教材作成/manabiquest/音楽 の WAV と「光のアルペジオ_繰り返し方.txt」）。
+    // 1周は (60 / 78 / 4) × 128.16 = 約24.646秒。ファイルの終わりを待たず、その周期で次の周を始め、前の周の余韻を次の頭に重ねる。
+    menu: { first: 'audio/menu-hikari-no-arpeggio.wav', period: 60 / 78 / 4 * 128.16 }
   };
   var BGM_VOL = 0.45, bgmKind = null, bgmToken = 0, bgmSrcs = [], bgmGain = null, bgmEl = null, bufs = {};
   function loadBuf(url) {
@@ -51,6 +51,19 @@ SR.sound = (function () {
       if (my !== bgmToken) return;
       var t0 = c.currentTime + 0.06, s1 = c.createBufferSource();
       s1.buffer = b1; s1.connect(g);
+      if (tr.period) {   // 決まった周期で、同じ音源を重ねながら置いていく
+        var next = t0, P = tr.period;
+        (function sched() {
+          if (my !== bgmToken) return;
+          while (next < c.currentTime + 30) {   // 30秒先まで予約しておく（画面を切りかえてもとぎれにくい）
+            var s = c.createBufferSource(); s.buffer = b1; s.connect(g); s.start(next); bgmSrcs.push(s);
+            s.onended = function () { var i = bgmSrcs.indexOf(this); if (i >= 0) bgmSrcs.splice(i, 1); };
+            next += P;
+          }
+          setTimeout(sched, 1000);
+        })();
+        return;
+      }
       if (!pRep) {
         s1.loop = true; var off = 0;
         if (tr.trim) { var e = edges(b1); off = e[0] / b1.sampleRate; s1.loopStart = off; s1.loopEnd = e[1] / b1.sampleRate; }
