@@ -333,14 +333,19 @@
       ['open', 'すき', '大技のあと。気力が削れやすい'], ['press', '重圧', '気力の回復が少なくなる'], ['shield', '防御', '受けるダメージが半分'], ['guard', '防護', 'ダメージを減らす守り'], ['kguard', '気力防護', '気力ダメージを減らす守り'],
       ['exposed', '無防備', '受けるダメージ2倍・回復を受けない'], ['ember', '燃え尽き', '次の番は動けない'], ['pray', '守りの祈り', '反動や無防備を打ち消す'], ['aim', '照準', '次の攻撃の気力削りが増える'],
       ['star', 'ねらい目', '弱点を突ける・よく効く・急所を突ける'], ['down', '効きにくい', 'この相手には体力ダメージが少ない'], ['all', '全体', '敵全体（味方全体）に届く'], ['unk', '弱点？', 'まだ弱点がわからない（調べるでわかる）']];
-    var h = '<li class="ichelp"><b>アイコン：現象</b>（技の性質。敵ごとに効き方が変わる）<div class="icgrid">' + Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }).join('') + '</div></li>';
-    h += '<li class="ichelp"><b>アイコン：状態</b>（数字は残りターン）<div class="icgrid">' + SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }).join('') + '</div></li>';
-    function mk(list) { return list.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }).join(''); }
-    h += '<li class="ichelp"><b>アイコン：しるし（戦いの様子）</b><div class="icgrid">' + mk(MK.slice(0, 6)) + '</div></li>';
-    h += '<li class="ichelp"><b>アイコン：しるし（守り）</b><div class="icgrid">' + mk(MK.slice(6, 13)) + '</div></li>';
-    h += '<li class="ichelp"><b>アイコン：しるし（技の札）</b><div class="icgrid">' + mk(MK.slice(13)) + '</div></li>';
-    h += '<li class="ichelp"><b>アイコン：枠の色</b><div class="icgrid">' + row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる') +
-      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる') + '</div></li>';
+    // 1ページに4つずつ（スマホの横画面でも読める大きさのまま）
+    var h = '';
+    function group(title, rows) {
+      for (var i = 0; i < rows.length; i += 4) {
+        var n = Math.ceil(rows.length / 4), part = n > 1 ? '（' + (i / 4 + 1) + '/' + n + '）' : '';
+        h += '<li class="ichelp"><b>' + title + part + '</b><div class="icgrid">' + rows.slice(i, i + 4).join('') + '</div></li>';
+      }
+    }
+    group('アイコン：現象', Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }));
+    group('アイコン：状態', SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }));
+    group('アイコン：しるし', MK.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }));
+    group('アイコン：枠の色', [row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる'),
+      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる')]);
     ul.insertAdjacentHTML('beforeend', h);
   }
   function paginateHelp() {
