@@ -762,10 +762,13 @@ SR.moneyHTML = function (n) {
 
 // 戦場に立つドット絵（2026-11-22 サニー：戦場はドット絵、カットインは水彩）。RPG本体の絵（4方向×4コマ、左右反転はしない）
 // row 1 ＝左向き（味方は右側に立って左の敵を向く）。fill＝コマの中で人が占める高さ、foot＝足もとの下の余白
-SR.PIX = {
-  // ナハト：構えの絵から作ったドット絵（162マス・96色）。外套と腰布がなびく8コマ
-  N: { src: 'img/pix/nacht_flutter.png', atlas: { cols: 8, rows: 1, row: 0, frames: 8, fps: 7, fill: .953, foot: .006 } },
-  V: { src: 'img/pix/volt_idle.png', atlas: { cols: 4, rows: 4, row: 1, frames: 4, fps: 4, fill: .68, foot: .13 } }
-};
-// カットインの大きな絵（新しい水彩があるキャラだけ）
-SR.CUTIN = { N: 'img/nacht_ready.png' };   // 構えの絵
+// 2026-11-22：5人とも、構えの絵から作ったドット絵（162マス・96色）。服がなびく8コマ。h＝戦場での高さ
+SR.PIX = {};
+(function () {
+  var at = { cols: 8, rows: 1, row: 0, frames: 8, fps: 7, fill: .953, foot: .006 };
+  var h = { N: 1.8, V: 1.8, F: 1.8, S: 1.8, L: 1.85 };
+  Object.keys(SR.img).forEach(function (id) { SR.PIX[id] = { src: 'img/pix/' + SR.img[id] + '_flutter.png?v=2', atlas: at, h: h[id] }; });
+})();
+// カットインの大きな絵：5人とも構えの絵
+SR.CUTIN = {};
+Object.keys(SR.img).forEach(function (id) { SR.CUTIN[id] = 'img/' + SR.img[id] + '_ready.png?v=2'; });
