@@ -1334,6 +1334,11 @@ svg.coin.cbig{width:18px;height:18px}
 /* MPも数字で */
 #battle.hd #partyHud .hr.mm{grid-template-columns:1fr auto!important}
 #battle.hd #partyHud .hr.mm span{color:#d6b8ff;font-size:max(calc(var(--u)*.85),10px);min-width:2.6em;text-align:right;font-weight:700}
+/* フォームの札は前の斜めの形のまま */
+#battle.hd #partyHud .hn .fm{transform:skewX(-14deg)!important;border-radius:0!important;top:-15px!important;padding:0 6px!important}
+/* 敵の下のアイコン：赤い帯（敵の名前と同じ見た目）をやめ、ほかと同じ紺のタイルに。弱点・急所は丸い赤い輪で示す */
+#battle.hd .hdu .lab .tgs>.badge.b-weak,#battle.hd .hdu .lab .tgs>.phi.kp{background:linear-gradient(180deg,rgba(60,52,110,.85),rgba(18,16,46,.92))!important;border-left:1px solid rgba(255,240,200,.25)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important}
+#battle.hd .hdu .lab .tgs>.badge.b-weak .sti,#battle.hd .hdu .lab .tgs>.phi.kp svg{border-radius:50%;box-shadow:0 0 0 1.5px #ff5a64,0 0 6px rgba(255,90,100,.85)!important}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1499,14 +1504,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122o"></script>
-<script src="js/icons.js?v=t1122o"></script>
-<script src="js/engine.js?v=t1122o"></script>
-<script src="js/loadout.js?v=t1122o"></script>
-<script src="js/sound.js?v=t1122o"></script>
-<script src="js/fx.js?v=t1122o"></script>
-<script src="js/tree3d.js?v=t1122o"></script>
-<script src="js/ui.js?v=t1122o"></script>
-<script type="module" src="js/stage3d.js?v=t1122o"></script>
+<script src="js/data.js?v=t1122p"></script>
+<script src="js/icons.js?v=t1122p"></script>
+<script src="js/engine.js?v=t1122p"></script>
+<script src="js/loadout.js?v=t1122p"></script>
+<script src="js/sound.js?v=t1122p"></script>
+<script src="js/fx.js?v=t1122p"></script>
+<script src="js/tree3d.js?v=t1122p"></script>
+<script src="js/ui.js?v=t1122p"></script>
+<script type="module" src="js/stage3d.js?v=t1122p"></script>
 </body>
 </html>
