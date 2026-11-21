@@ -736,11 +736,11 @@
         else if (ordNo[u.id]) cmdLine = '<div class="cmd">' + (ordNo[u.id][0] - 1) + '番あと</div>';
       }
       if (res) {
-        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=3" alt=""></div><div>' +
+        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=4" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=3" alt=""></div><div>' +
           '<div class="nm">' + role + u.name + '</div>' + tags + bars(u, v) + '</div>';
         addOrd(d, u.id); ra.appendChild(d);
       } else {
-        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=3" alt=""></div>' +
+        d.innerHTML = '<div class="pic"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=4" alt=""><img class="fc" src="img/' + SR.img[u.id] + '_face.jpg?v=3" alt=""></div>' +
           '<div class="nm">' + role + u.name + '</div><div>' + tags + '</div>' + bars(u, v) + cmdLine;
         addOrd(d, u.id); pa.appendChild(d);
       }
@@ -1370,7 +1370,7 @@
       SR.stage3d.setup(B.enemies.map(function (e) {
         var big = B.isBoss || e.type === 'twin', small = e.type === 'pup';
         return { id: e.id, img: 'img/enemies/' + e.img + '.png', pixel: true, h: big ? 3.2 : small ? 1.5 : 2.2 };
-      }).concat(front.map(function (u) { return { id: u.id, hero: true, pos: u.pos, img: SR.PIX[u.id] ? SR.PIX[u.id].src : 'img/' + SR.img[u.id] + '_stand.png?v=clean3', pixel: !!SR.PIX[u.id], atlas: SR.PIX[u.id] ? SR.PIX[u.id].atlas : null, h: SR.PIX[u.id] ? (SR.PIX[u.id].h || 1.8) : 2.45 }; })));
+      }).concat(front.map(function (u) { return { id: u.id, hero: true, pos: u.pos, img: SR.PIX[u.id] ? SR.PIX[u.id].src : 'img/' + SR.img[u.id] + '_stand.png?v=4', pixel: !!SR.PIX[u.id], atlas: SR.PIX[u.id] ? SR.PIX[u.id].atlas : null, h: SR.PIX[u.id] ? (SR.PIX[u.id].h || 1.8) : 2.45 }; })));
       SR.stage3d.onFrame(placeUnits);
       SR.stage3d.start();
     }
@@ -1451,7 +1451,7 @@
       } else {
         d.className = 'unit hero hdu' + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '');
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
-        d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + SR.iconizeTags(tags) + '</div></div>';
+        d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=4" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + SR.iconizeTags(tags) + '</div></div>';
         pa.appendChild(d);
         hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_face.jpg?v=3" alt=""></div><div class="hb"><div class="hn"><span class="rl r' + u.pos + '">' + ROLE[u.pos].charAt(0) + '</span>' + u.name + '<span class="lvt">Lv' + (u.lv || 1) + '</span>' + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }
@@ -1487,7 +1487,7 @@
     var v = val(u), w = SR.weapons && SR.weapons[u.id], fav = SR.tree && SR.tree.start && SR.tree.start[u.id];
     var again = c.getAttribute('data-who') === u.id && !c.classList.contains('hidden');
     c.classList.remove('hidden'); c.setAttribute('data-who', u.id);
-    var html = '<img src="' + (SR.CUTIN[u.id] || 'img/' + SR.img[u.id] + '_stand.png?v=clean3') + '" alt=""' + (again ? ' style="animation:none"' : '') + '><div class="band"></div><div class="cname">' + u.name + '</div>' + (u.id === 'N' ? '<div class="cform f-' + val(u).form + '">' + SR.formNames[val(u).form] + '</div>' : '') +
+    var html = '<img src="' + (SR.CUTIN[u.id] || 'img/' + SR.img[u.id] + '_stand.png?v=4') + '" alt=""' + (again ? ' style="animation:none"' : '') + '><div class="band"></div><div class="cname">' + u.name + '</div>' + (u.id === 'N' ? '<div class="cform f-' + val(u).form + '">' + SR.formNames[val(u).form] + '</div>' : '') +
       '';
     c.innerHTML = html;
   }
