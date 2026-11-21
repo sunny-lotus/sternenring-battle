@@ -549,20 +549,38 @@ SR.LINK_MATES = ['V', 'F', 'S', 'L'];
 SR.bondLv = [0, 40, 100];   // 親密度の段：1＝イベントで開く／2＝40／3＝100（柱の目もり）
 SR.BOND_PER_USE = 8;        // 1回使うと、いっしょに出した仲間それぞれ +8
 function link(id, cost, need, join, props) { skill(id, 'link', 0, cost, Object.assign({ link: true, need: need, join: join, with: Object.keys(need) }, props)); }
-// 二人（ナハト＋1人）
+// 二人（ナハト＋1人）。各仲間：段1で1つ、段2で2つ、段3で1つ
 link('雷光斬り', 20, { V: 1 }, false, { kind: 'attack', kd: 26, hp: 60, phen: '雷' });
 link('照準一閃', 26, { V: 2 }, true, { kind: 'attack', kd: 46, hp: 64, phen: ['斬撃', '雷'] });
+link('雷鎖断ち', 28, { V: 2 }, false, { kind: 'attack', kd: 18, hp: 44, all: true, phen: '雷', inflict: ['shock', 2] });
+link('迅雷三連', 34, { V: 3 }, true, { kind: 'attack', kd: 20, hp: 40, hits: 3, phen: ['斬撃', '雷'] });
 link('焔纏い斬り', 22, { F: 1 }, false, { kind: 'attack', kd: 16, hp: 84, phen: '炎' });
 link('炎嵐双撃', 32, { F: 2 }, true, { kind: 'attack', kd: 16, hp: 62, all: true, phen: ['斬撃', '炎'] });
+link('紅蓮返し', 26, { F: 2 }, false, { kind: 'attack', kd: 10, hp: 96, phen: '炎', finisher: 1.5, inflict: ['burn', 2] });
+link('灼刃十字', 38, { F: 3 }, true, { kind: 'attack', kd: 24, hp: 150, phen: ['斬撃', '炎'] });
 link('氷刃', 20, { S: 1 }, false, { kind: 'attack', kd: 28, hp: 50, phen: '冷気', inflict: ['freeze', 2] });
 link('守り刃', 28, { S: 2 }, true, { kind: 'heal', amount: 150, allies: true });
+link('霜花の舞', 28, { S: 2 }, false, { kind: 'attack', kd: 20, hp: 40, all: true, phen: '冷気', inflict: ['freeze', 1] });
+link('凍結一閃', 34, { S: 3 }, true, { kind: 'attack', kd: 62, hp: 58, phen: ['斬撃', '冷気'], inflict: ['freeze', 3] });
 link('光刃', 22, { L: 1 }, false, { kind: 'attack', kd: 22, hp: 72, phen: '光' });
 link('双剣交差', 30, { L: 2 }, true, { kind: 'attack', kd: 34, hp: 46, hits: 2, phen: ['斬撃', '強撃'] });
-// 三人以上
+link('陣破り', 28, { L: 2 }, false, { kind: 'attack', kd: 48, hp: 40, brave: true, phen: '光' });
+link('光輪大斬', 38, { L: 3 }, true, { kind: 'attack', kd: 30, hp: 96, all: true, phen: ['強撃', '光'] });
+// 三人
 link('雷炎の太刀', 34, { V: 2, F: 2 }, true, { kind: 'attack', kd: 30, hp: 120, phen: ['雷', '炎'] });
-link('白光の守り', 30, { S: 2, L: 2 }, true, { kind: 'teamKProtect' });
+link('雷氷縛り', 32, { V: 2, S: 2 }, true, { kind: 'attack', kd: 44, hp: 60, phen: ['雷', '冷気'], inflict: ['shock', 2] });
+link('光雷の陣', 32, { V: 2, L: 2 }, true, { kind: 'teamKProtect' });
+link('氷炎二重', 34, { F: 2, S: 2 }, true, { kind: 'attack', kd: 26, hp: 110, phen: ['炎', '冷気'] });
+link('炎光の柱', 36, { F: 2, L: 2 }, true, { kind: 'attack', kd: 22, hp: 80, all: true, phen: ['炎', '光'] });
+link('白光の守り', 30, { S: 2, L: 2 }, true, { kind: 'heal', amount: 220, allies: true });
+// 四人
 link('四方斬り', 40, { V: 2, F: 2, L: 2 }, true, { kind: 'attack', kd: 24, hp: 90, all: true, phen: ['斬撃', '雷', '炎', '光'] });
+link('天地の太刀', 42, { V: 3, S: 2, L: 2 }, true, { kind: 'attack', kd: 70, hp: 110, phen: ['斬撃', '雷', '冷気', '光'] });
+link('三花の守り', 38, { F: 2, S: 3, L: 2 }, true, { kind: 'heal', amount: 300, allies: true });
+link('嵐の四重奏', 44, { V: 2, F: 3, S: 2 }, true, { kind: 'attack', kd: 30, hp: 120, all: true, phen: ['雷', '炎', '冷気'] });
+// 五人
 link('五人の一太刀', 50, { V: 3, F: 3, S: 3, L: 3 }, true, { kind: 'attack', kd: 60, hp: 200, brave: true, phen: ['斬撃', '雷', '炎', '冷気', '光'] });
+link('五人の誓い', 46, { V: 3, F: 3, S: 3, L: 3 }, true, { kind: 'heal', amount: 400, allies: true });
 SR.isLink = function (id) { return !!SR.skills[id] && SR.skills[id].owner === 'link'; };
 
 // 親密度と、イベントで開いたかどうか（この端末に保存）

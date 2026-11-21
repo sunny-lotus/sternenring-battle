@@ -134,15 +134,17 @@
           '<div class="lk-p"><div class="lk-fill" style="height:' + (ev ? Math.max(4, v / MAXB * 100) : 0) + '%"></div>' + marks + '</div>' +
           '<div class="lk-v">' + (ev ? '親密度 ' + v : 'イベント未定') + '</div>' +
           '<button class="btn mini" data-nav data-lo="lev" data-id="' + c + '">' + (ev ? '開いた（試し）→戻す' : 'イベント → 開いたことにする') + '</button>' +
-          (ev ? '<button class="btn mini" data-nav data-lo="lbond" data-id="' + c + '">親密度 +20（試し）</button>' : '') + '</div>';
+          (ev ? '<button class="btn mini" data-nav data-lo="lbond" data-id="' + c + '">親密度 +20（試し）</button>' : '') +
+          '<div class="lk-mini">' + Object.keys(SR.skills).filter(function (s) { var a = SR.skills[s]; return a.link && a.with.length === 1 && a.with[0] === c; }).map(function (s) {
+            var a = SR.skills[s], got = G.hasLink(s);
+            return '<div class="lk-s' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N"><i>' + a.need[c] + '</i><b>' + s + '</b><span>' + (a.join ? '合' : '借') + '</span></div>';
+          }).join('') + '</div></div>';
       }).join('') + '</div>';
-      var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s); });
-      h += '<div class="bk-grid lk-list">' + lks.map(function (s) {
+      var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && SR.skills[s].with.length > 1; });
+      h += '<div class="lk-mh">3人以上の連携技</div><div class="lk-mgrid">' + lks.map(function (s) {
         var a = SR.skills[s], got = G.hasLink(s), why = G.linkWhy(s);
         var faces = a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('');
-        return '<div class="node lk-n' + (got ? ' got' : ' lock') + '" data-tip="' + s + '" data-tipwho="N"><span class="lk-f">' + faces + '</span><b>' + s + '</b>' +
-          '<span class="lk-k">' + (a.with.length + 1) + '人・' + (a.join ? '合わせ技' : '力を借りる') + '</span>' +
-          '<span class="small">' + (got ? '使える' : why) + '</span></div>';
+        return '<div class="lk-s lk-m' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N"><i>' + (a.with.length + 1) + '人</i><b>' + s + '</b><span class="lk-f">' + faces + '</span></div>';
       }).join('') + '</div></div>';
     } else {
       var L0 = SR.loadout, mine0 = (lo.set && lo.set[id]) || [], cap0 = L0.cap(), used0 = L0.used(mine0);
@@ -806,6 +808,7 @@
     var cost = u ? B.price(u, id) : a.cost;
     var h = '<b>' + (a.label || a.id) + '</b><span class="tk">' + cat + '・精神力' + (cost || 0) + '・' + SR.weightLabel(a) + '</span>';
     h += '<div>' + SR.describe(a) + '</div>';
+    if (a.link) h += '<div class="tl">' + a.with.map(function (c) { return SR.names[c] + '（段' + a.need[c] + '）'; }).join('・') + 'と・' + (a.join ? '合わせ技' : '力を借りる') + '</div><div class="tl">' + (SR.growth.hasLink(id) ? '使える' : SR.growth.linkWhy(id)) + '</div>';
     var ph = wid && SR.attackPhen ? SR.attackPhen({ id: wid }, a) : a.phen;
     if (a.kind === 'attack' && ph && SR.phenText(ph) !== SR.phenText(a.phen)) h += '<div class="tl">現象：' + SR.phenText(ph) + (wid && SR.weapons[wid] && (a.id === 'basic' || a.id === 'light') ? '（' + SR.weapons[wid].name + '）' : '') + '</div>';
     if (a.inflict) h += '<div class="tl">付ける状態：' + SR.statuses[a.inflict[0]].name + '（' + a.inflict[1] + 'ターン）・' + SR.statuses[a.inflict[0]].fx + '</div>';
