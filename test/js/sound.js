@@ -14,7 +14,10 @@ SR.sound = (function () {
   // つなぎは音声の時計（Web Audio）で予約する。フェードや無音は足さない。
   var TRACKS = {
     normal: { first: 'audio/seika-no-kenbu_29_loop.wav' },
-    boss: { first: 'audio/rinkai-no-yaiba_62_loop.wav', repeat: 'audio/rinkai-no-yaiba_62_repeat.wav' }
+    boss: { first: 'audio/rinkai-no-yaiba_62_loop.wav', repeat: 'audio/rinkai-no-yaiba_62_repeat.wav' },
+    // メニュー：まなびクエストのメニュー曲「光のアルペジオ」（教材作成/manabiquest/音楽 の WAV）。
+    // 音は 0.05 秒から 26.20 秒まで。そのあと約1.5秒の完全な無音があるので、頭と末尾の無音だけ外して繰り返す（余韻は残す）
+    menu: { first: 'audio/menu-hikari-no-arpeggio.wav', trim: true }
   };
   var BGM_VOL = 0.45, bgmKind = null, bgmToken = 0, bgmSrcs = [], bgmGain = null, bgmEl = null, bufs = {};
   function loadBuf(url) {
@@ -23,6 +26,16 @@ SR.sound = (function () {
       return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); });
     });
     return bufs[url];
+  }
+  // 完全な無音（0）だけの頭と末尾を見つける（音のある所は削らない）
+  function edges(b) {
+    var n = b.length, a = 0, z = n, ch = [];
+    for (var c = 0; c < b.numberOfChannels; c++) ch.push(b.getChannelData(c));
+    function silent(i) { for (var c = 0; c < ch.length; c++) if (Math.abs(ch[c][i]) > 1e-6) return false; return true; }
+    var lim = Math.min(n, b.sampleRate);   // 頭は1秒まで
+    while (a < lim && silent(a)) a++;
+    while (z > n / 2 && silent(z - 1)) z--;   // 末尾は曲の後半まで見る
+    return a < z ? [a, z] : [0, n];
   }
   function playBgm(kind) {
     bgmKind = kind;
@@ -38,7 +51,11 @@ SR.sound = (function () {
       if (my !== bgmToken) return;
       var t0 = c.currentTime + 0.06, s1 = c.createBufferSource();
       s1.buffer = b1; s1.connect(g);
-      if (!pRep) { s1.loop = true; s1.start(t0); bgmSrcs.push(s1); return; }
+      if (!pRep) {
+        s1.loop = true; var off = 0;
+        if (tr.trim) { var e = edges(b1); off = e[0] / b1.sampleRate; s1.loopStart = off; s1.loopEnd = e[1] / b1.sampleRate; }
+        s1.start(t0, off); bgmSrcs.push(s1); return;
+      }
       s1.start(t0); bgmSrcs.push(s1);
       var tEnd = t0 + b1.length / b1.sampleRate;
       pRep.then(function (b2) {
@@ -62,8 +79,13 @@ SR.sound = (function () {
     g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
     setTimeout(function () { srcs.forEach(function (s) { try { s.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} }, ms + 50);
   }
-  // 最初にさわったときに、ふつうの戦いの曲を先に読み込んでおく
-  document.addEventListener('pointerdown', function pre() { document.removeEventListener('pointerdown', pre, true); if (on.bgm) loadBuf(TRACKS.normal.first).catch(function () {}); }, true);
+  // 最初にさわったとき：メニュー画面ならメニュー曲を流し、ふつうの戦いの曲も先に読み込んでおく
+  document.addEventListener('pointerdown', function pre() {
+    document.removeEventListener('pointerdown', pre, true);
+    var t = document.getElementById('title');
+    if (!bgmKind && t && !t.classList.contains('hidden')) playBgm('menu');
+    if (on.bgm) loadBuf(TRACKS.normal.first).catch(function () {});
+  }, true);
 
   // ---- 効果音（合成） ----
   var ctx = null, master = null;
