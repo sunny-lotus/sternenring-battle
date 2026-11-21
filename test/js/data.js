@@ -8,7 +8,7 @@ SR.C = { maxMp: 100, maxK: 100, recovery: 26, ap: 24, maxRounds: 24,
   ctBase: 1000, brkDelay: 0.5, releaseWeight: 0.6,
   weak2K: [1, 1.5, 2.5], openK: 1.3 };   // 弱点が二つのボス：片方1.5倍・両方2.5倍。大技・全体攻撃の直後のすき：1.3倍   // アクティブカウント：番の間隔＝ctBase÷素早さ。ブレイクで順番が半分下がる。ブレイク明けの敵は次の番が早い
 // 2026-11-21 アクティブカウント：味方の素早さ（敵は enemyTypes の speed）
-SR.heroSpeed = { N: 70, V: 66, F: 58, S: 54, L: 62 };
+SR.heroSpeed = { N: 70, S: 66, V: 62, F: 58, L: 54 };   // 2026-11-22 サニー：セレナは2番目に速い・リヒトがいちばん遅い
 // 技の重さ：次の番までの間隔の倍率。軽い技ほど早く次の番が来る
 SR.weight = function (a) {
   if (!a) return 1;
