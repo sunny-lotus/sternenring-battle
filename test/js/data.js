@@ -766,7 +766,7 @@ SR.moneyHTML = function (n) {
 SR.PIX = {};
 (function () {
   var at = { cols: 8, rows: 1, row: 0, frames: 8, fps: 7, fill: .953, foot: .006 };
-  var h = { N: 1.8, V: 1.8, F: 1.8, S: 1.8, L: 1.85 };
+  var h = { N: 1.8, V: 1.8, F: 1.55, S: 1.8, L: 1.85 };   // フレアは小柄（サニー 2026-11-22）
   Object.keys(SR.img).forEach(function (id) { SR.PIX[id] = { src: 'img/pix/' + SR.img[id] + '_flutter.png?v=2', atlas: at, h: h[id] }; });
 })();
 // カットインの大きな絵：5人とも構えの絵
