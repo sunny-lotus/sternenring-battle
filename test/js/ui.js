@@ -1292,8 +1292,8 @@
     var el = $('u-' + f.target); if (!el) return hold;
     var hero = B.unit(f.target).hero;
     if (f.dmg !== undefined) {
-      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target, f.broke || (f.down && !hero) ? 3 : f.dmg >= 700 || (hero && fxs.big) ? 2 : 1, f.actor && SR.THEME[f.actor]);
-      if (!hero && !f.statusTick) F.slash(el, f.dmg >= 700 || f.broke, f.actor && SR.THEME[f.actor]);
+      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target, f.broke || (f.down && !hero) ? 3 : f.dmg >= 700 || (hero && fxs.big) ? 2 : 1, SR.THEME[f.by || f.actor], f.phen);
+      if (!hero && !f.statusTick) F.slash(el, f.dmg >= 700 || f.broke, SR.THEME[f.by || f.actor]);
       var best = !hero && !f.statusTick && B.fxBest > 0 && f.dmg > B.fxTop;
       if (!hero && f.dmg > B.fxTop) B.fxTop = f.dmg;
       F.num(el, f.dmg, { hurt: hero, big: hero && fxs.big, best: best });

@@ -173,7 +173,7 @@ SR.Battle = function (opts) {
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
     emit((label ? label + '　' : '') + dst.name + '　HP-' + Math.round(amount) + (kLoss > 0 ? '　ブレイクゲージ-' + Math.round(kLoss) : ''),
-      { target: dst.id, dmg: Math.round(amount), kdmg: Math.round(kLoss) }, 330);
+      { target: dst.id, dmg: Math.round(amount), kdmg: Math.round(kLoss), by: src.id, phen: SR.phenList(o.phen) }, 330);   // by・phen：演出用（当てた人の色、現象ごとの形）
     if (brokeNow) { emit(dst.name + ' ブレイク！（順番が下がり、次の番は動けない' + (dst.cutNow ? '・最大HP-' + dst.cutNow : '') + (dst.stackNow ? '・崩れ' + dst.stackNow + '：最大ブレイクゲージ' + Math.round(dst.maxK) + '・受けるダメージ+' + Math.round(tune.foeStack.dmg * dst.stackNow * 100) + '%' : '') + '）', { target: dst.id, broke: true, maxCut: dst.cutNow || 0 }, 900); dst.cutNow = 0; dst.stackNow = 0; breakMp(dst, src); }
     if (dst.stopped) { dst.stopped = false; stat.stops = (stat.stops || 0) + 1; emit('溜めが崩れた！ ' + dst.name + 'の大技を止めた', { target: dst.id, stop: true }, 1000); }
     if (dst.hp === 0) emit(dst.name + ' は倒れた', { target: dst.id, down: true }, 700);
