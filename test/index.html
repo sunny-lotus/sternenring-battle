@@ -1341,6 +1341,21 @@ svg.coin.cbig{width:18px;height:18px}
 #battle.hd .hdu .lab .tgs>.badge.b-weak .sti,#battle.hd .hdu .lab .tgs>.phi.kp svg{border-radius:50%;box-shadow:0 0 0 1.5px #ff5a64,0 0 6px rgba(255,90,100,.85)!important}
 #battle.hd .mki.crk{position:relative}#battle.hd .mki.crk b{position:absolute;right:-2px;bottom:-3px;font-size:10px;font-weight:800;color:#fff;background:#8a4a10;border-radius:6px;padding:0 3px;line-height:1.25;transform:skewX(18deg);box-shadow:0 0 0 1px #ffb043}
 #battle.hd #cutin img[src*="_ready"],#battle.hd #cutin img[src*="_pencil"]{filter:drop-shadow(0 0 1vw rgba(242,212,138,.25)) contrast(1.12) saturate(1.25) brightness(.96)}
+/* ステータス：1人ずつ、立ち絵を大きく（2026-11-22） */
+#statusBox.stview{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:60px minmax(0,1fr) minmax(240px,34%);gap:10px;margin-top:4px}
+.stpick{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;min-height:0}
+.stpick button{width:38px;height:38px;flex:none;padding:0;transform:rotate(45deg);overflow:hidden;border:1.5px solid rgba(232,195,114,.4);border-radius:3px;background:#141433;opacity:.55;cursor:pointer;transition:opacity .15s,box-shadow .15s}
+.stpick button.on{opacity:1;border-color:#ffe3a0;box-shadow:0 0 0 2px rgba(10,10,28,.9),0 0 12px rgba(242,212,138,.7)}
+.stpick button img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;transform:rotate(-45deg) scale(1.45);display:block}
+.stfig{position:relative;min-height:0;display:flex;justify-content:center;align-items:flex-end;overflow:hidden}
+.stfig::before{content:"";position:absolute;left:8%;right:8%;bottom:2%;height:78%;background:radial-gradient(ellipse at 50% 60%,rgba(120,100,200,.32),rgba(60,50,120,.12) 55%,transparent 72%);pointer-events:none}
+.stfig::after{content:"";position:absolute;left:22%;right:22%;bottom:1.5%;height:5%;background:radial-gradient(ellipse,rgba(0,0,0,.55),transparent 70%);pointer-events:none}
+.stfig img{position:relative;z-index:1;height:100%;width:auto;max-width:100%;object-fit:contain;object-position:50% 100%;filter:contrast(1.08) saturate(1.18) drop-shadow(0 0 10px rgba(242,212,138,.18));animation:stfIn .35s ease-out}
+.stfig.s-F img{height:88%}
+@keyframes stfIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.stc.stinfo{justify-content:center;align-self:center;overflow:visible;box-sizing:border-box;padding:8px 14px;gap:2px}
+.stc.stinfo .sn{font-size:22px}
+.stc.stinfo dl{font-size:13px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1506,14 +1521,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122za"></script>
-<script src="js/icons.js?v=t1122za"></script>
-<script src="js/engine.js?v=t1122za"></script>
-<script src="js/loadout.js?v=t1122za"></script>
-<script src="js/sound.js?v=t1122za"></script>
-<script src="js/fx.js?v=t1122za"></script>
-<script src="js/tree3d.js?v=t1122za"></script>
-<script src="js/ui.js?v=t1122za"></script>
-<script type="module" src="js/stage3d.js?v=t1122za"></script>
+<script src="js/data.js?v=t1122zb"></script>
+<script src="js/icons.js?v=t1122zb"></script>
+<script src="js/engine.js?v=t1122zb"></script>
+<script src="js/loadout.js?v=t1122zb"></script>
+<script src="js/sound.js?v=t1122zb"></script>
+<script src="js/fx.js?v=t1122zb"></script>
+<script src="js/tree3d.js?v=t1122zb"></script>
+<script src="js/ui.js?v=t1122zb"></script>
+<script type="module" src="js/stage3d.js?v=t1122zb"></script>
 </body>
 </html>
