@@ -123,29 +123,43 @@
             : '<button class="btn mini" data-nav data-lo="uniq" data-id="' + s + '">イベント → 覚えたことにする</button>') + '</div>';
       }).join('') + '</div></div>';
     } else if (tab === 'link') {
-      // ---- ナハトの連携技：4本の柱は仲間4人。親密度で色がたまる ----
-      var MAXB = SR.bondLv[2] + 20, open = G.linkOpen();
-      h += '<div class="bk-full lk">';
+      // ---- ナハトの連携技：魔法と同じ3Dの柱。4本の柱は仲間4人、色は親密度 ----
+      var open = G.linkOpen(), lside = lo.lside || 'detail';
+      h += '<div class="bk-left"><div class="row t3bar"><button class="btn mini" data-nav data-lo="rot" data-id="-1">左へ回す</button><button class="btn mini" data-nav data-lo="rot" data-id="1">右へ回す</button>' +
+        '<button class="btn mini" data-nav data-lo="zoom" data-id="1.25">大きく</button><button class="btn mini" data-nav data-lo="zoom" data-id="0.8">小さく</button></div>' +
+        '<div class="cbox t3"><canvas id="tree3d"></canvas></div></div>';
+      h += '<div class="bk-side"><div class="row stabs">' + [['detail', '詳細'], ['bond', '親密度'], ['list', '一覧']].map(function (b) {
+        return '<button class="btn mini' + (lside === b[0] ? ' sel' : '') + '" data-nav data-lo="lside" data-id="' + b[0] + '">' + b[1] + '</button>';
+      }).join('') + '</div><div class="sbody">';
       if (!open) h += '<div class="lk-note">連携技は終盤に手に入る（上の「時期」を終盤にすると試せる）</div>';
-      h += '<div class="lk-pillars">' + SR.LINK_MATES.map(function (c) {
-        var v = G.bond(c), ev = G.linkEv(c), lv = G.bondLvOf(c);
-        var marks = [0, SR.bondLv[1], SR.bondLv[2]].map(function (t, i) { return '<i class="lk-t' + (lv > i ? ' on' : '') + '" style="bottom:' + (t / MAXB * 100) + '%"><b>' + (i + 1) + '</b></i>'; }).join('');
-        return '<div class="lk-col c-' + c + (ev ? '' : ' off') + '"><div class="lk-face"><img src="img/' + SR.img[c] + '_serious.jpg" alt=""></div><div class="lk-nm">' + SR.names[c] + '</div>' +
-          '<div class="lk-p"><div class="lk-fill" style="height:' + (ev ? Math.max(4, v / MAXB * 100) : 0) + '%"></div>' + marks + '</div>' +
-          '<div class="lk-v">' + (ev ? '親密度 ' + v : 'イベント未定') + '</div>' +
-          '<button class="btn mini" data-nav data-lo="lev" data-id="' + c + '">' + (ev ? '開いた（試し）→戻す' : 'イベント → 開いたことにする') + '</button>' +
-          (ev ? '<button class="btn mini" data-nav data-lo="lbond" data-id="' + c + '">親密度 +20（試し）</button>' : '') +
-          '<div class="lk-mini">' + Object.keys(SR.skills).filter(function (s) { var a = SR.skills[s]; return a.link && a.with.length === 1 && a.with[0] === c; }).map(function (s) {
-            var a = SR.skills[s], got = G.hasLink(s);
-            return '<div class="lk-s' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N"><i>' + a.need[c] + '</i><b>' + s + '</b><span>' + (a.join ? '合' : '借') + '</span></div>';
-          }).join('') + '</div></div>';
-      }).join('') + '</div>';
-      var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && SR.skills[s].with.length > 1; });
-      h += '<div class="lk-mh">3人以上の連携技</div><div class="lk-mgrid">' + lks.map(function (s) {
-        var a = SR.skills[s], got = G.hasLink(s), why = G.linkWhy(s);
-        var faces = a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('');
-        return '<div class="lk-s lk-m' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N"><i>' + (a.with.length + 1) + '人</i><b>' + s + '</b><span class="lk-f">' + faces + '</span></div>';
-      }).join('') + '</div></div>';
+      function faces(a) { return a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join(''); }
+      if (lside === 'detail') {
+        var la = SR.skills[lo.sel];
+        if (la && la.link) {
+          var lg = G.hasLink(la.id);
+          h += '<div class="cdet"><b>' + la.id + '</b><span class="lk-f">' + faces(la) + '</span><span class="badge b-sys">' + (la.with.length + 1) + '人・' + (la.join ? '合わせ技' : '力を借りる') + '</span>' +
+            '<div class="d">' + SR.describe(la) + '</div>' +
+            '<span class="small">' + la.with.map(function (c) { return SR.names[c] + 'との段' + la.need[c]; }).join('・') + 'で使える</span>' +
+            (lg ? '<span class="st">使える</span>' : '<span class="why">' + G.linkWhy(la.id) + '</span>') + '</div>';
+        } else h += '<div class="small">柱の星を押すと、ここにくわしく出る。<br>4本の柱は仲間4人。その仲間のイベントで1段目が開き、連携技を使うほど親密度がたまって柱に色がつく。<br>柱のあいだの輪のついた星は、3人以上の連携技。<br>ダブルクリック（ダブルタップ）で柱に寄る。</div>';
+      } else if (lside === 'bond') {
+        var MAXB = SR.bondLv[2] + 20;
+        h += '<div class="lk-bonds">' + SR.LINK_MATES.map(function (c) {
+          var v = G.bond(c), ev = G.linkEv(c), lv = G.bondLvOf(c);
+          return '<div class="lk-b"><img src="img/' + SR.img[c] + '_serious.jpg" alt=""><b>' + SR.names[c] + '</b><span class="lk-lv">段' + lv + '</span>' +
+            '<span class="xb"><i style="width:' + (ev ? Math.max(3, v / MAXB * 100) : 0) + '%"></i><s style="left:' + (SR.bondLv[1] / MAXB * 100) + '%"></s><s style="left:' + (SR.bondLv[2] / MAXB * 100) + '%"></s></span>' +
+            '<small>' + (ev ? '親密度 ' + v : 'イベント未定') + '</small>' +
+            '<button class="btn mini" data-nav data-lo="lev" data-id="' + c + '">' + (ev ? '開いた（試し）→戻す' : 'イベント → 開いたことにする') + '</button>' +
+            (ev ? '<button class="btn mini" data-nav data-lo="lbond" data-id="' + c + '">+20（試し）</button>' : '') + '</div>';
+        }).join('') + '</div><div class="small">段1：イベント／段2：親密度' + SR.bondLv[1] + '／段3：親密度' + SR.bondLv[2] + '。連携技を1回使うと、いっしょに出した仲間それぞれ+' + SR.BOND_PER_USE + '。</div>';
+      } else {
+        var lks = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s); });
+        h += '<div class="clist">' + lks.map(function (s) {
+          var a = SR.skills[s], got = G.hasLink(s);
+          return '<div class="crow' + (got ? ' got' : '') + '" data-tip="' + s + '" data-tipwho="N" data-lo="sel" data-id="' + s + '"><b>' + s + '</b><span class="lk-f">' + faces(a) + '</span><span>' + (got ? '使える' : G.linkWhy(s)) + '</span></div>';
+        }).join('') + '</div>';
+      }
+      h += '</div></div>';
     } else {
       var L0 = SR.loadout, mine0 = (lo.set && lo.set[id]) || [], cap0 = L0.cap(), used0 = L0.used(mine0);
       h += '<div class="bk-full"><div class="row"><span class="small">付けているコスト <b>' + used0 + '</b> / ' + cap0 + '（序盤' + SR.passiveCap[1] + '・中盤' + SR.passiveCap[2] + '・終盤' + SR.passiveCap[3] + '）</span>' +
@@ -221,7 +235,16 @@
     var bt = '<div class="lo-tabs">' + L.ids.map(function (c) { return '<button class="btn' + (c === id ? ' sel' : '') + '" data-nav data-lo="who" data-id="' + c + '">' + SR.names[c] + '<small>' + (c === 'N' ? '刀剣術のみ' : '重点：' + SR.growth.focus(c)) + '</small></button>'; }).join('') + '</div>';
     $('bookBox').innerHTML = bookHTML(id, bt);
     var c3 = document.getElementById('tree3d');
-    if (c3 && lo.who !== 'N') {
+    if (c3 && lo.who === 'N') {
+      var MATES = SR.LINK_MATES, lk = Object.keys(SR.skills).filter(function (s) { return SR.isLink(s); }), G2 = SR.growth;
+      function bh(c) { if (!G2.linkEv(c)) return 0; var v = G2.bond(c); return v >= SR.bondLv[2] ? 3 : v >= SR.bondLv[1] ? 2 + (v - SR.bondLv[1]) / (SR.bondLv[2] - SR.bondLv[1]) : 1 + v / SR.bondLv[1]; }
+      var lcnt = {}, lcap = {}, lfil = {}, LBL = {};
+      MATES.forEach(function (c) { var ns = lk.filter(function (s) { return SR.skills[s].with.length === 1 && SR.skills[s].with[0] === c; }); lcnt[c] = ns.filter(function (s) { return G2.hasLink(s); }).length + '/' + ns.length; lcap[c] = G2.linkEv(c) && G2.linkOpen() ? 3 : 0; lfil[c] = G2.linkOpen() ? bh(c) : 0; LBL[c] = SR.names[c]; });
+      SR.tree3d.mount(c3, { era: G2.era(), pillars: MATES, label: LBL, colors: { V: [255, 225, 74], F: [255, 122, 58], S: [127, 208, 255], L: [255, 243, 196] }, count: lcnt, cap: lcap, fill: lfil, sel: lo.sel, nodes: lk.map(function (s) {
+        var a = SR.skills[s], mx = Math.max.apply(null, a.with.map(function (c) { return a.need[c]; }));
+        return { id: s, sys: a.with[0], tier: mx, h: mx - 0.15, req: [], combo: a.with.length > 1 ? a.with : null, stat: false, state: G2.hasLink(s) ? 'got' : 'lock' }; }) },
+        function (id) { lo.sel = id; lo.lside = 'detail'; SR.sound.se('tick'); drawLoadout(); });
+    } else     if (c3 && lo.who !== 'N') {
       var cnt = {}; SR.baseSystems.forEach(function (s) { var ns = SR.ctree.filter(function (n) { return n.sys === s; }); cnt[s] = ns.filter(function (n) { return SR.growth.has(lo.who, n.id); }).length + '/' + ns.length; });
       var cap = {}, fil = {}; SR.baseSystems.forEach(function (s) { cap[s] = SR.growth.books(s); fil[s] = SR.growth.fill(lo.who, s); });
       SR.tree3d.mount(c3, { era: SR.growth.era(), fav: SR.tree.start[lo.who], count: cnt, cap: cap, fill: fil, sel: lo.sel, nodes: SR.ctree.map(function (n) {
@@ -239,9 +262,10 @@
       var i = mine.indexOf(id);
       if (i >= 0) mine.splice(i, 1);
       else if (SR.loadout.used(mine) + SR.loadout.apOf(id) <= SR.loadout.cap()) mine.push(id);
-    } else if (act === 'sel') { lo.sel = id; lo.side = 'detail'; }
+    } else if (act === 'sel') { lo.sel = id; lo.side = 'detail'; lo.lside = 'detail'; }
     else if (act === 'btab') lo.btab = id;
     else if (act === 'side') lo.side = id;
+    else if (act === 'lside') lo.lside = id;
     else if (act === 'pas') SR.growth.togglePas(lo.who, id);
     else if (act === 'view') lo.view = id;
     else if (act === 'rot') { SR.tree3d.turn(+id * 0.6); return; }

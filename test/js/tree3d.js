@@ -12,6 +12,10 @@ SR.tree3d = (function () {
   // 柱の位置（正方形の四隅）。となりどうし：構築-循環-観測-干渉-構築
   var PIL = { 構築: [-D, -D], 循環: [D, -D], 観測: [D, D], 干渉: [-D, D] };
   var COL = { 構築: [232, 195, 114], 循環: [110, 210, 200], 観測: [150, 160, 255], 干渉: [235, 120, 120] };
+  var CORNER = [[-D, -D], [D, -D], [D, D], [-D, D]];
+  function SL() { return (model && model.pillars) || SR.baseSystems; }
+  function P(s) { var i = SL().indexOf(s); return i >= 0 ? CORNER[i] : (PIL[s] || [0, 0]); }
+  function C(s) { return (model && model.colors && model.colors[s]) || COL[s] || [232, 195, 114]; }
 
   function proj(x, y, z) {
     x -= camX; z -= camZ;   // 見ている中心（柱に寄るとき動く）
@@ -26,8 +30,8 @@ SR.tree3d = (function () {
   // 星の3D位置
   function layout(m) {
     var pos = {};
-    SR.baseSystems.forEach(function (s) {
-      var p = PIL[s], out = Math.atan2(p[1], p[0]);   // 外向き
+    SL().forEach(function (s) {
+      var p = P(s), out = Math.atan2(p[1], p[0]);   // 外向き
       [1, 2, 3].forEach(function (t) {
         var col = m.nodes.filter(function (n) { return n.sys === s && n.tier === t && !n.combo; });
         col.forEach(function (n, i) {
@@ -38,7 +42,7 @@ SR.tree3d = (function () {
     });
     m.nodes.forEach(function (n) {
       if (!n.combo) return;
-      var mx = 0, mz = 0; n.combo.forEach(function (s) { mx += PIL[s][0]; mz += PIL[s][1]; });
+      var mx = 0, mz = 0; n.combo.forEach(function (s) { mx += P(s)[0]; mz += P(s)[1]; });
       mx /= n.combo.length; mz /= n.combo.length;
       var sc = n.combo.length === 2 ? 1.08 : 1;
       pos[n.id] = [mx * sc, Y(n.h), mz * sc];   // 関わる柱のまん中に置く
@@ -60,13 +64,13 @@ SR.tree3d = (function () {
     ctx.stroke();
     // 段の高さの目印
     [1, 2, 3].forEach(function (t) {
-      var pp = ['構築', '循環', '観測', '干渉', '構築'].map(function (s) { var p = PIL[s]; return proj(p[0] * 1.32, Y(t), p[1] * 1.32); });
+      var pp = SL().concat([SL()[0]]).map(function (s) { var p = P(s); return proj(p[0] * 1.32, Y(t), p[1] * 1.32); });
       ctx.strokeStyle = 'rgba(232,195,114,.18)'; ctx.setLineDash([4, 5]);
       ctx.beginPath(); pp.forEach(function (q, i) { i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }); ctx.stroke(); ctx.setLineDash([]);
     });
     // 柱
-    SR.baseSystems.forEach(function (s) {
-      var p = PIL[s], c = COL[s];
+    SL().forEach(function (s) {
+      var p = P(s), c = C(s);
       var corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (k) { return [p[0] + k[0] * PW, p[1] + k[1] * PW]; });
       var capH = Y(model.cap[s] || 0), fillH = Y(model.fill[s] || 0), hot = focusSys === s;
       function face(a, b, y0, y1, kind) {
@@ -96,15 +100,15 @@ SR.tree3d = (function () {
       var base = proj(p[0] * 1.25, -0.05, p[1] * 1.25);
       items.push({ z: base.z - 5, fn: function () {
         ctx.font = '700 ' + Math.max(12, Math.min(26, base.s * 0.17)) + 'px "Shippori Mincho B1", serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = rgba(c, .95); ctx.fillText(s + (model.fav === s ? '（得意）' : ''), base.x, base.y + 14);
+        ctx.fillStyle = rgba(c, .95); ctx.fillText((model.label ? model.label[s] : s) + (model.fav === s ? '（得意）' : ''), base.x, base.y + 14);
         ctx.font = Math.max(10, Math.min(18, base.s * 0.12)) + 'px sans-serif'; ctx.fillStyle = '#b9bfe0'; ctx.fillText(model.count[s], base.x, base.y + 28);
       } });
     });
     // 線：前の技→次の技、組み合わせの星へは柱から光の線
     model.nodes.forEach(function (n) {
       var b = pos[n.id], froms = n.req.map(function (r) { return { p: pos[r], lit: model.state[r] === 'got' && n.state === 'got' }; });
-      if (n.combo) n.combo.forEach(function (s) { froms.push({ p: [PIL[s][0], Y(n.h), PIL[s][1]], lit: (model.fill[s] || 0) >= n.h, beam: true }); });
-      if (!froms.length) froms.push({ p: [PIL[n.sys][0], 0, PIL[n.sys][1]], lit: n.state === 'got' });
+      if (n.combo) n.combo.forEach(function (s) { froms.push({ p: [P(s)[0], Y(n.h), P(s)[1]], lit: (model.fill[s] || 0) >= n.h, beam: true }); });
+      if (!froms.length) froms.push({ p: [P(n.sys)[0], 0, P(n.sys)[1]], lit: n.state === 'got' });
       froms.forEach(function (fr) {
         if (!fr.p) return;
         var qa = proj(fr.p[0], fr.p[1], fr.p[2]), qb = proj(b[0], b[1], b[2]), lit = fr.lit;
@@ -166,8 +170,8 @@ SR.tree3d = (function () {
   // 柱を押した：その柱を正面に回して寄る
   function pickPillar(x, y) {
     var best = null;
-    SR.baseSystems.forEach(function (s) {
-      var p = PIL[s], a = proj(p[0], 0, p[1]), b = proj(p[0], TOP, p[1]);
+    SL().forEach(function (s) {
+      var p = P(s), a = proj(p[0], 0, p[1]), b = proj(p[0], TOP, p[1]);
       var vx = b.x - a.x, vy = b.y - a.y, t = Math.max(0, Math.min(1, ((x - a.x) * vx + (y - a.y) * vy) / (vx * vx + vy * vy || 1)));
       var d = Math.hypot(a.x + vx * t - x, a.y + vy * t - y), lim = Math.max(18, PW * a.s * 1.6);
       if (d <= lim && (!best || a.z < best.z)) best = { s: s, z: a.z };
@@ -177,7 +181,7 @@ SR.tree3d = (function () {
   function focusOn(s) {
     focusSys = s;
     if (!s) { aim = { yaw: yaw, zoom: 1, x: 0, z: 0, y: 1.9 }; return; }
-    var p = PIL[s], th = Math.atan2(p[1], p[0]);
+    var p = P(s), th = Math.atan2(p[1], p[0]);
     aim = { yaw: -Math.PI / 2 - th, zoom: 2.4, x: p[0], z: p[1], y: 1.75 };
   }
   function pick(x, y) {
