@@ -1,0 +1,7 @@
+敵の絵（js-*.png）: JosephSeraph 作 / CC-BY 3.0
+https://opengameart.org/content/js-monster-set-elementals
+https://opengameart.org/content/js-monster-set-elementals-ii
+https://opengameart.org/content/js-monster-set-elementals-iii
+https://opengameart.org/content/js-monsters-aeon-monsters-i
+https://opengameart.org/content/js-monster-pack-4-ascent
+背景を透明にし、切り出して拡大しています。

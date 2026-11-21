@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>星環バトル試作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1020; --panel:#1a2042; --panel2:#242c58; --line:#3a4479;
+  --ink:#f1f2fb; --sub:#b4bbdf; --gold:#f2c86b; --hp:#5fd38a; --hpLow:#e8a33c; --hpCrit:#e65a5a;
+  --k:#5aa8f0; --brk:#ff6a8a; --pow:#ff9a52;
+  --front:#2f6fd0; --mid:#2a9a8a; --back:#8a5ad0; --res:#4b5275;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.small{font-size:13px;color:var(--sub)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:15px}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:linear-gradient(#e9b955,#c4902f);color:#231a05;border-color:#f3d48b;font-weight:700}
+.btn.sel{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
+.btn:disabled{opacity:.4;cursor:default}
+body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
+
+/* タイトル */
+#title{max-width:980px;margin:0 auto;padding:12px 16px 24px}
+#title h1{font-size:24px;margin:8px 0 2px;letter-spacing:.08em}
+#title h3{margin:16px 0 6px}
+/* ===== 2026-11-21 メニュー画面（ファンタジー風） ===== */
+:root{--mgold:#e8c372;--mgold2:#f6e2a8;--mdark:#8a6a2a}
+.mincho,#title h1,#title h2,#title h3,.mbtn b,.msub{font-family:"Shippori Mincho B1","Yu Mincho","Hiragino Mincho ProN",serif}
+#title{position:relative;max-width:none;min-height:100vh;padding:0;overflow-x:hidden}
+#title .sky{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+#title>*:not(.sky){position:relative;z-index:1}
+.mpage{display:none;max-width:1000px;margin:0 auto;padding:0 16px 32px}
+#title[data-page="home"] .mhome{display:flex}
+#title:not([data-page="home"]) .mhome{display:none}
+#title[data-page="battle"] #pg-battle,#title[data-page="book"] #pg-book,#title[data-page="settings"] #pg-settings,#title[data-page="help"] #pg-help{display:flex}
+.mhome{min-height:100vh;align-items:center;justify-content:center;gap:48px;padding:24px 16px;flex-wrap:wrap;box-sizing:border-box}
+.mhero{text-align:center}
+.mcrest svg{width:110px;height:110px;filter:drop-shadow(0 0 14px rgba(242,200,107,.55));animation:crest 6s ease-in-out infinite}
+@keyframes crest{50%{filter:drop-shadow(0 0 24px rgba(242,200,107,.85))}}
+#title h1{font-size:40px;font-weight:800;letter-spacing:.18em;color:var(--mgold2);text-shadow:0 0 18px rgba(242,200,107,.45),0 2px 0 #4a3412;margin:10px 0 4px}
+.msub{color:#c9cfee;letter-spacing:.32em;font-size:14px}
+.mmain{display:flex;flex-direction:column;gap:10px;width:min(430px,100%)}
+.mbtn{display:flex;gap:14px;align-items:center;text-align:left;padding:11px 20px;color:var(--ink);cursor:pointer;position:relative;
+  background:linear-gradient(180deg,rgba(44,38,78,.94),rgba(18,16,38,.94));border:1px solid var(--mdark);border-radius:3px;
+  box-shadow:inset 0 0 0 3px rgba(10,8,22,.9),inset 0 0 0 4px rgba(232,195,114,.4),0 4px 14px rgba(0,0,0,.55);transition:transform .15s,border-color .15s}
+.mbtn::before,.mbtn::after{content:"";position:absolute;top:50%;width:8px;height:8px;background:var(--mgold);transform:translateY(-50%) rotate(45deg);box-shadow:0 0 6px rgba(242,200,107,.7)}
+.mbtn::before{left:-5px}.mbtn::after{right:-5px}
+.mbtn:hover,.mbtn.focus{border-color:var(--mgold2);transform:translateX(4px)}
+.mbtn svg{width:34px;height:34px;flex:none;fill:none;stroke:var(--mgold);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.mbtn b{display:block;font-size:21px;font-weight:700;letter-spacing:.24em;color:var(--mgold2)}
+.mbtn small{display:block;color:#b9bfe0;font-size:12px;margin-top:1px}
+.mhead{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;padding:10px 0;margin-bottom:6px;
+  background:linear-gradient(180deg,rgba(9,11,26,.97),rgba(9,11,26,.82));border-bottom:1px solid var(--mdark);box-shadow:0 1px 0 rgba(232,195,114,.25)}
+.mhead h2{flex:1;margin:0;font-size:23px;font-weight:700;letter-spacing:.3em;color:var(--mgold2);text-shadow:0 0 12px rgba(242,200,107,.35)}
+.mhead h2::before,.mhead h2::after{content:"◆";font-size:10px;color:var(--mgold);vertical-align:middle;margin:0 10px;opacity:.8}
+#title .mpage h3{color:var(--mgold2);letter-spacing:.16em;font-weight:700;display:flex;align-items:center;gap:10px}
+#title .mpage h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(232,195,114,.6),transparent)}
+#title .choice,#title #loadout,#title .rules,#title .book{background:rgba(22,22,50,.88);border-color:#5a4a2a}
+#title .choice.sel{border-color:var(--mgold);box-shadow:0 0 0 2px var(--mgold) inset,0 0 12px rgba(242,200,107,.25)}
+#title #loadout{margin-top:0}
+@media (orientation:landscape) and (max-height:540px){
+  .mhome{gap:28px;padding:10px 16px}
+  .mcrest svg{width:64px;height:64px}
+  #title h1{font-size:28px;margin:4px 0 2px}
+  .msub{font-size:12px}
+  .mmain{gap:7px;width:min(400px,100%)}
+  .mbtn{padding:6px 16px}
+  .mbtn b{font-size:17px}
+  .mbtn svg{width:26px;height:26px}
+  .mhead{padding:6px 0}.mhead h2{font-size:19px}
+}
+@media (max-width:640px) and (orientation:portrait){.mhome{gap:24px}#title h1{font-size:30px}}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.choice{text-align:left;padding:10px 12px}
+.choice b{display:block;margin-bottom:2px}
+#loadout{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.lo-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.lo-tabs .btn{display:flex;flex-direction:column;align-items:center;min-width:84px}
+.lo-tabs small{font-size:12px;color:var(--k)}
+.lo-head{margin:10px 0 6px;font-size:15px}
+.lo-eq{display:flex;flex-wrap:wrap;gap:6px}
+.lo-eq .btn{font-size:14px;padding:6px 10px;border-color:var(--gold)}
+.lo-eq small{color:var(--k)}
+.sk.fixed{opacity:1;cursor:default;background:#2a2340}
+.sk.on{border-color:var(--gold);background:#3a3420}
+.rules{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px 10px 30px;font-size:14px;line-height:1.75}
+
+/* バトル */
+#battle{max-width:1280px;margin:0 auto;padding:8px 12px;display:flex;flex-direction:column;gap:8px;height:100vh;height:100dvh}
+#field{position:relative;flex:1 1 auto;min-height:330px;border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:radial-gradient(ellipse at 30% 110%,#2b2350 0%,#121630 55%,#0a0c1a 100%)}
+#field::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(1px 1px at 12% 18%,#fff8 50%,transparent),radial-gradient(1px 1px at 33% 9%,#fff6 50%,transparent),
+  radial-gradient(1.5px 1.5px at 71% 14%,#fff9 50%,transparent),radial-gradient(1px 1px at 88% 30%,#fff6 50%,transparent),
+  radial-gradient(1px 1px at 52% 26%,#fff5 50%,transparent),radial-gradient(1px 1px at 6% 40%,#fff5 50%,transparent)}
+.topline{position:absolute;left:10px;top:8px;right:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:3;font-size:14px}
+.turn{font-weight:800;color:var(--gold);font-size:18px}
+.chip{font-size:13px;padding:3px 9px;border-radius:999px;background:#0008;border:1px solid var(--line)}
+.chip.warn{background:#7a1f1f;border-color:#ff8a8a;color:#fff;font-weight:700}
+.chip.hot{animation:blink .8s infinite}
+@keyframes blink{50%{opacity:.55}}
+
+#enemyArea{position:absolute;left:2%;top:44px;bottom:8px;width:40%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;align-content:center}
+#partyArea{position:absolute;left:41%;top:40px;bottom:8px;width:43%}
+#reserveArea{position:absolute;right:8px;top:44px;bottom:8px;width:14%;min-width:120px;border:2px dashed var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px;background:#0005}
+#reserveArea .lbl{font-size:13px;color:var(--sub);text-align:center}
+
+.unit{position:relative;border-radius:12px;border:2px solid transparent;transition:transform .2s,border-color .2s,opacity .3s}
+.enemy{width:31%;max-width:220px;text-align:center;padding:4px}
+.enemy.boss{width:100%;max-width:380px}
+.enemy svg{width:100%;height:auto;display:block}
+.enemy .nm{font-size:16px;font-weight:700}
+.enemy.down{opacity:.15}
+.enemy img.mon,.choice.enc img.th,.oi img.mon{image-rendering:pixelated}
+.enemy img.mon{display:block;width:100%;max-width:170px;aspect-ratio:1/1;object-fit:contain;margin:0 auto;filter:drop-shadow(0 6px 6px #0009)}
+.enemy.boss img.mon{max-width:250px}
+.enemy.many img.mon{max-width:90px}
+.enemy.charging img.mon{filter:drop-shadow(0 0 10px #ffcc55) drop-shadow(0 0 22px #ff7a3a);animation:pulse 1.2s infinite}
+.oi img.mon{width:100%;height:100%;object-fit:contain;background:#1b2140}
+.enemy.many{width:30%}
+.enemy.many svg{max-height:70px}
+.enemy.many .nm{font-size:14px}
+.enemy.charging svg{filter:drop-shadow(0 0 10px #ffcc55) drop-shadow(0 0 22px #ff7a3a);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
+
+.hero{position:absolute;width:31.5%;background:#1a2042e8;border-color:var(--line);padding:6px 8px}
+.hero[data-pos="0"]{left:0;top:2%}
+.hero[data-pos="1"]{left:34%;top:11%}
+.hero[data-pos="2"]{left:68%;top:20%}
+.hero .pic{height:110px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.hero .pic img{height:100%;object-fit:contain}
+.hero .nm{font-weight:800;font-size:17px}
+.role{display:inline-block;font-size:13px;font-weight:800;padding:1px 8px;border-radius:6px;color:#fff;margin-right:4px}
+.role.r0{background:var(--front)} .role.r1{background:var(--mid)} .role.r2{background:var(--back)} .role.r3{background:var(--res)}
+.reserve{background:#141936;border-color:var(--line);padding:5px 6px}
+.reserve .pic{height:70px;display:flex;justify-content:center;overflow:hidden}
+.reserve .pic img{height:100%;object-fit:contain}
+.reserve .nm{font-weight:700;font-size:15px}
+.unit.down .pic img{filter:grayscale(1) brightness(.45)}
+.pic .fc{display:none}
+.unit.brk{border-color:var(--brk)}
+.unit.active{border-color:var(--gold);box-shadow:0 0 16px #f2c86b66;z-index:2}
+.unit.pickable{border-color:#7fd4ff;cursor:pointer;box-shadow:0 0 0 2px #7fd4ff55}
+.unit.pickable:hover{background:#2c3a60}
+.unit.acting{box-shadow:0 0 22px #fffa;border-color:#fff;z-index:3}
+.cmd{font-size:13px;min-height:18px;margin-top:2px}
+.cmd.done{color:var(--gold)} .cmd.todo{color:var(--sub)}
+
+.bar{height:10px;border-radius:5px;background:#0007;overflow:hidden;margin-top:3px}
+.bar>i{display:block;height:100%;transition:width .25s}
+.bar.k>i{background:var(--k)}
+.bar.k{height:7px}
+.nums{display:flex;justify-content:space-between;font-size:13px;color:#dfe3ff;margin-top:1px}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:1px 6px;border-radius:6px;margin:1px 1px 0 0}
+.b-brk{background:var(--brk);color:#200}
+.b-form{background:#3c3f73;color:#dfe2ff}
+.b-buff{background:#28454f;color:#bff}
+.b-fire{background:#5a2a12;color:#ffc8a5}
+.b-sys{background:#26304f;color:#c9d6ff;border:1px solid #4a5a8a}.b-sys.good{background:#2b4a2f;color:#c9ffd0;border-color:#4f8a5a}
+.tree{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px}
+.tree .tr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.tree .tr b{min-width:3em}
+.tree .tr .btn{min-width:40px;padding:4px 10px;font-size:16px}
+.tree .tr .d{font-size:12px;opacity:.8}
+.tree .tr.adv{opacity:.5}
+.tree .pips{display:inline-flex;gap:4px;min-width:66px}
+.tree .pips i{width:16px;height:16px;border-radius:50%;border:2px solid #6a78a8;display:inline-block}
+.tree .pips i.on{background:#8fb4ff;border-color:#8fb4ff}
+.tree .pips i.st{background:#ffd27a;border-color:#ffd27a}
+.tree .pips em{font-size:12px;font-style:normal}
+.sk.locked{opacity:.55}
+.book{margin:8px 0;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:rgba(255,255,255,.03)}
+.book>summary{cursor:pointer;font-size:15px;padding:4px 0}
+.bk-era .btn{padding:4px 12px}
+.bk-sys{margin:6px 0}
+.bk-sys.adv{opacity:.5}
+.bk-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin:6px 0 4px}
+.bk-nodes{display:flex;flex-wrap:wrap;gap:6px}
+.node{display:flex;flex-direction:column;gap:2px;min-width:132px;flex:1 1 132px;max-width:220px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px}
+.node.got{border-color:#4f8a5a;background:rgba(80,160,100,.12)}
+.node.can{border-color:var(--gold)}
+.node.lock{opacity:.75}
+.node .st{color:#9fe0a8;font-size:12px}
+.node .why{color:#ffb38a;font-size:12px}
+.btn.mini{font-size:12px;padding:3px 8px;min-height:0}
+#tip{position:fixed;z-index:200;background:rgba(14,14,34,.97);border:1px solid #8a6a2a;border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.55;color:var(--ink);box-shadow:0 6px 24px rgba(0,0,0,.6),inset 0 0 0 1px rgba(232,195,114,.25);pointer-events:none;max-height:70vh;overflow:auto}
+#tip b{font-size:16px;color:#f6e2a8;margin-right:8px}
+#tip .tk{font-size:12px;color:#b9bfe0}
+#tip .tl{margin-top:4px;color:#dfe3ff}#tip .tl.sm{font-size:11px;color:var(--sub)}
+#tip .est{border-collapse:collapse;margin-top:2px;width:100%}
+#tip .est td{padding:2px 6px 2px 0;font-size:12px;border-top:1px solid rgba(255,255,255,.08);white-space:nowrap}
+#tip .est td:last-child{white-space:normal;color:#9fe0a8}
+#tip em{color:#ffd27a;font-style:normal;font-weight:700}
+/* 技の書：星座のツリー */
+.bk-br{flex-wrap:wrap;gap:6px}
+.bk-br .btn{display:flex;flex-direction:column;align-items:center;min-width:72px}
+.bk-br small{font-size:11px;color:var(--sub)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffd27a;margin-left:4px;box-shadow:0 0 6px #ffd27a;vertical-align:middle}
+.cbox{background:radial-gradient(ellipse at 50% 40%,#1d2250,#0b0d20);border:1px solid #5a4a2a;border-radius:10px;margin:6px 0;overflow:hidden}
+.cst{display:block;width:100%;height:auto;max-height:300px}
+.cst .ct{fill:#e8c372;font-size:12px;text-anchor:middle;letter-spacing:.1em}
+.cst .ct.off{fill:#6b6f90}
+.cst.one{max-height:none}
+.t3 canvas{display:block;width:100%;height:min(62vh,440px);touch-action:none;cursor:grab}
+@media (orientation:landscape) and (max-height:540px){.t3 canvas{height:330px}}
+.t3bar{align-items:center;gap:6px}
+.cst .band{fill:rgba(255,255,255,.025);stroke:rgba(232,195,114,.18);stroke-width:1}
+.cst .band.off{fill:rgba(0,0,0,.25)}
+.cst .bt{fill:#e8c372;font-size:14px;letter-spacing:.1em}.cst .bt.off{fill:#6b6f90}
+.cst .root path{fill:none;stroke:#8a6a2a;stroke-width:2}
+.cst .glass{fill:rgba(200,220,255,.06);stroke:rgba(200,220,255,.3);stroke-width:1}
+.cst .capl{stroke:#f2d48a;stroke-width:1.5;stroke-dasharray:4 3}
+.cst .cl.beam{stroke:rgba(143,224,208,.4)}
+.cst .cl.beam.lit{stroke:#f2d48a}
+#devBox{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;margin-top:6px}
+.devi{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(22,22,50,.88);border:1px solid #5a4a2a;border-radius:8px;padding:6px 10px;font-size:13px}
+.devi input{width:84px;font-size:15px;padding:4px 6px;background:#0e1130;color:var(--ink);border:1px solid var(--line);border-radius:6px;text-align:right}
+.devi small{color:var(--sub)}
+.shop{gap:8px}.shopi{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;min-width:130px}
+.shopi small{color:#ffb38a;font-size:11px}
+.fsel{gap:6px}.btn.fx{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-width:140px;text-align:left}
+.xb{position:relative;display:block;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.xb i{position:absolute;left:0;top:0;bottom:0}
+.xb s{position:absolute;top:0;bottom:0;width:2px;background:#f2d48a}
+.btn.fx small{font-size:11px;color:var(--sub)}
+.growres{margin:6px 0;font-size:14px;line-height:1.7}.growres .lrn{color:#ffd27a;font-weight:700}
+.cst .root .rn{fill:#f6e2a8;font-size:17px;text-anchor:middle;letter-spacing:.15em;font-family:"Shippori Mincho B1",serif}
+.cst .root.fav .rn{fill:#ffd27a}
+.cst .root .rc{fill:#b9bfe0;font-size:11px;text-anchor:middle}
+.cst .cl{stroke:#5d6390;stroke-width:1.5;stroke-dasharray:4 4}
+.cst .cl.lit{stroke:#f2d48a;stroke-width:2.2;stroke-dasharray:none;filter:drop-shadow(0 0 3px #f2d48a)}
+.cn{cursor:pointer}
+.cn .hit{fill:transparent}
+.cn text{fill:#c9cfee;font-size:15px;text-anchor:middle}
+.cn path,.cn circle:not(.hit):not(.ring){fill:#2b2f55;stroke:#6b6f90;stroke-width:1.5}
+.cn.got path,.cn.got circle:not(.hit):not(.ring){fill:#f2d48a;stroke:#fff6dc;filter:drop-shadow(0 0 6px #f2d48a)}
+.cn.got text{fill:#f6e2a8}
+.cn.can path,.cn.can circle:not(.hit):not(.ring){fill:#3a4a8a;stroke:#fff;animation:twinkle 1.6s ease-in-out infinite}
+.cn.can text{fill:#fff}
+.cn.lock{opacity:.55}
+.cn .ring{fill:none;stroke:#8fb4ff;stroke-width:1.5;stroke-dasharray:3 3}
+.cn .cring{fill:none;stroke:#8fe0d0;stroke-width:1.2;opacity:.8}
+.cn.got .cring{stroke:#f2d48a}
+@keyframes twinkle{50%{stroke:#ffd27a;filter:drop-shadow(0 0 6px #ffd27a)}}
+.cdet{border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:13px}
+.cdet .d{flex-basis:100%;color:#dfe3ff}
+.cdet .st{color:#9fe0a8}.cdet .why{color:#ffb38a}
+.mbtn.new small::after{content:"　買える本あり";color:#ffd27a}
+.b-charge{background:#6b4a0c;color:#ffe08a}
+.b-charge.hot{background:#c23a2a;color:#fff;animation:blink .8s infinite}
+
+#banner{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;background:#000c;border:1px solid var(--gold);
+  border-radius:12px;padding:10px 18px;font-size:19px;font-weight:700;max-width:90%;text-align:center;pointer-events:none}
+
+/* 技の枠の色：攻撃＝赤／守備＝青／回復・補助＝緑 */
+:root{--catAtk:#e8615f;--catDef:#5b9cf0;--catSup:#4fc27e}
+.sk.t-atk,.big.t-atk{border:2px solid var(--catAtk)}
+.sk.t-def,.big.t-def{border:2px solid var(--catDef)}
+.sk.t-sup,.big.t-sup{border:2px solid var(--catSup)}
+.sk.t-pas{border:2px dashed #8a8fb8}
+.sk.t-atk:not(:disabled):hover,.big.t-atk:hover{box-shadow:0 0 0 2px var(--catAtk)}
+.sk.t-def:not(:disabled):hover,.big.t-def:hover{box-shadow:0 0 0 2px var(--catDef)}
+.sk.t-sup:not(:disabled):hover{box-shadow:0 0 0 2px var(--catSup)}
+.catlegend{display:flex;gap:10px;font-size:12px;color:var(--sub);margin:2px 0 6px}
+.catlegend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+/* 状態アイコン */
+.sti{position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;margin:0 1px}
+.sti svg{width:20px;height:20px;display:block;filter:drop-shadow(0 1px 1px #000a)}
+.sti b{position:absolute;right:-5px;bottom:-4px;font-size:10px;line-height:1;background:#000c;color:#fff;border-radius:6px;padding:1px 3px}
+.sts{display:flex;justify-content:center;gap:4px;margin:2px 0}
+.stl{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:3px}
+.stline{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#ffd9b0}
+.stline.ex{color:#ffe27a;font-weight:700}
+.badge.b-weak{background:#2b2350;color:#ffd27a;display:inline-flex;align-items:center;gap:2px}
+.badge.b-weak .sti{width:16px;height:16px}.badge.b-weak .sti svg{width:16px;height:16px}
+.pop.stpop{display:flex;align-items:center;gap:3px;font-size:15px;top:62%;color:#fff}
+.btn.snd{font-size:13px;padding:5px 10px}
+.btn.snd.off{opacity:.5;text-decoration:line-through}
+.sndbox{position:absolute;right:8px;top:6px;z-index:5;display:flex;gap:4px}
+.sndbox .btn.snd{font-size:11px;padding:3px 8px;background:#000a}
+/* 行動順バー：顔が左から行動する順に並ぶ */
+#order{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+#order .ol{font-size:13px;font-weight:800;white-space:nowrap;color:var(--gold)}
+#order .ol.slow{color:var(--sub)}
+.otrack{flex:1;display:flex;align-items:flex-start;gap:6px;overflow-x:auto;padding:4px 2px 2px;position:relative;scrollbar-width:thin}
+.otrack::before{content:"";position:absolute;left:0;right:0;top:33px;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold),#f2c86b33)}
+.oc{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;width:64px}
+.oi{width:58px;height:58px;border-radius:50%;overflow:hidden;border:3px solid #5aa8f0;background:#0d1020;display:flex;align-items:center;justify-content:center}
+.oi img{width:100%;height:100%;object-fit:cover}
+.oi svg{width:150%;height:auto;margin-top:6px}
+.oc.o-enemy .oi{border-color:#ff7a7a;border-radius:10px}
+.oc.o-support .oi{width:42px;height:42px;margin-top:8px;border-color:#6b7397;opacity:.8}
+.oc.cur .oi{border-color:var(--gold);box-shadow:0 0 0 3px #f2c86b88;transform:scale(1.12)}
+.oc.todo .oi{border-style:dashed}
+.ot{font-size:12px;font-weight:700;line-height:1.2;margin-top:2px;white-space:nowrap;color:var(--sub)}
+.oc.o-enemy .ot{color:#ffb4b4}
+.ot.hot{background:#c23a2a;color:#fff;border-radius:5px;padding:0 4px}
+.ot.warm{background:#6b4a0c;color:#ffe08a;border-radius:5px;padding:0 4px}
+.shake{animation:shake .3s}
+@keyframes shake{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}
+.pop{position:absolute;left:50%;top:28%;transform:translateX(-50%);font-weight:900;font-size:24px;pointer-events:none;
+  text-shadow:0 2px 0 #000,0 0 6px #000;animation:pop .9s forwards;white-space:nowrap;z-index:5}
+.pop.dmg{color:#fff} .pop.kd{color:#8cc8ff;font-size:16px;top:48%} .pop.heal{color:#7dffa8} .pop.brk{color:var(--brk);font-size:28px}
+.pop.boost{color:#ffd76a;font-size:20px;top:8%}
+.pop.mp{color:#d9b8ff;font-size:16px;top:30%}
+.bar.m{height:8px}.bar.m>i{background:#b98cff}.bar.m>.ghost{background:#eadcff}
+.bar>s.cut{position:absolute;right:0;top:0;height:100%;z-index:2;background:repeating-linear-gradient(135deg,#1a0d14 0 3px,#7a3348 3px 6px);border-radius:0 6px 6px 0}
+.nmp{color:#d9b8ff}.nums small{font-size:.8em;opacity:.75;font-weight:400}
+@media (orientation:landscape) and (max-height:520px){.bar.m{height:5px;margin-top:2px}.reserve .bar.m{height:4px;margin-top:1px}}
+.bp{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.bp i{width:10px;height:10px;transform:rotate(45deg);border:1.5px solid #ffd76a;background:transparent;display:inline-block}
+.bp i.on{background:#ffd76a;box-shadow:0 0 6px #ffcc33}
+.bp i.use{background:#ff8a3d;border-color:#ff8a3d}
+.boostrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 8px}
+.boostrow .bl{font-weight:bold;color:#ffd76a;margin-right:4px}
+.boostrow .bbtn.on{background:#5a4512;border-color:#ffd76a;color:#fff3c4}
+.bnote{color:#ffd76a;font-size:.85em}
+@keyframes pop{0%{opacity:0;margin-top:8px}15%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-26px}}
+
+#bottom{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px;height:265px}
+#panel,#log{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;overflow:auto}
+#panel h3{margin:0 0 8px;font-size:17px}
+.phead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.phead h3{margin:0}
+.phead .row{margin-top:0}
+#log{font-size:14px;line-height:1.6}
+#log .t{color:var(--gold);font-weight:700;margin-top:4px}
+#log .e{color:#ffb4b4} #log .b{color:var(--brk);font-weight:700} #log .g{color:#9fe8b4} #log .s{color:var(--sub)}
+
+.menu4{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}@media (max-width:640px){.menu4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.badge.b-weak.unk{color:#b8b0d8}
+.big{font-size:18px;font-weight:700;padding:12px 14px;text-align:left;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.big .c{float:right;font-size:14px;color:var(--k);font-weight:700;margin-top:3px}
+.big .d{display:block;font-size:12px;font-weight:400;color:var(--sub)}
+.big:disabled{opacity:.4}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.grp{font-size:13px;color:var(--sub);margin:6px 0 4px}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
+.sk{text-align:left;padding:7px 10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.sk b{font-size:16px}
+.sk .c{float:right;color:var(--k);font-weight:700;font-size:14px}
+.sk .d{display:block;font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4}
+.sk:disabled{opacity:.4}
+.meter{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);margin-top:3px}
+.meter span{width:3.2em}
+.meter .m{flex:1;height:7px;border-radius:4px;background:#0007;overflow:hidden}
+.meter .m i{display:block;height:100%}
+.who{display:flex;gap:6px;flex-wrap:wrap}
+.who .btn{display:flex;flex-direction:column;align-items:flex-start;min-width:120px}
+.who .btn small{font-size:12px;color:var(--sub)}
+.plan{font-size:13px;color:#bfe7ff;margin-top:6px}
+.hint{font-size:12px;color:var(--sub);margin-top:8px}
+.result{text-align:center;padding:6px}
+.result h2{font-size:30px;margin:0 0 6px;color:var(--gold)}
+.result .maxhit{font-size:18px;margin:0 0 8px}.result .maxhit b{font-size:30px;color:#ffd27a;letter-spacing:.02em}.result .newbest{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:#ffd27a;color:#2b2350;font-weight:700;font-size:14px}
+
+/* スマホ・縦長 */
+@media (max-width:820px), (orientation:portrait) and (max-width:1000px){
+  #battle{height:auto;min-height:100dvh;padding:6px 8px}
+  #field{flex:none;min-height:0;display:flex;flex-direction:column;padding:38px 6px 6px;gap:4px}
+  #enemyArea,#partyArea,#reserveArea{position:static;width:auto;min-width:0}
+  #enemyArea{flex-wrap:nowrap;gap:2px}
+  .enemy{width:33%}.enemy.boss{width:62%}.enemy.many{width:20%}
+  .enemy.many .nums span:last-child{display:none}
+  .enemy img.mon{max-width:90px}
+  .enemy.boss img.mon{max-width:150px}
+  .enemy.many img.mon{max-width:60px}
+  .enemy .nm{font-size:14px}
+  #partyArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .hero{position:relative;width:auto;max-width:none;padding:4px 5px}
+  .hero[data-pos]{left:auto;top:auto}
+  .pic .st{display:none}
+  .pic .fc{display:block;width:100%;height:100%;object-fit:cover;border-radius:8px}
+  .hero .pic{height:auto;aspect-ratio:1/1;max-height:120px;max-width:120px;margin:0 auto 2px}
+  .hero .nm{font-size:15px}
+  .role{font-size:12px;padding:1px 5px}
+  #reserveArea{flex-direction:row;padding:4px;align-items:stretch}
+  #reserveArea .lbl{writing-mode:vertical-rl;align-self:center}
+  .reserve{flex:1;display:grid;grid-template-columns:48px 1fr;gap:6px;align-items:center}
+  .reserve .pic{height:48px;width:48px}
+  .nums{font-size:12px}
+  #bottom{grid-template-columns:1fr;height:auto}
+  #log{max-height:130px}
+  .big{font-size:17px;padding:14px 12px}
+  .list{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  #order{padding:4px 6px;gap:4px}
+  #order .ol{font-size:11px}
+  .oc{width:40px}
+  .oi{width:38px;height:38px;border-width:2px}
+  .otrack::before{top:22px}
+  .oc.o-support .oi{width:28px;height:28px;margin-top:5px}
+  #field{padding-top:34px}
+  .topline{font-size:12px}.turn{font-size:16px}.chip{font-size:12px;padding:2px 7px}
+  .enemy svg{max-height:56px}
+  .enemy .badge{font-size:11px}
+  .hero .pic{max-width:64px;max-height:64px}
+  .hero .badge{font-size:11px}
+  .cmd{font-size:12px;min-height:16px}
+  .phead .btn{padding:7px 10px;font-size:14px}
+  .big{padding:10px 10px;font-size:16px}
+  .big .d{font-size:11px}
+  #bottom{gap:6px}
+}
+
+/* ===== 枠なし：状態は輪郭の光で示す ===== */
+.unit{border-color:transparent!important;box-shadow:none!important;background:none!important}
+.unit .nm,.unit .nums,.unit .cmd{text-shadow:0 1px 2px #000,0 0 5px #000}
+#reserveArea{border:none;background:#0003}
+.unit .pic img,.enemy img.mon,.enemy>svg{transition:filter .2s}
+.unit.pickable .pic img,.enemy.pickable img.mon,.enemy.pickable>svg{filter:drop-shadow(0 0 2px #7fd4ff) drop-shadow(0 0 7px #7fd4ffaa)}
+.unit.brk .pic img{filter:drop-shadow(0 0 3px var(--brk)) drop-shadow(0 0 9px var(--brk)) saturate(.5)}
+.unit.active .pic img{filter:drop-shadow(0 0 3px #f2c86b) drop-shadow(0 0 11px #f2c86b)}
+.unit.acting .pic img,.enemy.acting img.mon,.enemy.acting>svg{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px #fff)}
+.unit.aura1 .pic img{filter:drop-shadow(0 0 4px #ffd76a) drop-shadow(0 0 14px #ffb300)}
+.unit.aura2 .pic img{filter:drop-shadow(0 0 4px #ff7af0) drop-shadow(0 0 16px #ff3ad6)}
+.unit.down .pic img{filter:grayscale(1) brightness(.45)}
+
+/* ===== ゲージ：太く、減った分が遅れて消える ===== */
+.bar{position:relative;height:12px;border-radius:6px;box-shadow:0 0 0 1px #000a}
+.bar.k{height:8px}
+.bar>i{position:relative;z-index:1;border-radius:inherit}
+.bar>.ghost{position:absolute;left:0;top:0;height:100%;background:#fff;border-radius:inherit;transition:width .5s ease-in .3s}
+.bar.k>.ghost{background:#d6ecff}
+.nums{font-weight:700}
+
+/* ===== 行動順：大技の位置を赤く ===== */
+.oc.hotc .oi{border-color:#ff3a2a;box-shadow:0 0 10px 2px #ff3a2a;animation:blink .8s infinite}
+
+/* ===== 警告と札 ===== */
+.warnbox{background:#5a1616;border:1px solid #ff8a8a;border-radius:10px;padding:5px 10px;margin:0 0 8px;font-size:13px;font-weight:700;color:#ffe1e1;line-height:1.5}
+.badge.b-hit{background:#f2c86b;color:#2b1c00}
+.badge.b-risk{background:#7a1f1f;color:#ffd0d0}
+
+/* ===== タイトルの相手カード ===== */
+.choice.enc{display:flex;gap:10px;align-items:center}
+.choice.enc .th{flex:none;width:60px;height:60px;object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--sub)}
+.choice.enc .tx{min-width:0;flex:1}
+.choice.enc .meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:1px 0 3px;font-size:12px;color:var(--sub)}
+.dp{display:inline-flex;gap:2px;margin-left:4px;vertical-align:middle}
+.dp i{width:9px;height:9px;border-radius:2px;background:#0006;border:1px solid var(--line)}
+.dp i.on{background:#ff7a5a;border-color:#ffb49c}
+.bestd{color:#ffd27a;font-weight:700}
+
+#battle[data-log=shut] #log{display:none}
+#battle[data-log=shut] #bottom{grid-template-columns:1fr}
+
+/* ===== スマホ横向き：左に戦場、右にコマンド。スクロールなし ===== */
+@media (orientation:landscape) and (max-height:540px){
+  #battle{position:fixed;inset:0;max-width:none;height:auto;min-height:0;display:grid;grid-template-columns:minmax(0,56fr) minmax(0,44fr);grid-template-rows:auto minmax(0,1fr);gap:4px;
+    padding:4px max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left))}
+  #order{grid-column:1;grid-row:1;padding:2px 6px;gap:4px;border-radius:8px}
+  #order .ol{font-size:10px}
+  .oc{width:38px}.oi{width:34px;height:34px;border-width:2px}.otrack{padding:3px 2px 1px;gap:4px}.otrack::before{top:19px;height:3px}
+  .oc.o-support .oi{width:24px;height:24px;margin-top:5px}
+  .ot{font-size:10px;margin-top:1px}
+  #field{grid-column:1;grid-row:2;flex:none;min-height:0;display:grid;grid-template-columns:41% minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;padding:24px 4px 4px;gap:2px 4px;border-radius:10px}
+  #enemyArea,#partyArea,#reserveArea{position:static;width:auto;min-width:0}
+  #enemyArea{grid-row:1/3;gap:2px;flex-wrap:wrap}
+  #partyArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;align-items:end}
+  .hero{position:relative;width:auto;max-width:none;padding:0 3px}.hero[data-pos]{left:auto;top:auto}
+  .hero .pic{height:clamp(50px,27dvh,130px)}
+  .hero .nm{font-size:13px;white-space:nowrap;overflow:hidden}
+  .role{font-size:10px;padding:0 4px;margin-right:2px}
+  .badge{font-size:10px;padding:0 4px}
+  .bar{height:9px;margin-top:2px}.bar.k{height:6px}
+  .nums{font-size:11px}
+  .cmd{font-size:10px;min-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  #reserveArea{flex-direction:row;padding:2px;gap:4px;align-items:stretch}
+  #reserveArea .lbl{display:none}
+  .reserve{flex:1;display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px;align-items:center;padding:0 2px}
+  .reserve .pic{height:42px;width:32px}
+  .reserve .nm{font-size:11px;white-space:nowrap;overflow:hidden}
+  .enemy{padding:0}.enemy .nm{font-size:12px}
+  .enemy img.mon{max-width:min(96px,24dvh)}.enemy.boss img.mon{max-width:min(150px,38dvh)}.enemy.many img.mon{max-width:46px}
+  #enemyArea{align-content:center;justify-content:center}
+  .enemy:not(.boss){flex:0 0 32%;max-width:32%;width:auto;min-width:0}.enemy:not(.boss) img.mon{max-width:min(60px,19dvh)}
+  .enemy:first-child:nth-last-child(2),.enemy:first-child:nth-last-child(2)~.enemy{flex-basis:48%;max-width:48%}.enemy:first-child:nth-last-child(2) img.mon,.enemy:first-child:nth-last-child(2)~.enemy img.mon{max-width:min(88px,23dvh)}
+  .enemy.many{flex:0 0 31%;max-width:31%}.enemy.many img.mon{max-width:44px}.enemy:not(.boss) .nums span:last-child{display:none}
+  .enemy .nm{white-space:nowrap;overflow:hidden}
+  .topline{left:6px;top:3px;right:170px;font-size:11px;gap:4px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}.turn{font-size:14px}.chip{font-size:10px;padding:1px 6px}
+  .sndbox{top:3px;right:4px}#battle .sndbox .btn.snd{font-size:10px;padding:3px 7px}
+  #banner{font-size:14px;padding:5px 12px;bottom:6px}
+  #bottom{grid-column:2;grid-row:1/3;display:block;height:auto;min-height:0;position:relative}
+  #panel{height:100%;padding:6px 8px;border-radius:10px}
+  #panel h3{font-size:14px;margin-bottom:4px}
+  #battle .btn{padding:8px 10px;font-size:13px}
+  .phead{margin-bottom:4px;gap:4px}
+  .menu4{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .big{font-size:15px;padding:9px 10px}.big .d{font-size:10px}.big .c{font-size:12px}
+  .list{grid-template-columns:1fr 1fr;gap:4px}
+  .sk{padding:5px 7px}.sk b{font-size:13px}.sk .d{font-size:10px;line-height:1.3}.sk .c{font-size:11px}
+  .meter{font-size:10px;margin-top:2px}
+  .boostrow{margin:2px 0 4px}.boostrow .small,.hint,.catlegend{display:none}
+  .who .btn{min-width:0;flex:1 1 30%}
+  .warnbox{font-size:11px;padding:3px 8px;margin-bottom:4px}
+  .plan{font-size:11px;margin-top:4px}
+  .row{margin-top:5px;gap:4px}
+  #log{position:absolute;inset:0;z-index:8;font-size:12px;border-radius:10px}
+  #battle:not([data-log=open]) #log{display:none}
+  .result h2{font-size:22px;margin:0}.result{font-size:12px}
+}
+
+/* ===== 行動順：同じ形の斜めの枠に、顔を大きく ===== */
+.otrack::before{display:none}
+.otrack{gap:0;padding:3px 10px 2px;align-items:flex-start}
+.oc{width:60px}
+.oi,.oc.o-support .oi{width:54px;height:44px;margin-top:0;border-radius:5px;transform:skewX(-14deg);border:2px solid #5aa8f0;border-bottom-width:5px;background:#0d1020}
+.oc.o-enemy .oi{border-radius:5px;border-color:#ff7a7a;background:#2a1020}
+.oc.o-support .oi{border-color:#6b7397;opacity:.6}
+.oi img{transform:skewX(14deg) scale(1.3);object-position:50% 25%}
+.oi img.mon{object-fit:cover;background:none;transform:skewX(14deg) scale(1.45);object-position:50% 30%}
+.oi svg{transform:skewX(14deg)}
+.oc.cur .oi{transform:skewX(-14deg) scale(1.1);border-color:var(--gold);box-shadow:0 0 10px 1px #f2c86b;opacity:1}
+.oc.cur{z-index:2}
+.oc.warmc .oi{border-color:#ffb02e}
+.oc.hotc .oi{border-color:#ff3a2a;box-shadow:0 0 10px 2px #ff3a2a}
+.ot{font-size:11px;margin-top:3px}
+.oc.o-hero .ot{color:#bfe0ff}
+
+/* ===== 右側だけで人を切り替える札 ===== */
+.atabs{display:flex;gap:5px;margin-bottom:6px}
+.atab{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;padding:3px 6px 3px 3px;border-radius:10px;border:2px solid var(--line);background:#141936;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.atab img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto}
+.atab span{min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.atab b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atab small{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atab.done small{color:#8fe3a4}
+.atab.on{border-color:var(--gold);background:#2a2550;box-shadow:0 0 8px #f2c86b88}
+.atab.on small{color:var(--gold)}
+.atab.focus{outline:2px solid #fff}
+.go .sh{display:none}
+.nums em{font-style:normal}
+
+@media (max-width:480px){
+  .oc{width:44px}.oi,.oc.o-support .oi{width:40px;height:34px;border-width:2px;border-bottom-width:4px;margin-top:0}
+  .atab img{width:30px;height:30px}.atab b{font-size:12px}
+}
+@media (orientation:landscape) and (max-height:540px){
+  .oc{width:50px}.oi,.oc.o-support .oi{width:45px;height:34px;border-width:2px;border-bottom-width:4px;margin-top:0}
+  .otrack{padding:3px 8px 1px;gap:0}.ot{font-size:10px;margin-top:2px}
+  #field{grid-template-rows:minmax(0,1fr) auto}
+  #partyArea{align-items:stretch;min-height:0;gap:4px}
+  .hero{display:flex;flex-direction:column;min-height:0;padding:0 2px}
+  .hero .pic{flex:1 1 0;min-height:28px;height:auto;aspect-ratio:auto;max-width:none;max-height:none;width:100%;margin:0 0 2px;border-radius:8px;transition:box-shadow .2s}
+  .hero .pic .st{display:none}
+  .hero .pic .fc{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 18%;border-radius:8px}
+  .unit.hero .pic img{filter:none}
+  .hero.active .pic{box-shadow:0 0 0 2px #f2c86b,0 0 12px 2px #f2c86b}
+  .hero.acting .pic{box-shadow:0 0 0 2px #fff,0 0 14px 2px #fff}
+  .hero.brk .pic{box-shadow:0 0 10px 2px var(--brk)}.unit.hero.brk .pic img{filter:saturate(.4) brightness(.8)}
+  .hero.aura1 .pic{box-shadow:0 0 0 2px #ffd76a,0 0 14px 3px #ffb300}
+  .hero.aura2 .pic{box-shadow:0 0 0 2px #ff7af0,0 0 16px 4px #ff3ad6}
+  .unit.hero.down .pic img{filter:grayscale(1) brightness(.45)}
+  .nums{font-size:11px;white-space:nowrap;gap:4px}.nums em{display:none}.nh{color:#9df0b0}.nk{color:#9fd0ff}
+  .hero .nums em,.reserve .nums em{display:none}
+  .enemy .nums em{display:inline}
+  #reserveArea{background:none;padding:0;gap:6px}
+  .reserve{display:block;padding:1px 4px;background:#0004!important;border-radius:6px}
+  .reserve .pic{display:none}
+  .reserve .nm{font-size:11px}.reserve .bar{height:6px;margin-top:1px}.reserve .bar.k{height:4px}
+  .reserve .nums{display:none}
+  .atabs{gap:4px;margin-bottom:4px}.atab{padding:2px 5px 2px 2px;border-radius:8px}.atab img{width:32px;height:32px}.atab b{font-size:12px}.atab small{font-size:10px}
+  #panel .lg{display:none}.go .sh{display:inline}
+  .phead .row{flex-wrap:nowrap;width:100%;gap:3px}#battle .phead .row .btn{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;padding:8px 3px;font-size:11px}#battle .phead .row .btn.go{font-size:13px;flex:1.4 1 auto}
+  .menu4 .big{padding:7px 9px}
+}
+/* ===== 2026-11-21 ゲームらしく：画面の大きさに固定。ページ全体は動かさず、中だけスクロール ===== */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea{-webkit-user-select:text;user-select:text}
+#title{position:fixed;inset:0;min-height:0;overflow:hidden}
+#title .mhome{position:absolute;inset:0;min-height:0;height:100%;overflow:auto}
+#title .mpage{position:absolute;inset:0;max-width:none;margin:0;padding:0 max(12px, calc((100% - 1200px) / 2)) 8px;overflow:hidden;box-sizing:border-box;flex-direction:column}
+#battle{position:fixed;inset:0;margin:0 auto;overflow:hidden}
+@media (max-width:820px), (orientation:portrait) and (max-width:1000px){#battle{overflow-y:auto;overscroll-behavior:contain}}
+.mcorner{position:absolute;top:10px;right:12px;z-index:3;display:flex;gap:6px}
+.mcorner .btn{font-size:13px;padding:6px 12px;background:rgba(20,18,40,.8);border-color:#8a6a2a;color:#f6e2a8}
+*::-webkit-scrollbar{width:8px;height:8px}*::-webkit-scrollbar-thumb{background:rgba(232,195,114,.35);border-radius:4px}*::-webkit-scrollbar-track{background:transparent}
+/* ===== 2026-11-21 各ページもスクロールなし：見出し＋中身（中身は画面に収める） ===== */
+#title .mhead{position:static;flex:none;padding:6px 0;margin-bottom:6px}
+#title .mbody{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:6px}
+#title .mbody.scroll{overflow-y:auto}
+#title .mpage h3{margin:2px 0}
+/* 出陣：相手を小さな札で一画面に */
+#encChoices{flex:1;min-height:0;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:6px}
+#encChoices .choice.enc{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;gap:2px;min-height:0;overflow:hidden}
+#encChoices .choice.enc .th{width:56px;height:56px;font-size:24px}
+#encChoices .choice.enc .tx>.small{display:none}
+#encChoices .choice.enc .meta{justify-content:center;font-size:11px;margin:0}
+#encChoices .choice.enc b{font-size:13px;margin:0}
+#pg-battle .mbody>.row{flex:none;margin:0}
+#encNote{font-size:13px;color:#dfe3ff}
+/* 技の書 */
+#bookBox{flex:1;min-height:0;display:flex;flex-direction:column}
+.bk-top{flex:none;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.bk-top .lo-tabs{gap:4px}.bk-top .lo-tabs .btn{min-width:0;padding:4px 10px;font-size:13px}.bk-top .lo-tabs small{font-size:10px}
+.bk-top .row{margin:0;gap:4px}.bk-top .btabs .btn{padding:5px 12px;font-size:14px}
+.bk-top .gold{font-size:13px;color:#f6e2a8;margin-left:6px}
+.bk-main{flex:1;min-height:0;display:flex;gap:8px;margin-top:6px}
+.bk-left{flex:1 1 60%;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px}
+.bk-left .t3bar{flex:none;margin:0;gap:4px}
+.bk-left .cbox{flex:1;min-height:0;margin:0;position:relative}
+.bk-left .t3 canvas{position:absolute;inset:0;width:100%;height:100%}
+.bk-left .cbox.flat svg{width:100%;height:100%;max-height:none}
+.bk-side{flex:0 0 38%;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;background:rgba(22,22,50,.88);border:1px solid #5a4a2a;border-radius:10px;padding:6px 8px}
+.bk-side .stabs{margin:0;gap:4px;flex:none}
+.bk-side .sbody{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.bk-side .cdet{border:none;padding:0}
+.bk-side .fsel{display:grid;grid-template-columns:1fr 1fr;gap:6px}.bk-side .btn.fx{min-width:0}
+.bk-side .shop{display:grid;grid-template-columns:1fr 1fr;gap:6px}.bk-side .shopi{min-width:0}
+.clist{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;align-content:start}
+.crow{display:flex;flex-direction:column;font-size:11px;line-height:1.3;padding:2px 4px;border-radius:4px;cursor:pointer;border:1px solid transparent}
+.crow b{font-size:12px}.crow span{color:#ffb38a}.crow.got span{color:#9fe0a8}.crow:hover{border-color:var(--line)}
+.bk-full{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
+.bk-full .row{margin:0;gap:4px}
+.bk-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-rows:min-content;gap:6px;align-content:start}
+.bk-grid .node{max-width:none;padding:5px 8px;font-size:12px}
+.bk-grid .node .btn{align-self:flex-start}
+/* 設定 */
+#pg-settings #tuneChoices{grid-template-columns:1fr 1fr}
+#pg-settings #devBox{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:0}
+#pg-settings .devi{padding:3px 8px;font-size:12px}#pg-settings .devi input{width:64px;font-size:13px;padding:2px 4px}
+#pg-settings .row{margin:0}
+/* 遊び方：ページめくり */
+#pg-help .rules{flex:1;min-height:0;overflow:hidden;margin:0}
+.hpager{flex:none;display:flex;gap:8px;align-items:center;justify-content:center}
+@media (orientation:landscape) and (max-height:540px){
+  #title .mhead{padding:3px 0;margin-bottom:3px}#title .mhead h2{font-size:17px}
+  #encChoices .choice.enc .th{width:40px;height:40px}
+  .bk-side .sbody,.crow{font-size:11px}
+  #pg-help .rules{font-size:12px;line-height:1.5}
+}
+/* ===== 2026-11-21 HD-2D風の戦闘画面（3Dの舞台の上に、名札・行動順・カットイン・吹き出しを重ねる） ===== */
+#battle.hd{position:fixed!important;inset:0!important;max-width:none!important;margin:0!important;padding:0!important;display:block!important;height:auto!important;overflow:hidden!important;background:#05060f;--u:min(1vw,1.9vh)}
+#battle.hd.hidden{display:none!important}
+#battle.hd #stage3d{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+#battle.hd #field{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;border:none!important;border-radius:0!important;background:transparent!important;display:block!important;min-height:0!important;z-index:1;overflow:visible!important}
+#battle.hd #enemyArea,#battle.hd #partyArea{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;display:block!important;pointer-events:none;margin:0!important;padding:0!important;grid-template-columns:none!important}
+#battle.hd .hdu{transition:none!important;position:absolute!important;left:0;top:0;margin:0!important;padding:0!important;border:none!important;background:none!important;box-shadow:none!important;pointer-events:auto;min-width:0!important;min-height:0!important;width:120px;height:200px;display:block!important}
+#battle.hd .hdu .spr{width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center}
+#battle.has3d .hdu .spr>*{visibility:hidden}
+#battle.hd .hdu .spr img.mon{max-height:100%;max-width:100%;image-rendering:pixelated}
+#battle.hd .hdu .spr img.st{max-height:100%;max-width:100%}
+#battle.hd .hdu .lab{position:absolute;left:50%;top:100%;transform:translateX(-50%);text-align:center;white-space:nowrap;margin-top:calc(var(--u)*.3)}
+#battle.hd .hdu .lab .nm{display:inline-block;font-size:calc(var(--u)*1.15);font-weight:700;padding:0 calc(var(--u)*.9);transform:skewX(-14deg);text-shadow:0 1px 3px #000}
+#battle.hd .enemy .lab .nm{background:linear-gradient(90deg,rgba(60,10,20,.9),rgba(60,10,20,.35));border-left:3px solid #e8656a;color:#ffe0e0}
+#battle.hd .hero .lab .nm{background:linear-gradient(90deg,rgba(14,12,34,.85),rgba(14,12,34,.35));border-left:3px solid #e8c372;color:#f6e2a8}
+#battle.hd .hdu .lab .bar{width:calc(var(--u)*9);height:calc(var(--u)*.6);margin:calc(var(--u)*.15) auto 0}
+#battle.hd .hdu .lab .nums{display:none}
+#battle.hd .hdu .lab .tgs{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:calc(var(--u)*16);margin:2px auto 0;white-space:normal}
+#battle.hd .hdu .lab .badge{font-size:calc(var(--u)*.72);padding:0 calc(var(--u)*.3);margin:0}
+#battle.hd .hdu .lab .sts{display:flex;justify-content:center;gap:2px}
+#battle.hd .hdu .lab .est{margin-top:2px;font-size:calc(var(--u)*.85);background:rgba(10,10,30,.92);border:1px solid #f2d48a;border-radius:4px;padding:1px 6px;color:#fff}
+#battle.hd .hdu .lab .est b{color:#ffd27a}
+#battle.hd .hdu.pickable{cursor:pointer}
+#battle.hd .hdu.pickable::after{content:"";position:absolute;left:10%;right:10%;bottom:-4%;height:12%;border:2px dashed #ffd27a;border-radius:50%;animation:hdblink 1.6s ease-in-out infinite}
+@keyframes hdblink{50%{opacity:.35}}
+#battle.hd .hdu.down .lab{opacity:.45}
+#battle.hd #topline{position:absolute!important;left:1.6%;top:1%;display:flex!important;gap:6px;align-items:center;z-index:3;background:none!important;padding:0!important;flex-wrap:wrap;max-width:36%}
+#battle.hd .turnx{display:flex;align-items:baseline;gap:calc(var(--u)*.5);font-family:"Cinzel",serif;margin-right:6px}
+#battle.hd .turnx b{font-size:calc(var(--u)*3.4);font-weight:900;line-height:1;background:linear-gradient(180deg,#fff6dc,#f2d48a 45%,#b8862e);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 4px rgba(242,212,138,.55))}
+#battle.hd .turnx span{font-size:calc(var(--u)*1.4);font-weight:700;letter-spacing:.35em;color:#e8c372;text-shadow:0 1px 3px #000}
+#battle.hd #topline .chip{font-size:calc(var(--u)*.9)}
+#battle.hd .sndbox{position:absolute!important;top:1%;right:1%;left:auto!important;bottom:auto!important;z-index:5;display:flex;gap:4px}
+#battle.hd .sndbox .btn{font-size:calc(var(--u)*.95);padding:3px 9px;background:rgba(8,10,26,.7);border-color:rgba(232,195,114,.45)}
+#battle.hd #banner{position:absolute!important;top:12%!important;bottom:auto!important;left:50%!important;right:auto!important;transform:translateX(-50%);z-index:6}
+/* 行動順：平行四辺形をすきまなく。先の番ほどうすい */
+#battle.hd #order{position:absolute!important;top:1.5%;left:50%;transform:translateX(-50%);z-index:3;background:none!important;border:none!important;padding:0!important;margin:0!important;display:flex}
+#battle.hd #order.hidden{display:none!important}
+#battle.hd #order .ol{display:none}
+#battle.hd #order .otrack{display:flex;gap:0;overflow:visible!important}
+#battle.hd #order .oc{width:calc(var(--u)*4.4);height:calc(var(--u)*3.1);transform:skewX(-20deg);margin:0 0 0 -1px;border:2px solid #5d6aa8;border-radius:0;overflow:hidden;background:#141838;position:relative;flex:none;padding:0}
+#battle.hd #order .oc .oi{width:100%;height:100%;transform:skewX(20deg) scale(1.35);display:flex;align-items:center;justify-content:center}
+#battle.hd #order .oc .oi img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+#battle.hd #order .oc .oi img.mon{object-fit:contain}
+#battle.hd #order .oc.o-enemy{border-color:#c25a5e;background:#2a1420}
+#battle.hd #order .oc.cur{width:calc(var(--u)*5.8);height:calc(var(--u)*3.8);border-color:#f2d48a;box-shadow:0 0 12px rgba(242,212,138,.85);z-index:2}
+#battle.hd #order .oc>span{position:absolute;bottom:1px;left:50%;transform:skewX(20deg) translateX(-50%);font-size:calc(var(--u)*.7);background:rgba(10,10,30,.85);color:#fff;padding:0 3px;border-radius:2px;white-space:nowrap}
+#battle.hd #order .oc>span.hot{background:#c23a2a}
+/* カットイン：番のキャラの大きな姿と、名前の帯 */
+#battle.hd #cutin{position:absolute;inset:0;z-index:2;pointer-events:none}
+#battle.hd #cutin.hidden{display:none}
+#battle.hd #cutin img{position:absolute;right:13%;bottom:-20%;height:98%;-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 80%);mask-image:linear-gradient(180deg,#000 62%,transparent 80%);filter:drop-shadow(0 0 1vw rgba(242,212,138,.3));animation:cutin .35s ease-out}
+@keyframes cutin{from{transform:translateX(8%);opacity:0}}
+#battle.hd #cutin .band{position:absolute;right:-2%;bottom:16%;width:36%;height:12%;transform:skewX(-18deg);background:linear-gradient(90deg,rgba(14,12,34,0) 0%,rgba(14,12,34,.75) 22%,rgba(14,12,34,.92) 100%);border-top:2px solid #f2d48a;border-bottom:1px solid rgba(232,195,114,.55)}
+#battle.hd #cutin .band::after{content:"";position:absolute;left:18%;top:0;bottom:0;width:calc(var(--u)*.5);background:#f2d48a;opacity:.8}
+#battle.hd #cutin .cname{position:absolute;right:4.5%;bottom:19.5%;font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--u)*3.4);letter-spacing:.25em;color:#f6e2a8;text-shadow:0 0 1vw rgba(0,0,0,.9),0 3px 0 #3a2808}
+#battle.hd #cutin .csub{position:absolute;right:5%;bottom:16.8%;font-size:calc(var(--u)*1);color:#c9cfee;text-shadow:0 1px 3px #000}
+#battle.hd #cutin .cbars{position:absolute;right:4%;bottom:3.5%;width:calc(var(--u)*16)}
+#battle.hd #cutin .cbars .bar{height:calc(var(--u)*.75);margin-top:3px}
+#battle.hd #cutin .cbars .nums{font-size:calc(var(--u)*.95);color:#c9cfee;text-shadow:0 1px 3px #000;display:flex;gap:8px;justify-content:flex-end}
+#battle.hd #cutin .cbars .nums em{font-style:normal;color:#9aa0c8}
+/* 右の操作：吹き出し・技の札 */
+#battle.hd #bottom{position:absolute!important;right:0;left:auto!important;top:11%;bottom:27%;width:44%;height:auto!important;display:block!important;z-index:4;background:none!important;border:none!important;padding:0!important;margin:0!important;grid-template-columns:none!important;grid-column:auto!important;grid-row:auto!important}
+#battle.hd #panel{height:100%!important;background:none!important;border:none!important;padding:0 1% 0 0!important;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;display:flex;flex-direction:column;align-items:flex-end;gap:4px;box-shadow:none!important}
+#battle.hd #log{display:none!important}
+#battle.hd[data-log=open] #log{display:block!important;position:fixed;left:1%;top:12%;bottom:18%;width:34%;z-index:7;background:rgba(8,10,26,.92);border:1px solid #3a4479;border-radius:8px;overflow:auto;font-size:12px}
+#battle.hd .hdrow{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+#battle.hd .hdrow .btn{font-size:calc(var(--u)*.95);padding:3px 9px;background:rgba(8,10,26,.7);border-color:rgba(232,195,114,.45)}
+#battle.hd .hdwarn{font-size:calc(var(--u)*.9);color:#ffd27a;background:rgba(40,20,10,.75);border:1px solid #8a6a2a;border-radius:4px;padding:2px 8px;max-width:100%;text-align:right}
+#battle.hd .bubs{display:flex;flex-direction:column;align-items:flex-end;gap:calc(var(--u)*.6);margin-top:calc(var(--u)*.4)}
+#battle.hd .bub{position:relative;min-width:calc(var(--u)*14);text-align:left;padding:calc(var(--u)*.55) calc(var(--u)*1.4) calc(var(--u)*.55) calc(var(--u)*1.6);color:#f6e2a8;cursor:pointer;font:inherit;
+  background:linear-gradient(90deg,rgba(52,44,96,.25) 0%,rgba(36,30,72,.6) 45%,rgba(16,14,36,.88) 100%);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  clip-path:polygon(0 12%,6% 0,100% 0,100% 70%,94% 100%,0 100%);border:none;border-left:3px solid #e8c372;box-shadow:0 0 0 1px rgba(232,195,114,.5)}
+#battle.hd .bub:nth-child(2){margin-right:calc(var(--u)*1.5)}#battle.hd .bub:nth-child(3){margin-right:calc(var(--u)*3)}#battle.hd .bub:nth-child(4){margin-right:calc(var(--u)*4.5)}#battle.hd .bub:nth-child(5){margin-right:calc(var(--u)*6)}
+#battle.hd .bub b{display:block;font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--u)*1.8);letter-spacing:.15em;line-height:1.15}
+#battle.hd .bub small{display:block;font-size:calc(var(--u)*.8);color:#c9cfee;margin-top:2px}
+#battle.hd .bub .n{position:absolute;right:calc(var(--u)*.9);top:calc(var(--u)*.4);font-size:calc(var(--u)*.85);color:#b58cff}
+#battle.hd .bub.atk{border-left-color:#e8656a}
+#battle.hd .bub:hover,#battle.hd .bub.focus{background:linear-gradient(90deg,rgba(138,100,32,.35) 0%,rgba(138,100,32,.75) 50%,rgba(58,40,8,.92) 100%);color:#fff6dc;box-shadow:0 0 0 1px #fff3c8,0 0 1.4vw rgba(242,212,138,.9)}
+#battle.hd .bub[disabled]{opacity:.4;cursor:default}
+#battle.hd #panel .boostrow{justify-content:flex-end;margin:0;font-size:calc(var(--u)*.9);background:none}
+#battle.hd #panel .boostrow .small{display:none}
+#battle.hd #panel .list{width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;flex:none}
+#battle.hd #panel .sk{background:linear-gradient(90deg,rgba(40,34,80,.55),rgba(16,14,36,.9));padding:4px 8px}
+#battle.hd #panel .sk .d{display:none}
+#battle.hd #panel .sk .meter{display:flex;font-size:calc(var(--u)*.75);gap:4px;align-items:center;margin-top:2px}
+#battle.hd #panel .sk .meter .m{flex:1;height:calc(var(--u)*.5)}
+#battle.hd #panel .grp{align-self:stretch;text-align:right;color:#e8c372;font-size:calc(var(--u)*.9);margin:0}
+#battle.hd #panel .row{justify-content:flex-end;margin:0}
+#battle.hd #panel .catlegend{display:none}
+#battle.hd #panel h3{color:#f6e2a8;text-shadow:0 1px 3px #000;text-align:right;font-size:calc(var(--u)*1.3);margin:0}
+#battle.hd #panel .who{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#battle.hd #panel .who .btn{min-width:40%;background:rgba(16,14,36,.85)}
+#battle.hd #panel .hint{text-align:right;text-shadow:0 1px 3px #000}
+#battle.hd #panel .atabs,#battle.hd #panel .phead{display:none}
+#battle.hd #panel .result{align-self:center;background:rgba(8,10,26,.92);border:1px solid #8a6a2a;border-radius:10px;padding:12px 18px;margin:auto}
+#battle.hd.res #bottom{left:18%!important;right:18%;width:auto;top:16%;bottom:8%}
+/* 控え：左下の小さな顔 */
+#battle.hd #reserveArea{position:absolute!important;left:1.2%;bottom:2%;top:auto!important;right:auto!important;display:flex!important;flex-direction:row!important;gap:6px;z-index:3;background:none!important;border:none!important;padding:0!important;width:auto!important;height:auto!important;grid-column:auto!important;grid-row:auto!important}
+#battle.hd #reserveArea .lbl{display:none}
+#battle.hd #reserveArea .unit{width:calc(var(--u)*7);padding:3px!important;border-radius:6px;background:rgba(8,10,26,.72)!important;border:1px solid #3a4479!important;display:flex!important;flex-direction:column;align-items:center;margin:0!important;min-height:0!important}
+#battle.hd #reserveArea .unit>div:not(.pic){width:100%;text-align:center}
+#battle.hd #reserveArea .unit .pic{width:calc(var(--u)*3.4)!important;height:calc(var(--u)*3.4)!important;border-radius:50%;overflow:hidden;position:relative;display:block!important;flex:none}
+#battle.hd #reserveArea .unit .pic img.st{display:none}
+#battle.hd #reserveArea .unit .pic img.fc{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;position:static}
+#battle.hd #reserveArea .unit .nm{font-size:calc(var(--u)*.8)}
+#battle.hd #reserveArea .unit .badge,#battle.hd #reserveArea .unit .nums,#battle.hd #reserveArea .unit .bp,#battle.hd #reserveArea .unit .role,#battle.hd #reserveArea .unit .bar.k,#battle.hd #reserveArea .unit .bar.m{display:none}
+#battle.hd #reserveArea .unit .bar{height:4px;width:100%;margin-top:2px}
+#battle.hd #reserveArea .unit.pickable{border-color:#ffd27a!important;cursor:pointer}
+/* 技の一覧はコンパクトに。一覧を開いているあいだは右側を下まで使い、カットインは引っ込める */
+#battle.hd.m-list #bottom{bottom:2%!important;top:9%!important}
+#battle.hd.m-list #cutin{display:none!important}
+#battle.hd #panel .row .btn,#battle.hd #panel .cattabs .btn,#battle.hd #panel .bbtn{font-size:calc(var(--u)*.95)!important;padding:2px 9px!important;min-height:0!important;background:rgba(8,10,26,.75)}
+#battle.hd #panel .sk{font-size:calc(var(--u)*.85)!important;padding:3px 6px!important;min-height:0!important;border-radius:6px}
+#battle.hd #panel .sk b{font-size:calc(var(--u)*1.05)!important}
+#battle.hd #panel .sk .c{font-size:calc(var(--u)*.75)!important}
+#battle.hd #panel .sk .badge{font-size:calc(var(--u)*.68)!important;padding:0 3px!important}
+#battle.hd #panel .sk .stl{font-size:calc(var(--u)*.72)!important;margin:1px 0}
+#battle.hd #panel .sk .stl .sticon,#battle.hd #panel .sk .stl svg{width:calc(var(--u)*1)!important;height:calc(var(--u)*1)!important}
+#battle.hd #panel .boostrow .bbtn{width:auto!important;height:auto!important}
+/* 味方のバーは画面下の帯にまとめる */
+#battle.hd #partyHud{position:absolute;left:calc(var(--u)*17);bottom:1.5%;display:flex;gap:calc(var(--u)*.6);z-index:3;pointer-events:none}
+#battle.hd.res #partyHud,#battle.hd.m-list #partyHud{display:none}
+#battle.hd #partyHud .hc{display:flex;align-items:center;gap:calc(var(--u)*.5);width:calc(var(--u)*15);padding:calc(var(--u)*.35) calc(var(--u)*.6);background:linear-gradient(180deg,rgba(10,12,32,.82),rgba(6,8,22,.9));border:1px solid #3a4479;border-radius:6px;transition:transform .2s,border-color .2s}
+#battle.hd #partyHud .hc.cur{border-color:#f2d48a;box-shadow:0 0 0 1px #f2d48a55,0 0 12px #f2d48a44;transform:translateY(-4px)}
+#battle.hd #partyHud .hc.down{opacity:.45;filter:grayscale(.8)}
+#battle.hd #partyHud .hf{width:calc(var(--u)*3);height:calc(var(--u)*3);border-radius:50%;overflow:hidden;flex:none;border:1px solid #6a74a8}
+#battle.hd #partyHud .hc.cur .hf{border-color:#f2d48a}
+#battle.hd #partyHud .hf img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block}
+#battle.hd #partyHud .hb{flex:1;min-width:0}
+#battle.hd #partyHud .hn{font-size:calc(var(--u)*.95);font-weight:700;line-height:1.1;color:#f3ecd8;text-shadow:0 1px 2px #000}
+#battle.hd #partyHud .hc.cur .hn{color:#ffe3a0}
+#battle.hd #partyHud .bar{width:100%;margin-top:calc(var(--u)*.2)}
+#battle.hd #partyHud .nums{display:flex;gap:calc(var(--u)*.5);font-size:calc(var(--u)*.72);color:#e8ecff;line-height:1.1;margin-top:1px;white-space:nowrap}
+#battle.hd #partyHud .nums em{font-style:normal;color:#8f97c4}
+#battle.hd #partyHud .nums .nk{color:#9fe6ff}#battle.hd #partyHud .nums .nmp{color:#d6b8ff}
+/* 3つのバーを見分けやすく
+   体力：太くて丸い、上につや
+   気力：10の区切りに分かれた斜めのブロック
+   精神力：細い光の線と先端のひし形 */
+#battle.hd .bar{height:calc(var(--u)*.75)!important;border-radius:calc(var(--u)*.4)!important;background:#05060f!important;box-shadow:0 0 0 1px #000c,inset 0 1px 2px #000!important}
+#battle.hd .bar>i{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 0 rgba(0,0,0,.28)}
+#battle.hd .bar.k{height:calc(var(--u)*.5)!important;border-radius:0!important;background:#0a1830!important;box-shadow:none!important;transform:skewX(-25deg);-webkit-mask-image:repeating-linear-gradient(90deg,#000 0 calc(10% - 2px),transparent calc(10% - 2px) 10%);mask-image:repeating-linear-gradient(90deg,#000 0 calc(10% - 2px),transparent calc(10% - 2px) 10%)}
+#battle.hd .bar.k>i{background:linear-gradient(180deg,#bff3ff,#38b8f0 55%,#1a6fb8)!important;border-radius:0!important;box-shadow:none}
+#battle.hd .bar.k>.ghost{background:#ffffff!important;border-radius:0!important}
+#battle.hd .bar.m{height:calc(var(--u)*.28)!important;border-radius:0!important;background:rgba(80,50,130,.35)!important;box-shadow:none!important;overflow:visible!important;margin-top:calc(var(--u)*.35)!important}
+#battle.hd .bar.m>i{background:linear-gradient(90deg,#6c3fd0,#d3b4ff)!important;border-radius:0!important;box-shadow:0 0 6px #b98cff,0 0 2px #fff!important;position:relative}
+#battle.hd .bar.m>i::after{content:"";position:absolute;right:calc(var(--u)*-.3);top:50%;width:calc(var(--u)*.6);height:calc(var(--u)*.6);background:#f1e6ff;transform:translateY(-50%) rotate(45deg);box-shadow:0 0 6px #d3b4ff}
+#battle.hd .bar.m>i[style*="width:0%"]::after{display:none}
+#battle.hd .bar.m>.ghost{background:#f1e6ff!important;border-radius:0!important}
+/* 下の帯：スマホでも読める大きさに */
+#battle.hd #partyHud{left:calc(var(--u)*17 + 8px)}
+#battle.hd #partyHud .hc{width:max(calc(var(--u)*17),150px);padding:3px 7px 4px;gap:6px}
+#battle.hd #partyHud .hf{width:max(calc(var(--u)*3.4),30px);height:max(calc(var(--u)*3.4),30px)}
+#battle.hd #partyHud .hn{font-size:max(calc(var(--u)*1),11px);margin-bottom:1px}
+#battle.hd #partyHud .hr{display:grid;grid-template-columns:2.4em 1fr 2.9em;align-items:center;gap:4px;font-size:max(calc(var(--u)*.78),9px);line-height:1}
+#battle.hd #partyHud .hr+.hr{margin-top:2px}
+#battle.hd #partyHud .hr em{font-style:normal;font-weight:700;letter-spacing:.02em}
+#battle.hd #partyHud .hr span{text-align:right;font-variant-numeric:tabular-nums;color:#f3ecd8;font-weight:700}
+#battle.hd #partyHud .hr.hp em{color:#9fe39a}
+#battle.hd #partyHud .hr.kk em,#battle.hd #partyHud .hr.kk span{color:#9fe6ff}
+#battle.hd #partyHud .hr.mm em,#battle.hd #partyHud .hr.mm span{color:#d6b8ff}
+#battle.hd #partyHud .bar{margin:0!important;width:100%}
+#battle.hd #partyHud .hr.hp .bar{height:max(calc(var(--u)*.9),8px)!important}
+#battle.hd #partyHud .hr.kk .bar{height:max(calc(var(--u)*.7),6px)!important}
+#battle.hd #partyHud .hr.mm .bar{height:max(calc(var(--u)*.3),3px)!important;margin-right:5px!important}
+#battle.hd #partyHud .hr.mm .bar>i::after{width:max(calc(var(--u)*.6),6px);height:max(calc(var(--u)*.6),6px);right:max(calc(var(--u)*-.3),-3px)}
+/* ===== ウィンドウの見た目（紺のガラスに金の縁と角飾り） ===== */
+#battle.hd{--wg1:rgba(44,36,88,.9);--wg2:rgba(10,10,28,.94);--gold:#e8c372;--goldL:#fff1c4}
+#battle.hd .win,#battle.hd #partyHud .hc,#battle.hd #reserveArea .unit,#battle.hd #panel .sk,#battle.hd #panel .tgt,#battle.hd #banner,#battle.hd .hdu .lab .plate{position:relative;background:linear-gradient(165deg,var(--wg1),var(--wg2) 62%)!important;border:1px solid rgba(232,195,114,.38)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,240,200,.14),0 6px 16px rgba(0,0,0,.55)!important;border-radius:3px!important}
+/* 角の金具 */
+#battle.hd #partyHud .hc::before,#battle.hd #partyHud .hc::after,#battle.hd #reserveArea .unit::before,#battle.hd #reserveArea .unit::after,#battle.hd #panel .tgt::before,#battle.hd #panel .tgt::after,#battle.hd #banner::before,#battle.hd #banner::after{content:"";position:absolute;width:7px;height:7px;border:solid var(--gold);pointer-events:none}
+#battle.hd #partyHud .hc::before,#battle.hd #reserveArea .unit::before,#battle.hd #panel .tgt::before,#battle.hd #banner::before{left:-2px;top:-2px;border-width:2px 0 0 2px}
+#battle.hd #partyHud .hc::after,#battle.hd #reserveArea .unit::after,#battle.hd #panel .tgt::after,#battle.hd #banner::after{right:-2px;bottom:-2px;border-width:0 2px 2px 0}
+/* 味方の帯 */
+#battle.hd #partyHud .hc{padding:4px 8px 5px 6px;gap:7px}
+#battle.hd #partyHud .hc .hb{position:relative}
+#battle.hd #partyHud .hn{font-family:"Shippori Mincho B1",serif;font-weight:800;letter-spacing:.08em;padding-bottom:1px;margin-bottom:2px;background:linear-gradient(90deg,rgba(232,195,114,.7),transparent) left bottom/100% 1px no-repeat}
+#battle.hd #partyHud .hf{transform:rotate(45deg);border-radius:3px;border:1.5px solid #8a7440;box-shadow:0 0 0 2px rgba(0,0,0,.6);margin:0 3px}
+#battle.hd #partyHud .hf img{transform:rotate(-45deg) scale(1.45)}
+#battle.hd #partyHud .hc.cur{border-color:var(--gold)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5),inset 0 0 18px rgba(242,212,138,.18),0 0 0 1px rgba(242,212,138,.4),0 0 16px rgba(242,212,138,.35)!important}
+#battle.hd #partyHud .hc.cur .hf{border-color:var(--goldL);box-shadow:0 0 8px rgba(255,220,140,.8)}
+#battle.hd #partyHud .hc.cur::before,#battle.hd #partyHud .hc.cur::after{width:10px;height:10px;border-color:var(--goldL)}
+#battle.hd #partyHud .hc.brk{border-color:#e8656a!important}
+/* 控え */
+#battle.hd #reserveArea .unit{padding:4px 3px!important}
+#battle.hd #reserveArea .unit .pic{transform:rotate(45deg);border-radius:3px!important;border:1.5px solid #8a7440;margin:4px 0 5px}
+#battle.hd #reserveArea .unit .pic img.fc{transform:rotate(-45deg) scale(1.45)}
+#battle.hd #reserveArea .unit .nm{font-family:"Shippori Mincho B1",serif;font-weight:800}
+/* 敵・味方の頭上の札 */
+#battle.hd .hdu .lab .nm{font-family:"Shippori Mincho B1",serif;font-weight:800;letter-spacing:.1em;padding:1px calc(var(--u)*1.1)!important}
+#battle.hd .enemy .lab .nm{background:linear-gradient(90deg,rgba(90,14,30,.95),rgba(40,8,18,.55))!important;border-left:3px solid #ff7b80!important;box-shadow:0 0 0 1px rgba(255,123,128,.35)}
+#battle.hd .hero .lab .nm{background:linear-gradient(90deg,rgba(30,26,64,.95),rgba(14,12,34,.5))!important;box-shadow:0 0 0 1px rgba(232,195,114,.3)}
+#battle.hd .enemy .lab .bar{width:calc(var(--u)*10)!important}
+/* 実況の帯 */
+#battle.hd #banner{font-family:"Shippori Mincho B1",serif;font-weight:800;letter-spacing:.08em;color:#f6e2a8;padding:5px 22px!important;font-size:calc(var(--u)*1.2)!important;border-radius:0!important;background:linear-gradient(90deg,rgba(10,10,28,0),rgba(20,16,44,.94) 14%,rgba(20,16,44,.94) 86%,rgba(10,10,28,0))!important;border-width:1px 0!important;border-image:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold) 80%,transparent) 1!important;box-shadow:none!important}
+#battle.hd #banner::before,#battle.hd #banner::after{display:none}
+/* 技の札 */
+#battle.hd #panel .sk{border-left:3px solid var(--sc,#e8c372)!important}
+#battle.hd #panel .sk:hover{border-color:var(--goldL)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5),0 0 12px rgba(242,212,138,.45)!important}
+#battle.hd #panel .sk b{font-family:"Shippori Mincho B1",serif;font-weight:800}
+/* 相手を選ぶ札 */
+#battle.hd #panel .tgt{display:block;text-align:left;min-width:calc(var(--u)*13);padding:4px 14px!important;color:#ffe0e0;cursor:pointer;font:inherit;border-left:3px solid #ff7b80!important}
+#battle.hd #panel .tgt span{display:block;font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--u)*1.35);letter-spacing:.12em}
+#battle.hd #panel .tgt small{display:block;font-size:calc(var(--u)*.8);color:#c9cfee}
+#battle.hd #panel .tgt:hover,#battle.hd #panel .tgt.focus{border-color:#ffb0b3!important;box-shadow:0 0 14px rgba(255,123,128,.55)!important}
+/* 小さなボタン */
+#battle.hd .hdrow .btn,#battle.hd #panel .row .btn,#battle.hd #panel .cattabs .btn{border-radius:2px!important;border:1px solid rgba(232,195,114,.5)!important;background:linear-gradient(180deg,rgba(40,34,80,.85),rgba(12,12,30,.9))!important;color:#f3e6c0;font-family:"Shippori Mincho B1",serif;font-weight:700;letter-spacing:.06em}
+#battle.hd #panel .cattabs .btn.on,#battle.hd #panel .row .btn.on{background:linear-gradient(180deg,#a8823a,#5a4412)!important;color:#fff6dc}
+#battle.hd #panel .sk.t-atk{--sc:var(--catAtk)}#battle.hd #panel .sk.t-def{--sc:var(--catDef)}#battle.hd #panel .sk.t-sup{--sc:var(--catSup)}
+#battle.hd #panel .sk{border-left-width:4px!important}
+#battle.hd #panel .sk.t-atk,#battle.hd #panel .sk.t-def,#battle.hd #panel .sk.t-sup{border-left-color:var(--sc)!important;background:linear-gradient(165deg,color-mix(in srgb,var(--sc) 18%,rgba(30,26,64,.92)),var(--wg2) 62%)!important}
+#battle.has3d .hdu.pickable::after{display:none}
+/* ===== ブースト：宝石 ===== */
+#battle.hd .bst{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:3px 10px 3px 12px;margin:2px 0;background:linear-gradient(90deg,rgba(20,16,44,0),rgba(20,16,44,.88) 30%);border-right:2px solid rgba(232,195,114,.6)}
+#battle.hd .bst .bt{font-family:"Shippori Mincho B1",serif;font-weight:800;letter-spacing:.12em;color:#ffd27a;font-size:max(calc(var(--u)*1),11px)}
+#battle.hd .bst .gems{display:flex;gap:max(calc(var(--u)*.9),9px);padding:0 4px}
+#battle.hd .bst .gem{width:max(calc(var(--u)*2.4),24px);height:max(calc(var(--u)*2.4),24px);padding:0;border:none;background:none;cursor:pointer;display:grid;place-items:center}
+#battle.hd .bst .gem i{display:block;width:62%;height:62%;transform:rotate(45deg);border:2px solid #6a74a8;background:rgba(10,10,30,.8);transition:all .2s}
+#battle.hd .bst .gem.full i{border-color:#bfefff;background:linear-gradient(135deg,#e8fbff,#5cc8f0 50%,#1d5d9a);box-shadow:0 0 8px rgba(140,220,255,.7)}
+#battle.hd .bst .gem.full:hover i{transform:rotate(45deg) scale(1.15)}
+#battle.hd .bst .gem.lit i{border-color:#fff4c8;background:linear-gradient(135deg,#fffbe6,#ffc444 45%,#e8642a);box-shadow:0 0 10px #ffb43c,0 0 22px rgba(255,120,40,.8);animation:gemlit 1s ease-in-out infinite;transform:rotate(45deg) scale(1.2)}
+@keyframes gemlit{50%{box-shadow:0 0 16px #ffd27a,0 0 34px rgba(255,120,40,1)}}
+#battle.hd .bst .gem.empty{cursor:default}
+#battle.hd .bst .be{font-size:max(calc(var(--u)*.85),10px);color:#c9cfee;white-space:nowrap}
+#battle.hd .bst .be b{color:#ffd27a;font-weight:800}
+#battle.hd .bst.lv1,#battle.hd .bst.lv2{border-right-color:#ffb43c}
+/* こめた力が攻撃の吹き出しとカットインにも乗る */
+#battle.hd[data-boost="1"] .bub.atk,#battle.hd[data-boost="2"] .bub.atk{background:linear-gradient(90deg,rgba(120,60,10,.35) 0%,rgba(150,80,20,.7) 45%,rgba(60,24,6,.92) 100%);border-left-color:#ffc444;color:#fff1c4}
+#battle.hd[data-boost="2"] .bub.atk{background:linear-gradient(90deg,rgba(200,100,20,.45) 0%,rgba(220,110,30,.8) 45%,rgba(90,30,6,.95) 100%);border-left:5px solid #ffe08a}
+#battle.hd[data-boost="1"] .bub.atk small,#battle.hd[data-boost="2"] .bub.atk small{color:#ffd27a}
+#battle.hd[data-boost="1"] #cutin img{filter:drop-shadow(0 0 1vw rgba(255,170,60,.7))}
+#battle.hd[data-boost="2"] #cutin img{filter:drop-shadow(0 0 1.2vw rgba(255,130,40,.95)) drop-shadow(0 0 .3vw #fff3c8)}
+#battle.hd .boostrow{display:none!important}
+#battle.hd #panel .tgt{min-width:max(calc(var(--u)*14),130px)}#battle.hd #panel .tgt span{font-size:max(calc(var(--u)*1.35),13px)}#battle.hd #panel .tgt small{font-size:max(calc(var(--u)*.8),10px)}
+/* ===== 文字を減らす ===== */
+#battle.hd .bub small{display:none}
+#battle.hd[data-boost="1"] .bub.atk small,#battle.hd[data-boost="2"] .bub.atk small{display:block}
+#battle.hd .hero .lab .nm{display:none}
+#battle.hd #panel .atabs,#battle.hd #panel .cattabs,#battle.hd #panel .grp,#battle.hd #panel .hint{display:none!important}
+#battle.hd #partyHud .hr{grid-template-columns:1fr}
+#battle.hd #partyHud .hr em{display:none}
+#battle.hd #partyHud .hr.hp{grid-template-columns:1fr auto}
+#battle.hd #partyHud .hr.hp span{font-size:max(calc(var(--u)*.85),10px);min-width:2.6em}
+#battle.hd #panel .sk .badge{display:none}
+#battle.hd #panel .sk .badge.b-sys{display:inline-block}
+#battle.hd #panel .sk .badge.b-hit:first-child{display:inline-block}
+#battle.hd #panel .sk .stl{display:none!important}
+#battle.hd #panel .sk .meter span{display:none}
+#battle.hd #panel .sk .c{color:#d6b8ff;font-weight:700}
+#battle.hd #panel .sk .c::before{content:"";display:inline-block;width:.6em;height:.6em;margin-right:3px;transform:rotate(45deg);background:#b98cff;box-shadow:0 0 4px #b98cff}
+#battle.hd #panel .tghead{font-family:"Shippori Mincho B1",serif;font-weight:800;color:#ffd27a;letter-spacing:.12em;font-size:max(calc(var(--u)*1.05),12px);padding-right:6px}
+#battle.hd .hdwarn{display:flex;gap:5px;justify-content:flex-end;background:none!important;border:none!important;padding:0!important}
+#battle.hd .hdwarn span{font-size:max(calc(var(--u)*.85),10px);font-weight:800;color:#fff;background:linear-gradient(90deg,#8a1a24,#c8323c);padding:1px 9px;transform:skewX(-14deg);box-shadow:0 0 8px rgba(255,80,80,.5)}
+/* 右上はひとつのボタンにたたむ */
+#battle.hd .sndbox{position:absolute!important;right:1%;top:1%;z-index:8;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#battle.hd .sndbox>.btn{display:none}
+#battle.hd .sndbox.open>.btn{display:block}
+#battle.hd .sndbox>.mnu{display:block;width:max(calc(var(--u)*2.6),28px);height:max(calc(var(--u)*2.6),28px);padding:0;border:1px solid rgba(232,195,114,.6);background:linear-gradient(180deg,rgba(40,34,80,.85),rgba(12,12,30,.9));border-radius:2px;cursor:pointer;position:relative}
+#battle.hd .sndbox>.mnu i,#battle.hd .sndbox>.mnu::before,#battle.hd .sndbox>.mnu::after{content:"";position:absolute;left:24%;right:24%;height:2px;background:#f2d48a}
+#battle.hd .sndbox>.mnu::before{top:30%}#battle.hd .sndbox>.mnu i{top:calc(50% - 1px)}#battle.hd .sndbox>.mnu::after{bottom:30%}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<section id="title" data-page="home">
+  <!-- 2026-11-21 メニュー画面（ファンタジー風）。星環は「空を横切る、ごく緩い弧の光の帯」として描く（作画基準） -->
+  <svg class="sky" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="ringG" x1="0" x2="1"><stop offset="0" stop-color="#9fc4ff" stop-opacity="0"/><stop offset=".25" stop-color="#cfe0ff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff4d6" stop-opacity=".8"/><stop offset=".75" stop-color="#cfe0ff" stop-opacity=".55"/><stop offset="1" stop-color="#9fc4ff" stop-opacity="0"/></linearGradient>
+      <radialGradient id="skyG" cx="50%" cy="0%" r="90%"><stop offset="0" stop-color="#2a2f6b"/><stop offset=".55" stop-color="#141838"/><stop offset="1" stop-color="#090b1a"/></radialGradient>
+    </defs>
+    <rect width="1200" height="700" fill="url(#skyG)"/>
+    <g fill="#fff" class="stars"></g>
+    <g fill="none" stroke="url(#ringG)" stroke-linecap="round">
+      <path d="M-100 250 Q600 120 1300 250" stroke-width="26" opacity=".18"/>
+      <path d="M-100 246 Q600 116 1300 246" stroke-width="2" opacity=".9"/>
+      <path d="M-100 254 Q600 124 1300 254" stroke-width="1.2" opacity=".7"/>
+      <path d="M-100 240 Q600 110 1300 240" stroke-width=".8" opacity=".6"/>
+      <path d="M-100 260 Q600 130 1300 260" stroke-width=".8" opacity=".55"/>
+      <path d="M-100 234 Q600 104 1300 234" stroke-width=".5" opacity=".45"/>
+    </g>
+    <path d="M0 700 L0 560 Q120 520 220 548 Q330 500 440 540 Q560 488 680 532 Q800 492 920 538 Q1040 506 1200 546 L1200 700 Z" fill="#070914"/>
+  </svg>
+
+  <div class="mhome">
+    <div class="mcorner"><button class="btn" data-fs data-nav>全画面</button></div>
+    <div class="mhero">
+      <div class="mcrest" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><g fill="none" stroke="#e8c372" stroke-width="2"><circle cx="60" cy="60" r="50"/><circle cx="60" cy="60" r="44" stroke-width="1" opacity=".6"/></g>
+          <path d="M60 18 L67 50 L100 60 L67 70 L60 102 L53 70 L20 60 L53 50 Z" fill="#f2d48a" stroke="#8a6a2a" stroke-width="1.5"/>
+          <path d="M60 34 L64 56 L86 60 L64 64 L60 86 L56 64 L34 60 L56 56 Z" fill="#fff6dc" opacity=".8"/></svg>
+      </div>
+      <h1>星環バトル試作</h1>
+      <div class="msub">シュテルネンリング　戦いの稽古場</div>
+    </div>
+    <nav class="mmain">
+      <button class="mbtn" data-nav data-page="battle"><svg viewBox="0 0 32 32"><path d="M6 26 L22 10 L26 6 L24 12 L8 28 Z M5 21 L11 27 M4 28 L7 25"/></svg><span><b>出陣</b><small>相手を選んで戦う</small></span></button>
+      <button class="mbtn" data-nav data-page="book"><svg viewBox="0 0 32 32"><path d="M5 7 Q11 5 16 8 Q21 5 27 7 L27 25 Q21 23 16 26 Q11 23 5 25 Z M16 8 L16 26"/></svg><span><b>技の書</b><small>技を覚える・パッシブを付ける</small></span></button>
+      <button class="mbtn" data-nav data-page="settings"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><path d="M16 6 L16 2 M16 26 L16 30 M6 16 L2 16 M26 16 L30 16 M16 16 L21 11"/></svg><span><b>設定</b><small>難しさ・音・全画面</small></span></button>
+      <button class="mbtn" data-nav data-page="help"><svg viewBox="0 0 32 32"><path d="M8 5 L24 5 Q27 5 27 8 L27 27 L11 27 Q8 27 8 24 Z M5 8 Q5 5 8 5 M12 11 L23 11 M12 16 L23 16 M12 21 L19 21"/></svg><span><b>遊び方</b><small>ルールと操作</small></span></button>
+    </nav>
+  </div>
+
+  <div class="mpage" id="pg-battle">
+    <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>出陣</h2><button class="btn primary" id="startBtn" data-nav>たたかう</button></div>
+    <div class="mbody">
+
+    <div class="choices" id="encChoices"></div>
+    <!-- 2026-11-21 持ち込み構成は使わない（いつも「技の書で覚えた技＋付けたパッシブ」）。パッシブのプリセットは技の書 -->
+    <div class="choices hidden" id="kitChoices"></div>
+    <div class="row"><button class="btn primary" data-nav data-start>たたかう</button><span class="small" id="encNote"></span></div>
+    </div>
+  </div>
+
+  <div class="mpage" id="pg-book">
+    <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>技の書</h2></div>
+    <div class="mbody">
+    <div id="bookBox"></div>
+    </div>
+  </div>
+
+
+  <div class="mpage" id="pg-settings">
+    <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>設定</h2></div>
+    <div class="mbody">
+    <h3>難しさ</h3>
+    <div class="choices" id="tuneChoices"></div>
+    <h3>音と画面</h3>
+    <div class="row"><button class="btn snd" data-snd="bgm" data-nav></button><button class="btn snd" data-snd="se" data-nav></button><button class="btn snd" data-fs data-nav>全画面</button></div>
+    <h3>開発用：育ちの数字</h3>
+    <div class="small">試作の調整用。変えるとすぐ反映され、この端末に保存される。</div>
+    <div class="row"><button class="btn mini" data-nav data-lo="gexp">試し：全員の重点に経験値+50</button><button class="btn mini" data-nav data-lo="ggold">試し：金貨+500</button><button class="btn mini" data-nav data-lo="gall">試し：全部開放</button><button class="btn mini" data-nav data-lo="greset">育ちを最初に戻す</button></div>
+    <div id="devBox"></div>
+    </div>
+  </div>
+
+  <div class="mpage" id="pg-help">
+    <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>遊び方</h2></div>
+    <div class="mbody">
+    <div class="small">バトル相談の試算モデル（sr-battle-sandbox、2026-11-07）をもとにした試作。数値はすべて仮の値です。</div>
+  <h3>ルール</h3>
+  <ul class="rules">
+    <li><b>体力</b>が0になると倒れる。<b>精神力</b>は技を使うと払い、毎ターン少し回復する（最大100）。<b>気力</b>は攻撃を受けると減る守りの力で、技では減らない。毎ターン回復する。</li>
+    <li><b>味方はブレイクされるたびに最大体力が1割減る</b>（元の半分まで。敵は減らない）。戦いのあいだは戻らない。</li>
+    <li><b>崩れ</b>：敵はブレイクするたびに崩れが1つたまる（最大3）。1つごとに最大気力が15%減り（次のブレイクが早くなる）、受けるダメージが15%増える。戦いのあいだは消えない。</li>
+    <li><b>現象</b>：技が起こす現象（魔法の炎・雷・冷気・光・衝撃と、武器の斬撃・貫通・強撃）で、敵ごとに体力へのダメージの効き方が変わる。「〇〇に弱い」はよく効き、「〇〇に強い」は効きにくい。気力の削り方は今までどおり状態の弱点で変わる。ブレイブ攻撃は武器で決まる（ナハト＝刀・斬撃、ヴォルト＝ケインソード・貫通、フレア＝フランベルジュ・斬撃、セレナ＝レイピア・貫通、リヒト＝ツヴァイハンダー・強撃）。武器の特性：ケインソードは突きで気力削り1.2倍、フランベルジュは裂傷中の相手に1.3倍、レイピアの貫通は「強い」を受けない、ツヴァイハンダーの強撃は気力削り1.2倍で次の番が少し遅い。ボスは弱点を二つ持つものや、現象の急所（気力に効く）・大技の直後のすき（気力1.3倍）がある。</li>
+    <li><b>星律の体系と技の書</b>：魔法は七つの体系（構築・循環・観測・干渉・因果・時環・星核）を組み合わせた操作で、属性ではない。メニューの<b>技の書</b>で、ナハト以外の4人がコモンの技を覚える。時期ごとに四体系の書（初級・中級・上級）が手に入り、その範囲のツリーを、戦いに勝ってもらうポイント（通常戦1・ボス3）で覚える。得意な体系の技は1ポイント安い。ユニーク技はサブクエスト・イベントで増える。<b>覚えた技は全部、戦闘で使える</b>（コストなし）。<b>パッシブだけコストで付ける</b>（上限は序盤8・中盤12・終盤16）。技の書は「コモン・ユニーク・パッシブ」に分かれ、パッシブのタブで付け外しとプリセット（標準・反撃・追撃）を選べる。ユニーク技とパッシブはサブクエスト・イベントで増える。因果・時環・星核はまだ解明されていない。</li>
+    <li>特性（パッシブ）には、<b>ブレイクさせると精神力が回復</b>するものがある（勝ち鬨・集積回路・残熱回収・陣頭指揮）。</li>
+    <li>相手の気力を削るほど体力へのダメージが大きい。<b>ブレイブ攻撃</b>など「ブレイク可」の技で気力を0にすると<b>ブレイク</b>（気力0は必ずブレイク）。ほかの技は気力を1（<b>あと一押し</b>）までしか減らせない。ブレイクすると順番が下がって次の番は動けず、ダメージ1.5倍（緊張感ありは2倍）。</li>
+    <li><b>アクティブカウント</b>：1回の番で動くのは1人だけ。上の帯に、これから動く順番（いま→あと）が並ぶ。<b>素早さ</b>が高いほど番が早く、何度も回ってくる（ナハト70・ヴォルト66・リヒト62・フレア58・セレナ54）。<b>技の重さ</b>：軽い技（ブレイブ攻撃・防御など）は次の番が早く、大きな技ほど次の番が遅い。感電すると番が遅くなり、加速で味方の番を早められる。敵をブレイクさせると順番が下がり、次の番は休みになる（気力全回復・その次の番は早く来る）。「〇ターン」はその人の番の数で数える。</li>
+    <li><b>前衛・中衛・後衛</b>の3人が戦う。前衛ほど狙われやすい。<b>控え</b>の2人にも番が来て、小さな支援を自動で行う（緊張感ありでは体力も少し回復する）。味方の番に1回、交代か並べ替えができる。いまの番の人を下げると、入った人がその番に動く。</li>
+    <li><b>ブースト</b>（緊張感ありのみ）：自分の番のはじめに1つたまる（最大2・最初は1）。行動のときに1つか2つ使う。<b>ブレイブ攻撃は回数が+1／+2</b>（気力をまとめて削れる）。技は威力が×1.5／×2（攻撃・回復・蘇生）で、回数は増えない。使った番の次はたまらない。</li>
+    <li>コマンドは好きな人から入れられる。<b>交代</b>は1ターンに1組（前線の一人と控えの一人）。入る人の行動の順番が来たときに入れ替わる（それまでは下がる人が前線で攻撃を受ける）。ブレイク中の人は交代できない（倒れた人は下げられる）。前線の3人が全員倒れると、控えが前線に飛び出す。</li>
+    <li>コマンド：<b>ブレイブ攻撃</b>（消費なし・ブレイクさせられる）／<b>スキル</b>（<b>ユニーク</b>＝そのキャラだけの技、<b>コモン</b>＝みんなが使える技。ナハトはコモンなし）／<b>防御</b>（消費なし・そのターン受けるダメージと気力ダメージが半分）。</li>
+    <li>ターンの最初に1回だけ、<b>控えとの交代</b>か<b>前線同士の並べ替え</b>のどちらかができる。</li>
+    <li><b>ナハト</b>は技でフォームが変わる。ブレイブ：仲間が気力を0にした相手へ無料追撃。リベンジ：被ダメージ0.6倍、殴られたら無料反撃。アサルト：威力1.3倍。</li>
+    <li><b>技の時期</b>（序盤・中盤・終盤）：相手ごとに時期があり、それより後の技はその戦いでは使えない。終盤の大技（捨て身斬り・業火・決死の一閃・星落とし）は、撃つと次のターンに倒れかねない反動がある。無防備のあいだは回復も受けつけない。<b>守りの祈り</b>（先に掛けて反動を打ち消す）、<b>立て直し</b>（反動で減った体力を戻す）、かばうで支える。</li>
+    <li><b>数字</b>：体力・ダメージ・回復は試算の10倍で表示（比率は同じ）。勝つと1発の最大ダメージと自己ベストが出る。</li>
+    <li><b>状態</b>（緊張感ありのみ）：技で燃焼・裂傷・凍結・目眩・感電・暗闇を付けられる。効果は小さめ。敵ごとに「〇〇中は崩れやすい」弱点があり、その状態の間は気力が2倍削れて、気力が回復しない（ボス戦のカギ）。弱点ははじめ「弱点？」で隠れている。<b>調べる</b>（気力4）か、その状態を付けてみると分かり、分かった弱点は次の戦いからもアイコンで見える。「〇〇中に1.5倍」のように状態を活かす技もある。同じ状態を重ねるとターンが足し算で延びる（最大6）。</li>
+    <li><b>技の枠の色</b>：赤＝攻撃、青＝守備、緑＝回復・補助。</li>
+    <li><b>緊張感あり</b>：相手は自分の番で力を溜め、次の番に大技を撃つ（帯に「溜め」「大技」と出る）。溜めているあいだはスキだらけで、気力が1.5倍削れる（弱点と重なって3倍）。溜め中か大技の前にブレイクさせれば止まる。止められないなら、大技の前に防御しておく（防御は次の自分の番まで続く）。味方は気力が満タンでも攻撃の半分は受ける（前は4分の1）。敵はブレイク前は体力があまり削れず（気力を削っても半分まで）、<b>ブレイク中は2倍</b>。ブレイクしてからブーストで叩くのが基本。ボス級は体力が多く（2.5倍）、ブレイク1回では倒しきれない。ボス級にかかる状態は半分の番で解ける。ボス級は<b>弱点の状態が付いていないと気力が4割しか削れない</b>（付いていれば2倍）。ボス級の気力は3倍あるので、弱点を付け直しながら何ターンかかけて崩す。ボス戦では仲間が倒れることもある。セレナの<b>蘇生</b>（体力40%で起こす）や、だれでも持てる<b>気付け</b>（25%）で立て直す。「自動で進める」で味方もおまかせで動き続ける。</li>
+    <li>操作：マウス・タッチ・キーボード（矢印で選ぶ、Enterで決定、Escで戻る、Q/Eでキャラ切替、Cで交代）・コントローラー（十字キー、A決定、B戻る、L/Rキャラ切替、X交代、STARTで行動開始）。</li>
+  </ul>
+  <p class="credit" style="font-size:11px;color:var(--sub);margin-top:10px">素材：敵イラスト JosephSeraph（opengameart.org, CC BY 3.0・切り出しと拡大の加工あり）／効果音 Little Robot Sound Factory（www.littlerobotsoundfactory.com, CC BY 3.0）・leohpaz（CC BY 4.0）・StarNinjas・rubberduck（CC0）。くわしくは audio/se/CREDITS.txt と img/enemies/CREDITS.txt</p>
+    </div>
+  </div>
+</section>
+
+<section id="battle" class="hidden hd">
+  <canvas id="stage3d"></canvas>
+  <div id="cutin" class="hidden"></div>
+  <div id="partyHud"></div>
+  <div id="order" class="hidden"></div>
+  <div id="field">
+    <div class="topline" id="topline"></div>
+    <div id="enemyArea"></div>
+    <div id="partyArea"></div>
+    <div id="reserveArea"></div>
+
+    <div class="sndbox"><button class="mnu" id="mnuBtn" aria-label="メニュー"><i></i></button><button class="btn snd" data-fs>全画面</button><button class="btn snd" id="camBtn">カメラ 動く</button><button class="btn snd" id="logBtn">ログ</button><button class="btn snd" data-snd="bgm"></button><button class="btn snd" data-snd="se"></button></div>
+    <div id="banner" class="hidden"></div>
+  </div>
+  <div id="bottom">
+    <div id="panel"></div>
+    <div id="log"></div>
+  </div>
+</section>
+<script src="js/data.js?v=t1121a"></script>
+<script src="js/icons.js?v=t1121a"></script>
+<script src="js/engine.js?v=t1121a"></script>
+<script src="js/loadout.js?v=t1121a"></script>
+<script src="js/sound.js?v=t1121a"></script>
+<script src="js/fx.js?v=t1121a"></script>
+<script src="js/tree3d.js?v=t1121a"></script>
+<script src="js/ui.js?v=t1121a"></script>
+<script type="module" src="js/stage3d.js?v=t1121a"></script>
+</body>
+</html>
