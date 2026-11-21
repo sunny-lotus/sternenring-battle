@@ -93,3 +93,7 @@ SR.iconizeTags = function (html) {
 SR.statusSVG.bleed = '<circle cx="10" cy="10" r="9.2" fill="#a3182f" stroke="#ffc0c8" stroke-width=".8"/>' +
   '<g transform="translate(10 10) scale(.74) translate(-10 -10)"><path d="M3 16.5C7.5 14 12.5 9 16.5 2.5 15.5 8 11.5 13.5 4.6 17.6z" fill="#fff4f4"/></g>' +
   '<path d="M14.2 11.6c.9 1.3 1.6 2.2 1.6 3a1.6 1.6 0 0 1-3.2 0c0-.8.7-1.7 1.6-3z" fill="#ffd0d6"/>';
+// 2026-11-22 サニー：裂傷はふつうに血のしずく（深紅の丸に白っぽいしずく）
+SR.statusSVG.bleed = '<circle cx="10" cy="10" r="9.2" fill="#a3182f" stroke="#ffc0c8" stroke-width=".8"/>' +
+  '<path d="M10 3.6c2.6 3.6 4.4 6.1 4.4 8.3a4.4 4.4 0 0 1-8.8 0c0-2.2 1.8-4.7 4.4-8.3z" fill="#fff0f2"/>' +
+  '<path d="M8.2 12.4a2 2 0 0 0 1.6 1.9" stroke="#e05068" stroke-width="1" fill="none" stroke-linecap="round"/>';
