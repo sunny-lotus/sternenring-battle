@@ -324,8 +324,28 @@
   }
   // 遊び方：項目を、画面に入る分ずつのページに分ける
   var helpPage = 0;
+  // 遊び方：アイコンの説明一覧（現象・状態・しるし）。絵は戦闘と同じもの
+  function buildIconHelp() {
+    var ul = document.querySelector('#pg-help .rules'); if (!ul || ul.querySelector('.ichelp')) return;
+    function row(icon, name, fx) { return '<div class="ic"><span class="ici">' + icon + '</span><b>' + name + '</b>' + (fx ? '<small>' + fx + '</small>' : '') + '</div>'; }
+    var PH = { '炎': '燃やす', '雷': '電気を走らせる', '冷気': '冷やす・凍らせる', '光': 'まぶしい光', '衝撃': 'ぶつける力', '斬撃': '刀や剣で斬る', '貫通': '突き通す', '強撃': '重い一撃' };
+    var MK = [['brk', 'ブレイク', '気力が0になって崩れた／技の札ではブレイクできる技'], ['push', 'あと一押し', '気力が1。ブレイクできる技で崩せる'], ['charge', '溜め', '次の番に大技が来る'], ['big', '大技', '強い攻撃が来る。ブレイクで止められる'],
+      ['open', 'すき', '大技のあと。気力が削れやすい'], ['press', '重圧', '気力の回復が少なくなる'], ['shield', '防御', '受けるダメージが半分'], ['guard', '防護', 'ダメージを減らす守り'], ['kguard', '気力防護', '気力ダメージを減らす守り'],
+      ['exposed', '無防備', '受けるダメージ2倍・回復を受けない'], ['ember', '燃え尽き', '次の番は動けない'], ['pray', '守りの祈り', '反動や無防備を打ち消す'], ['aim', '照準', '次の攻撃の気力削りが増える'],
+      ['star', 'ねらい目', '弱点を突ける・よく効く・急所を突ける'], ['down', '効きにくい', 'この相手には体力ダメージが少ない'], ['all', '全体', '敵全体（味方全体）に届く'], ['unk', '弱点？', 'まだ弱点がわからない（調べるでわかる）']];
+    var h = '<li class="ichelp"><b>アイコン：現象</b>（技の性質。敵ごとに効き方が変わる）<div class="icgrid">' + Object.keys(PH).map(function (p) { return row(SR.phenIcon(p), p, PH[p]); }).join('') + '</div></li>';
+    h += '<li class="ichelp"><b>アイコン：状態</b>（数字は残りターン）<div class="icgrid">' + SR.statusOrder.map(function (s) { return row(SR.statusIcon(s), SR.statuses[s].name, SR.statuses[s].fx); }).join('') + '</div></li>';
+    function mk(list) { return list.map(function (m) { return row(SR.markIcon(m[0], m[1]), m[1], m[2]); }).join(''); }
+    h += '<li class="ichelp"><b>アイコン：しるし（戦いの様子）</b><div class="icgrid">' + mk(MK.slice(0, 6)) + '</div></li>';
+    h += '<li class="ichelp"><b>アイコン：しるし（守り）</b><div class="icgrid">' + mk(MK.slice(6, 13)) + '</div></li>';
+    h += '<li class="ichelp"><b>アイコン：しるし（技の札）</b><div class="icgrid">' + mk(MK.slice(13)) + '</div></li>';
+    h += '<li class="ichelp"><b>アイコン：枠の色</b><div class="icgrid">' + row('<span class="badge b-weak icw">' + SR.statusIcon('burn') + '</span>', '赤い枠の状態', 'その敵の弱点。この状態にすると気力が大きく削れる') +
+      row(SR.phenIcon('炎', 'kp'), '赤い輪の現象', 'その敵の急所。この現象の技で気力が多く削れる') + '</div></li>';
+    ul.insertAdjacentHTML('beforeend', h);
+  }
   function paginateHelp() {
     var ul = document.querySelector('#pg-help .rules'); if (!ul) return;
+    buildIconHelp();
     var items = Array.prototype.slice.call(ul.children), pager = document.getElementById('hpager');
     if (!pager) { pager = document.createElement('div'); pager.id = 'hpager'; pager.className = 'hpager'; ul.parentNode.insertBefore(pager, ul.nextSibling); }
     items.forEach(function (li) { li.style.display = ''; });
