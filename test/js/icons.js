@@ -72,6 +72,8 @@ SR.iconizeTags = function (html) {
     if (/b-sys/.test(cls)) return txt.split('・').map(function (p) { return SR.phenIcon(p); }).join('');
     if (/b-weak/.test(cls) && SR.phenSVG[txt]) return SR.phenIcon(txt, 'kp" title="' + (ttl ? ttl.slice(8, -1) : txt + 'が急所'));
     if (SR.typeLabel && Object.keys(SR.typeLabel).some(function (k) { return SR.typeLabel[k] === txt; })) return '';   // 種類は札の色でわかる
+    var cm = /^崩れ(\d+)$/.exec(txt);   // 崩れ（ブレイクされた回数）：割れた石のアイコン＋回数
+    if (cm) return '<span class="mki crk" title="崩れ' + cm[1] + '：ブレイクされた回数。最大ブレイクゲージが減り、受けるダメージが増える"><svg viewBox="0 0 20 20" aria-hidden="true">' + SR.markSVG.crack + '</svg><b>' + cm[1] + '</b></span>';
     var m = SR.MARK_OF[txt]; if (!m) return '<span class="badge ' + cls + '"' + (ttl || '') + '><span>' + txt + '</span></span>';
     return SR.markIcon(m, ttl ? ttl.slice(8, -1) : txt, cls.replace(/badge/, '').trim());
   });
@@ -97,3 +99,6 @@ SR.statusSVG.bleed = '<circle cx="10" cy="10" r="9.2" fill="#a3182f" stroke="#ff
 SR.statusSVG.bleed = '<circle cx="10" cy="10" r="9.2" fill="#a3182f" stroke="#ffc0c8" stroke-width=".8"/>' +
   '<path d="M10 3.6c2.6 3.6 4.4 6.1 4.4 8.3a4.4 4.4 0 0 1-8.8 0c0-2.2 1.8-4.7 4.4-8.3z" fill="#fff0f2"/>' +
   '<path d="M8.2 12.4a2 2 0 0 0 1.6 1.9" stroke="#e05068" stroke-width="1" fill="none" stroke-linecap="round"/>';
+// 崩れ：割れた石（ブレイクされた回数）
+SR.markSVG.crack = '<path d="M10 2l7 4v8l-7 4-7-4V6z" fill="#4a3e6a" stroke="#14102a" stroke-width="1"/><path d="M10 2l7 4-7 4-7-4z" fill="#6a5a92"/>' +
+  '<path d="M10.4 2.6L8.8 6.4l2.6 2.4-2.2 3.4 1.4 4.8" stroke="#ffb043" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M10.4 2.6L8.8 6.4l2.6 2.4-2.2 3.4 1.4 4.8" stroke="#fff3c4" stroke-width=".6" fill="none" stroke-linejoin="round"/>';
