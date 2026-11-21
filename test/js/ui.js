@@ -391,6 +391,73 @@
   $('title').addEventListener('click', function (ev) { var b = ev.target.closest('[data-help]'); if (!b || b.disabled) return; helpPage += +b.getAttribute('data-help'); paginateHelp(); nav.refresh(); });
   window.addEventListener('resize', function () { if (!$('title').classList.contains('hidden')) fitPage(); });
   // ---- メニュー画面：ページの切り替え ----
+  // ---- 開発者設定：レベル・お金・スキルの経験値・親密度 ----
+  var devTab = 'lv';
+  function drawDevMenu() {
+    var box = $('devMenu'); if (!box) return;
+    var G = SR.growth, O = ['N', 'V', 'F', 'S', 'L'], SYS = SR.baseSystems, MAXE = Math.round(SR.cumExp(3));
+    function face(id) { return '<span class="dvf"><img src="img/' + SR.img[id] + '_serious.jpg" alt=""></span><b class="dvn">' + SR.names[id] + '</b>'; }
+    var h = '<div class="row dvtabs">' + [['lv', 'レベル'], ['gold', 'お金'], ['exp', 'スキルの経験値'], ['bond', '親密度（連携技）']].map(function (t) {
+      return '<button class="btn mini' + (devTab === t[0] ? ' sel' : '') + '" data-nav data-dv="tab" data-id="' + t[0] + '">' + t[1] + '</button>';
+    }).join('') + '</div><div class="dvbody">';
+    if (devTab === 'lv') {
+      h += O.map(function (id) {
+        var i = SR.level.info(id);
+        return '<div class="dvr">' + face(id) + '<span class="dvl">Lv</span><input type="number" min="1" max="' + SR.LV_MAX + '" value="' + i.lv + '" data-dvi="lv" data-id="' + id + '">' +
+          '<button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="-1">-1</button><button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="1">+1</button><button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="10">+10</button>' +
+          '<button class="btn mini" data-nav data-dv="lvset" data-id="' + id + '" data-v="1">Lv1に</button><button class="btn mini" data-nav data-dv="lvset" data-id="' + id + '" data-v="' + SR.LV_MAX + '">最大</button>' +
+          '<small>次のLvまで ' + (i.next ? i.next - i.cur : '－') + '</small></div>';
+      }).join('') + '<div class="row"><button class="btn mini" data-nav data-dv="lvall" data-v="1">全員 Lv1 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="10">全員 Lv10 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="' + SR.LV_MAX + '">全員 最大に</button></div>';
+    } else if (devTab === 'gold') {
+      h += '<div class="dvr"><b class="dvn">お金</b><input type="number" min="0" value="' + G.gold() + '" data-dvi="gold" class="wide">' +
+        ['-1000', '+100', '+1000', '+10000'].map(function (v) { return '<button class="btn mini" data-nav data-dv="gold" data-v="' + v + '">' + v + '</button>'; }).join('') + '<button class="btn mini" data-nav data-dv="goldset" data-v="0">0にする</button></div>' +
+        '<div class="small dvnote">いまのゲームの中では、お金は一種類（金貨）で数えている。本文（第一巻）では大銅貨・大銀貨が使われていて、金貨は出てこない。両替の割合は本文に書かれていない。</div>';
+    } else if (devTab === 'exp') {
+      h += '<div class="dvgrid"><span></span>' + SYS.map(function (s) { return '<b class="dvh">' + s + '<small>本：' + SR.bookTier[G.books(s)] + '</small></b>'; }).join('') + '<span></span>';
+      ['V', 'F', 'S', 'L'].forEach(function (id) {
+        h += '<span class="dvw">' + face(id) + '</span>' + SYS.map(function (s) {
+          var e = G.exp(id, s);
+          return '<span class="dvc"><input type="number" min="0" max="' + MAXE + '" step="10" value="' + e + '" data-dvi="exp" data-id="' + id + '" data-s="' + s + '"><i class="dvbar"><s style="width:' + Math.min(100, e / MAXE * 100) + '%"></s></i></span>';
+        }).join('') + '<span class="dvb"><button class="btn mini" data-nav data-dv="exp0" data-id="' + id + '">0</button><button class="btn mini" data-nav data-dv="expmax" data-id="' + id + '">最大</button></span>';
+      });
+      h += '<span class="dvw"><b class="dvn">本</b></span>' + SYS.map(function (s) {
+        return '<span class="dvc dvbk">' + [1, 2, 3].map(function (t) { return '<button class="btn mini' + (G.books(s) === t ? ' sel' : '') + '" data-nav data-dv="book" data-s="' + s + '" data-v="' + t + '">' + SR.bookTier[t] + '</button>'; }).join('') + '</span>';
+      }).join('') + '<span></span></div><div class="small dvnote">経験値の最大は ' + MAXE + '（上級の終わり）。本の段より上の経験値は、本を持つまで柱に色がつかない。</div>';
+    } else {
+      h += SR.LINK_MATES.map(function (c) {
+        var ev = G.linkEv(c);
+        return '<div class="dvr">' + face(c) + '<button class="btn mini' + (ev ? ' sel' : '') + '" data-nav data-dv="lev" data-id="' + c + '">' + (ev ? 'イベント済み' : 'イベントまだ') + '</button>' +
+          '<span class="dvl">親密度</span><input type="number" min="0" max="' + (SR.bondLv[2] + 20) + '" step="10" value="' + G.bond(c) + '" data-dvi="bond" data-id="' + c + '"><span class="dvl">段' + G.bondLvOf(c) + '</span>' +
+          '<button class="btn mini" data-nav data-dv="bondset" data-id="' + c + '" data-v="' + SR.bondLv[1] + '">段2に</button><button class="btn mini" data-nav data-dv="bondset" data-id="' + c + '" data-v="' + SR.bondLv[2] + '">段3に</button></div>';
+      }).join('') + '<div class="small dvnote">連携技は終盤から。時期は技の書の上で変えられる（いま：' + SR.eraName[G.era()] + '）。</div>';
+    }
+    box.innerHTML = h + '</div>';
+  }
+  $('title').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-dv]'); if (!b) return;
+    var a = b.getAttribute('data-dv'), id = b.getAttribute('data-id'), v = +b.getAttribute('data-v'), s = b.getAttribute('data-s'), G = SR.growth;
+    if (a === 'tab') devTab = id;
+    else if (a === 'lv') SR.level.setLv(id, SR.level.lv(id) + v);
+    else if (a === 'lvset') SR.level.setLv(id, v);
+    else if (a === 'lvall') ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { SR.level.setLv(w, v); });
+    else if (a === 'gold') G.setGold(G.gold() + v);
+    else if (a === 'goldset') G.setGold(v);
+    else if (a === 'exp0') SR.baseSystems.forEach(function (x) { G.setExp(id, x, 0); });
+    else if (a === 'expmax') SR.baseSystems.forEach(function (x) { G.setExp(id, x, SR.cumExp(3)); });
+    else if (a === 'book') G.setBook(s, v);
+    else if (a === 'lev') G.toggleLinkEv(id);
+    else if (a === 'bondset') G.setBond(id, v);
+    SR.sound.se('tick'); drawDevMenu(); nav.refresh();
+  });
+  $('title').addEventListener('change', function (ev) {
+    var t = ev.target; if (!t.hasAttribute || !t.hasAttribute('data-dvi')) return;
+    var k = t.getAttribute('data-dvi'), id = t.getAttribute('data-id'), v = +t.value, G = SR.growth;
+    if (k === 'lv') SR.level.setLv(id, v);
+    else if (k === 'gold') G.setGold(v);
+    else if (k === 'exp') G.setExp(id, t.getAttribute('data-s'), v);
+    else if (k === 'bond') G.setBond(id, v);
+    drawDevMenu(); nav.refresh();
+  });
   // 今の育ち・装備で戦いを始めたときの仲間（メニューとステータスで使う）
   function partyNow() {
     var key = Object.keys(SR.encounters).find(function (k) { return !SR.encounters[k].random; });
@@ -441,6 +508,7 @@
     if (p === 'settings') drawDev();
     if (p === 'status') drawStatus();
     if (p === 'menu') drawMenu();
+    if (p === 'dev') drawDevMenu();
     requestAnimationFrame(fitPage);
     lastMode = null; nav.refresh();
   }

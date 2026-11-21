@@ -594,6 +594,7 @@ SR.isLink = function (id) { return !!SR.skills[id] && SR.skills[id].owner === 'l
   G.bond = function (c) { return b.bond[c] || 0; };
   G.linkEv = function (c) { return !!b.ev[c]; };
   G.toggleLinkEv = function (c) { b.ev[c] = !b.ev[c]; save(); };
+  G.setBond = function (c, v) { b.bond[c] = Math.max(0, Math.min(SR.bondLv[2] + 20, Math.round(v))); save(); };   // 開発者設定用
   G.addBond = function (c, n) { if (!b.ev[c]) return; b.bond[c] = Math.min(SR.bondLv[2] + 20, (b.bond[c] || 0) + n); save(); };
   // その仲間との段（0〜3）。イベントで1、親密度で2・3
   G.bondLvOf = function (c) { if (!b.ev[c]) return 0; var v = b.bond[c] || 0; return v >= SR.bondLv[2] ? 3 : v >= SR.bondLv[1] ? 2 : 1; };
@@ -681,7 +682,28 @@ SR.level = (function () {
     lv: function (id) { return info(id).lv; },
     add: function (id, n) { var a = info(id).lv; d.exp[id] = (d.exp[id] || 0) + n; save(); return info(id).lv - a; },
     up: function (id) { var i = info(id); if (i.lv < SR.LV_MAX) { d.exp[id] = (d.exp[id] || 0) + (i.next - i.cur); save(); } },   // 試し用：1つ上げる
-    reset: function () { d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } }; save(); }
+    reset: function () { d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } }; save(); },
+    reload: function () { try { var x = JSON.parse(localStorage.getItem(KEY)); if (x && x.exp) d = x; } catch (e) {} }
   };
 })();
 (function () { var rs = SR.growth.reset; SR.growth.reset = function () { rs(); SR.level.reset(); }; })();
+
+// ---- 開発者設定で数字を直接さわるための入口（試し用）----
+(function () {
+  var G = SR.growth;
+  G.setGold = function (n) { var d = G.data(); d.gold = Math.max(0, Math.round(n)); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+  G.setExp = function (who, s, v) { var d = G.data(); if (!d.exp[who]) return; d.exp[who][s] = Math.max(0, Math.min(SR.cumExp(3), Math.round(v))); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+  G.setBook = function (s, t) { var d = G.data(); d.books[s] = Math.max(1, Math.min(3, t)); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+})();
+(function () {
+  var L = SR.level, KEY = 'sr-battle-lv-v1';
+  function need(lv) { return 40 + lv * 20; }
+  L.setLv = function (id, lv) {   // そのLvのちょうど始まりにする
+    lv = Math.max(1, Math.min(SR.LV_MAX, Math.round(lv)));
+    var e = 0; for (var i = 1; i < lv; i++) e += need(i);
+    var d; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (x) {}
+    if (!d || !d.exp) d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } };
+    d.exp[id] = e; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (x) {}
+    L.reload();
+  };
+})();

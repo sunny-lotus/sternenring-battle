@@ -42,7 +42,7 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
 .mpage{display:none;max-width:1000px;margin:0 auto;padding:0 16px 32px}
 #title[data-page="home"] .mhome{display:flex}
 #title:not([data-page="home"]) .mhome{display:none}
-#title[data-page="battle"] #pg-battle,#title[data-page="book"] #pg-book,#title[data-page="settings"] #pg-settings,#title[data-page="help"] #pg-help,#title[data-page="menu"] #pg-menu,#title[data-page="status"] #pg-status,#title[data-page="items"] #pg-items{display:flex}
+#title[data-page="battle"] #pg-battle,#title[data-page="book"] #pg-book,#title[data-page="settings"] #pg-settings,#title[data-page="help"] #pg-help,#title[data-page="menu"] #pg-menu,#title[data-page="status"] #pg-status,#title[data-page="items"] #pg-items,#title[data-page="dev"] #pg-dev{display:flex}
 .mhome{min-height:100vh;align-items:center;justify-content:center;gap:48px;padding:24px 16px;flex-wrap:wrap;box-sizing:border-box}
 .mhero{text-align:center}
 .mcrest svg{width:110px;height:110px;filter:drop-shadow(0 0 14px rgba(242,200,107,.55));animation:crest 6s ease-in-out infinite}
@@ -1250,6 +1250,31 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .stc .slv{display:flex;align-items:baseline;gap:4px;font-family:Cinzel,serif}.stc .slv em{font-style:normal;font-size:12px;color:#c9cfee}.stc .slv b{font-size:24px;color:#ffe3a0;text-shadow:0 0 10px rgba(242,212,138,.5)}
 .stc .sxp{display:flex;align-items:center;gap:6px;width:100%}
 .stc .btn.mini{margin-top:4px;font-size:11px;padding:1px 8px}
+/* ===== 開発者設定 ===== */
+#devMenu{display:flex;flex-direction:column;gap:6px;width:100%;max-width:1000px;margin:0 auto}
+#devMenu .dvtabs{gap:6px}
+#devMenu .dvbody{display:flex;flex-direction:column;gap:5px;padding:8px 10px;background:linear-gradient(165deg,rgba(44,36,88,.6),rgba(10,10,28,.75));border:1px solid rgba(232,195,114,.35);border-left:3px solid #e8c372}
+#devMenu .dvr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:3px 6px;background:rgba(255,255,255,.035)}
+#devMenu .dvf{width:26px;height:26px;transform:rotate(45deg);overflow:hidden;border:1.5px solid #e8c372;border-radius:2px;margin:0 4px;flex:none;display:inline-block}
+#devMenu .dvf img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;transform:rotate(-45deg) scale(1.45)}
+#devMenu .dvn{font-family:"Shippori Mincho B1",serif;font-weight:800;color:#f6e2a8;min-width:4.2em}
+#devMenu .dvl{font-family:Cinzel,serif;color:#c9cfee;font-size:12px}
+#devMenu input[type=number]{width:70px;padding:3px 6px;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(232,195,114,.45);border-radius:2px;font:inherit;font-variant-numeric:tabular-nums}
+#devMenu input.wide{width:120px}
+#devMenu small{color:#b9bfe0;font-size:11px}
+#devMenu .dvnote{margin-top:4px;line-height:1.5}
+#devMenu .dvgrid{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr)) auto;gap:4px 8px;align-items:center}
+#devMenu .dvh{font-family:"Shippori Mincho B1",serif;color:#f6e2a8;text-align:center}
+#devMenu .dvh small{display:block;font-family:inherit}
+#devMenu .dvw{display:flex;align-items:center}
+#devMenu .dvc{display:flex;flex-direction:column;gap:2px;align-items:stretch}
+#devMenu .dvc input{width:100%;box-sizing:border-box}
+#devMenu .dvbar{display:block;height:4px;background:rgba(0,0,0,.5)}
+#devMenu .dvbar s{display:block;height:100%;background:linear-gradient(90deg,#b8862a,#ffe08a);text-decoration:none}
+#devMenu .dvbk{flex-direction:row;gap:2px}
+#devMenu .dvbk .btn{flex:1;padding:1px 2px;font-size:10px}
+#devMenu .dvb{display:flex;gap:3px}
+#devMenu .btn.mini{padding:2px 8px;font-size:11px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1347,11 +1372,18 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div class="choices" id="tuneChoices"></div>
     <h3>音と画面</h3>
     <div class="row"><button class="btn snd" data-snd="bgm" data-nav></button><button class="btn snd" data-snd="se" data-nav></button><button class="btn snd" data-fs data-nav>全画面</button></div>
+    <h3>開発者設定</h3>
+    <div class="row"><button class="btn primary" data-nav data-page="dev">レベル・お金・スキルの経験値・親密度を調整する</button></div>
     <h3>開発用：育ちの数字</h3>
     <div class="small">試作の調整用。変えるとすぐ反映され、この端末に保存される。</div>
     <div class="row"><button class="btn mini" data-nav data-lo="gexp">試し：全員の重点に経験値+50</button><button class="btn mini" data-nav data-lo="ggold">試し：金貨+500</button><button class="btn mini" data-nav data-lo="gall">試し：全部開放</button><button class="btn mini" data-nav data-lo="greset">育ちを最初に戻す</button></div>
     <div id="devBox"></div>
     </div>
+  </div>
+
+  <div class="mpage" id="pg-dev">
+    <div class="mhead"><button class="btn mback" data-nav data-back data-page="settings">戻る</button><h2>開発者設定</h2></div>
+    <div class="mbody"><div id="devMenu"></div></div>
   </div>
 
   <div class="mpage" id="pg-help">
@@ -1408,14 +1440,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122c"></script>
-<script src="js/icons.js?v=t1122c"></script>
-<script src="js/engine.js?v=t1122c"></script>
-<script src="js/loadout.js?v=t1122c"></script>
-<script src="js/sound.js?v=t1122c"></script>
-<script src="js/fx.js?v=t1122c"></script>
-<script src="js/tree3d.js?v=t1122c"></script>
-<script src="js/ui.js?v=t1122c"></script>
-<script type="module" src="js/stage3d.js?v=t1122c"></script>
+<script src="js/data.js?v=t1122d"></script>
+<script src="js/icons.js?v=t1122d"></script>
+<script src="js/engine.js?v=t1122d"></script>
+<script src="js/loadout.js?v=t1122d"></script>
+<script src="js/sound.js?v=t1122d"></script>
+<script src="js/fx.js?v=t1122d"></script>
+<script src="js/tree3d.js?v=t1122d"></script>
+<script src="js/ui.js?v=t1122d"></script>
+<script type="module" src="js/stage3d.js?v=t1122d"></script>
 </body>
 </html>
