@@ -1018,6 +1018,37 @@ input,textarea{-webkit-user-select:text;user-select:text}
 @keyframes tipin{from{opacity:0;transform:translateX(-12px)}}
 #tip.hdtip{background:linear-gradient(160deg,rgba(40,34,84,.5),rgba(10,10,28,.62) 65%)!important;line-height:1.5}
 #tip.hdtip .tapagain{position:sticky;bottom:-12px;margin:6px -16px -12px -18px;padding:6px 0;background:linear-gradient(180deg,rgba(30,24,60,.85),rgba(14,12,34,.95))}
+/* ===== 技の説明（戦闘中）：バーとアイコン ===== */
+#tip.hdtip{padding:10px 14px 12px 16px}
+#tip.hdtip .tbh{display:flex;align-items:center;gap:10px;padding-bottom:5px;margin-bottom:6px;background:linear-gradient(90deg,rgba(232,195,114,.7),transparent) left bottom/100% 1px no-repeat}
+#tip.hdtip .tbh b{margin:0;font-size:1.5em}
+#tip.hdtip .tcost{margin-left:auto;font-weight:800;color:#d6b8ff;font-size:1.15em}
+#tip.hdtip .tcost::before{content:"";display:inline-block;width:.6em;height:.6em;margin-right:5px;transform:rotate(45deg);background:#b98cff;box-shadow:0 0 5px #b98cff}
+#tip.hdtip .tbi{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
+#tip.hdtip .tchip{display:inline-flex;align-items:center;gap:3px;padding:1px 8px 1px 3px;border-radius:2px;background:rgba(255,255,255,.07);border:1px solid rgba(232,195,114,.3);font-size:.9em;color:#eef0ff;white-space:nowrap}
+#tip.hdtip .tchip.brk{border-color:#5cc8f0;color:#bff3ff}
+#tip.hdtip .tchip .phi,#tip.hdtip .tchip .mki,#tip.hdtip .tchip .sti{width:1.5em;height:1.5em;display:inline-grid;place-items:center}
+#tip.hdtip .tchip svg{width:90%;height:90%}
+#tip.hdtip .phi{border-radius:50%;background:radial-gradient(circle,#2a2550,#14122e 70%)}
+#tip.hdtip .tbm{display:grid;grid-template-columns:2.8em 1fr;align-items:center;gap:6px;margin:3px 0;font-size:.85em;color:#9fe6ff;font-weight:700}
+#tip.hdtip .tbm.p{color:#ffc48a}
+#tip.hdtip .tbm i{display:block;height:7px;background:rgba(0,0,0,.5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);transform:skewX(-20deg)}
+#tip.hdtip .tbm s{display:block;height:100%;background:linear-gradient(90deg,#1a6fb8,#7fe0ff);text-decoration:none}
+#tip.hdtip .tbm.p s{background:linear-gradient(90deg,#b8562a,#ffc44a)}
+#tip.hdtip .tbx{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
+#tip.hdtip .tbx span{font-size:.85em;padding:1px 8px;background:rgba(200,50,60,.25);border-left:2px solid #ff7b80;color:#ffd6d8}
+#tip.hdtip .tbe{margin-top:8px;padding-top:6px;border-top:1px solid rgba(232,195,114,.25);display:flex;flex-direction:column;gap:4px}
+#tip.hdtip .tr{display:grid;grid-template-columns:3.2em 1fr 3.8em 3.4em;align-items:center;gap:6px}
+#tip.hdtip .tr .en{font-family:"Shippori Mincho B1",serif;font-weight:800;color:#ffd6d8}
+#tip.hdtip .tr .kb{position:relative;height:8px;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+#tip.hdtip .tr .kb i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#1a6fb8,#5cc8f0)}
+#tip.hdtip .tr .kb em{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,#ff7b80 0 3px,#a8323c 3px 6px);box-shadow:0 0 6px rgba(255,90,100,.7)}
+#tip.hdtip .tr .dm{text-align:right;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+#tip.hdtip .tr .mk{display:flex;align-items:center;gap:2px}
+#tip.hdtip .tr .mk .mki{width:1.4em;height:1.4em}
+#tip.hdtip .tr .ko{font-family:Cinzel,serif;font-weight:900;font-size:.85em;color:#2a1a00;background:linear-gradient(90deg,#ffcf5a,#ffe9a0);padding:0 4px;border-radius:2px}
+#tip.hdtip .tr .up{color:#9fe39a;font-size:.85em}#tip.hdtip .tr .dn{color:#9aa0c8;font-size:.85em}
+#tip.hdtip .tbd{color:#eef0ff}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1147,14 +1178,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121i"></script>
-<script src="js/icons.js?v=t1121i"></script>
-<script src="js/engine.js?v=t1121i"></script>
-<script src="js/loadout.js?v=t1121i"></script>
-<script src="js/sound.js?v=t1121i"></script>
-<script src="js/fx.js?v=t1121i"></script>
-<script src="js/tree3d.js?v=t1121i"></script>
-<script src="js/ui.js?v=t1121i"></script>
-<script type="module" src="js/stage3d.js?v=t1121i"></script>
+<script src="js/data.js?v=t1121j"></script>
+<script src="js/icons.js?v=t1121j"></script>
+<script src="js/engine.js?v=t1121j"></script>
+<script src="js/loadout.js?v=t1121j"></script>
+<script src="js/sound.js?v=t1121j"></script>
+<script src="js/fx.js?v=t1121j"></script>
+<script src="js/tree3d.js?v=t1121j"></script>
+<script src="js/ui.js?v=t1121j"></script>
+<script type="module" src="js/stage3d.js?v=t1121j"></script>
 </body>
 </html>

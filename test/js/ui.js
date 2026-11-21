@@ -723,6 +723,50 @@
   }
   // ================= 技の詳しい説明（カーソルを乗せる・長押し） =================
   // 戦闘中は、いまの番の人がその技を使ったときの見込みを敵ごとに出す（気力・体力・ブレイク・倒せるか）
+  // 戦闘中の技の説明：文字を少なく、バーとアイコンで見せる
+  function tipBattle(a, u, id) {
+    var cost = B.price(u, id) || 0, ph = SR.attackPhen ? SR.attackPhen(u, a) : a.phen;
+    var h = '<div class="tbh"><b>' + (a.label || a.id) + '</b><span class="tcost">' + cost + '</span></div><div class="tbi">';
+    if (a.kind === 'attack') {
+      h += '<span class="tchip">' + SR.markIcon(a.all || a.scatter ? 'all' : 'aim', '') + (a.all ? '全体' : a.scatter ? 'ばらまき' : '一体') + (a.hits ? ' ×' + a.hits : '') + '</span>';
+      SR.phenList(ph).forEach(function (p) { h += '<span class="tchip">' + SR.phenIcon(p) + p + '</span>'; });
+      if (a.brave) h += '<span class="tchip brk">' + SR.markIcon('brk', '') + 'ブレイク可</span>';
+    }
+    if (a.inflict) h += '<span class="tchip">' + SR.statusIcon(a.inflict[0]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + '</span>';
+    if (a.exploit) h += '<span class="tchip">' + SR.statusIcon(a.exploit[0]) + 'に×' + a.exploit[1] + '</span>';
+    if (a.form) h += '<span class="tchip">→' + SR.formNames[a.form] + '</span>';
+    var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') h += '<span class="tchip">' + wl.replace('次の番', '次') + '</span>';
+    h += '</div>';
+    if (a.kind === 'attack') {
+      var hits = a.hits || 1;
+      h += '<div class="tbm"><span>崩す</span><i><s style="width:' + Math.min(100, a.kd * hits / 70 * 100) + '%"></s></i></div>' +
+        '<div class="tbm p"><span>威力</span><i><s style="width:' + Math.min(100, a.hp * hits / 132 * 100) + '%"></s></i></div>';
+      var ex = [];
+      if (a.finisher) ex.push('ブレイク中に×' + a.finisher);
+      if (a.breakBonus) ex.push('ブレイクさせると×' + a.breakBonus);
+      if (a.desperate) ex.push('気力が少ないほど強い');
+      if (a.allK) ex.push('気力が多いほど強い');
+      if (a.recoilTo) ex.push('反動：体力' + Math.round(a.recoilTo * 100) + '%に');
+      if (a.teamRecoil) ex.push('反動：前線の体力半分');
+      if (a.exhaust) ex.push('次は動けない');
+      if (a.expose) ex.push('しばらく無防備');
+      if (a.taunt) ex.push('攻撃を引きつける');
+      if (a.antiSpell) ex.push('術の相手に崩す×2');
+      if (ex.length) h += '<div class="tbx">' + ex.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>';
+      var foes = B.living();
+      h += '<div class="tbe">';
+      foes.forEach(function (e) {
+        var r = B.estimate(u.id, id, e.id); if (!r) return;
+        var kd = a.scatter ? r.kd / foes.length : r.kd, dmg = Math.round(a.scatter ? r.dmg / foes.length : r.dmg);
+        var k0 = r.kNow, k1 = Math.max(0, r.brk ? k0 : k0 - kd), mk = e.maxK || 100;
+        var mark = (r.breaks && !a.scatter ? SR.markIcon('brk', 'ブレイクできる') : '') + (r.kills && !a.scatter ? '<span class="ko">KO</span>' : '') +
+          (r.aff > 1 ? '<span class="up">▲</span>' : r.aff < 1 ? '<span class="dn">▼</span>' : '');
+        h += '<div class="tr"><span class="en">' + e.name + '</span><span class="kb"><i style="width:' + (k1 / mk * 100) + '%"></i><em style="left:' + (k1 / mk * 100) + '%;width:' + ((k0 - k1) / mk * 100) + '%"></em></span><span class="dm">-' + dmg.toLocaleString() + '</span><span class="mk">' + mark + '</span></div>';
+      });
+      h += '</div>';
+    } else h += '<div class="tbd">' + SR.describe(a) + '</div>';
+    return h;
+  }
   function tipHTML(id, who) {
     var a = SR.skills[id], P = SR.passives[id];
     if (!a && P) return '<b>' + id + '</b><span class="tk">パッシブ・コスト' + P[1] + '</span><div>' + P[2] + '</div>';
@@ -732,6 +776,7 @@
     }
     var inBattle = B && st.mode !== 'title' && !$('battle').classList.contains('hidden');
     var u = inBattle && st.actor && (!who || who === st.actor.id) ? st.actor : null;
+    if (u && $('battle').classList.contains('hd')) return tipBattle(a, u, id);
     var wid = u ? u.id : who, cat = SR.typeLabel[SR.category(id)] || ({ light: '基本攻撃', brave: 'ブレイブ攻撃', defend: '防御', scan: '調べる' })[SR.category(id)] || '';
     var cost = u ? B.price(u, id) : a.cost;
     var h = '<b>' + (a.label || a.id) + '</b><span class="tk">' + cat + '・精神力' + (cost || 0) + '・' + SR.weightLabel(a) + '</span>';
@@ -804,7 +849,6 @@
       e.stopPropagation(); e.preventDefault();
       document.querySelectorAll('#battle .armed').forEach(function (x) { x.classList.remove('armed'); });
       showTip(el); el.classList.add('armed');
-      tipEl.insertAdjacentHTML('beforeend', '<div class="tapagain">もう一度タップで決定</div>');
       if (SR.sound && SR.sound.se) SR.sound.se('ok');
     } else { hideTip(); }
   }, true);
