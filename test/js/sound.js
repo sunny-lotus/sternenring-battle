@@ -8,29 +8,62 @@ SR.sound = (function () {
   try { var s = JSON.parse(localStorage.getItem(KEY)); if (s) on = Object.assign(on, s); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(on)); } catch (e) {} }
 
-  var TRACKS = { normal: 'audio/seika-no-kenbu_29_loop.wav', boss: 'audio/rinkai-no-yaiba_62_loop.wav' };
-  var bgmEl = null, bgmKind = null;
+  // BGM の繰り返し方（ゲーム音楽/制作メモ/各曲ループ仕様/各曲の繰り返し方_AI引き継ぎ.md）
+  // 星火の剣舞29：ファイルの先頭から末尾までを、すき間なく繰り返す。
+  // 臨界の刃62：初回だけ全体（遅いテーマから）を1回。終わった時刻ちょうどに反復用WAVを始め、それを繰り返す。
+  // つなぎは音声の時計（Web Audio）で予約する。フェードや無音は足さない。
+  var TRACKS = {
+    normal: { first: 'audio/seika-no-kenbu_29_loop.wav' },
+    boss: { first: 'audio/rinkai-no-yaiba_62_loop.wav', repeat: 'audio/rinkai-no-yaiba_62_repeat.wav' }
+  };
+  var BGM_VOL = 0.45, bgmKind = null, bgmToken = 0, bgmSrcs = [], bgmGain = null, bgmEl = null, bufs = {};
+  function loadBuf(url) {
+    var c = ac(); if (!c) return Promise.reject();
+    if (!bufs[url]) bufs[url] = fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (ab) {
+      return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); });
+    });
+    return bufs[url];
+  }
   function playBgm(kind) {
     bgmKind = kind;
     if (!on.bgm) return;
-    if (bgmEl && bgmEl.dataset.kind === kind) { bgmEl.currentTime = 0; bgmEl.play().catch(function () {}); return; }
     stopBgm(true);
-    bgmEl = new Audio(TRACKS[kind]);
-    bgmEl.dataset.kind = kind; bgmEl.loop = true; bgmEl.volume = 0.45;
-    bgmEl.play().catch(function () {});
+    var tr = TRACKS[kind], c = ac(), my = ++bgmToken;
+    if (!c || !window.fetch) {   // 古い端末：ふつうの再生（全体を繰り返すだけ）
+      bgmEl = new Audio(tr.first); bgmEl.loop = true; bgmEl.volume = BGM_VOL; bgmEl.play().catch(function () {}); return;
+    }
+    bgmGain = c.createGain(); bgmGain.gain.value = BGM_VOL; bgmGain.connect(c.destination);
+    var g = bgmGain, pRep = tr.repeat ? loadBuf(tr.repeat) : null;
+    loadBuf(tr.first).then(function (b1) {
+      if (my !== bgmToken) return;
+      var t0 = c.currentTime + 0.06, s1 = c.createBufferSource();
+      s1.buffer = b1; s1.connect(g);
+      if (!pRep) { s1.loop = true; s1.start(t0); bgmSrcs.push(s1); return; }
+      s1.start(t0); bgmSrcs.push(s1);
+      var tEnd = t0 + b1.length / b1.sampleRate;
+      pRep.then(function (b2) {
+        if (my !== bgmToken) return;
+        var s2 = c.createBufferSource(); s2.buffer = b2; s2.loop = true; s2.connect(g);
+        s2.start(Math.max(tEnd, c.currentTime + 0.02)); bgmSrcs.push(s2);
+      });
+    }).catch(function () {});
   }
   function stopBgm(keepKind) {
+    bgmToken++;
+    bgmSrcs.forEach(function (s) { try { s.stop(); } catch (e) {} }); bgmSrcs = [];
+    if (bgmGain) { try { bgmGain.disconnect(); } catch (e) {} bgmGain = null; }
     if (bgmEl) { bgmEl.pause(); bgmEl = null; }
     if (!keepKind) bgmKind = null;
   }
   function fadeBgm(ms) {
-    var el = bgmEl; if (!el) return;
-    var v0 = el.volume, t0 = performance.now();
-    (function step(now) {
-      var r = Math.min(1, (now - t0) / ms); el.volume = v0 * (1 - r);
-      if (r < 1) requestAnimationFrame(step); else { el.pause(); if (bgmEl === el) bgmEl = null; }
-    })(t0);
+    if (bgmEl) { var el = bgmEl, v0 = el.volume, t0 = performance.now(); (function step(now) { var r = Math.min(1, (now - t0) / ms); el.volume = v0 * (1 - r); if (r < 1) requestAnimationFrame(step); else { el.pause(); if (bgmEl === el) bgmEl = null; } })(t0); return; }
+    if (!bgmGain || !ctx) return;
+    var g = bgmGain, srcs = bgmSrcs, t = ctx.currentTime; bgmToken++; bgmSrcs = []; bgmGain = null;
+    g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
+    setTimeout(function () { srcs.forEach(function (s) { try { s.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} }, ms + 50);
   }
+  // 最初にさわったときに、ふつうの戦いの曲を先に読み込んでおく
+  document.addEventListener('pointerdown', function pre() { document.removeEventListener('pointerdown', pre, true); if (on.bgm) loadBuf(TRACKS.normal.first).catch(function () {}); }, true);
 
   // ---- 効果音（合成） ----
   var ctx = null, master = null;
