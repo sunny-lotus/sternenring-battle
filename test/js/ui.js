@@ -1350,6 +1350,15 @@
       el.style.left = Math.round(r.x - r.w / 2) + 'px'; el.style.top = Math.round(r.y) + 'px';   // transform は揺れなどの動きに使うので、位置は left/top
       lastPos[el.id] = [el.style.width, el.style.height, el.style.left, el.style.top];
     });
+    // 札（名前・バー・状態）が下の味方の帯にかかるときは、帯の上まで持ち上げる
+    var hud = $('partyHud'), res = $('reserveArea'), lim = Infinity;
+    [hud, res].forEach(function (x) { if (x && x.offsetParent) { var rr = x.getBoundingClientRect(); if (rr.height) lim = Math.min(lim, rr.top - 6); } });
+    document.querySelectorAll('#battle .hdu.enemy .lab').forEach(function (lab) {
+      lab.style.marginTop = '';
+      if (lim === Infinity) return;
+      var over = lab.getBoundingClientRect().bottom - lim;
+      if (over > 0) lab.style.marginTop = -Math.round(over) + 'px';
+    });
   }
   function syncStage(snap) {
     if (!stageReady()) return;
