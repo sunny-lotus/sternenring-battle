@@ -664,7 +664,7 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
 // ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
 // 戦いの経験値で上がる。上がるとHP・最大ブレイクゲージ・与えるダメージ・ブレイクゲージ削りが少しずつ伸びる（数値は仮）。
 SR.LV_MAX = 50;
-SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01 };   // 1レベルごと：最大HP+4%・最大ブレイクゲージ+2・HPダメージ+2%・ブレイクゲージ削り+1%
+SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01, spd: 0.5 };   // 1レベルごと：最大HP+4%・最大ブレイクゲージ+2・HPダメージ+2%・ブレイクゲージ削り+1%・素早さ+0.5（2026-11-22 サニー：素早さもLvで伸びる）
 SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
 SR.level = (function () {
   var KEY = 'sr-battle-lv-v1', d;

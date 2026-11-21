@@ -24,7 +24,7 @@ SR.Battle = function (opts) {
   heroes.forEach(function (u) {
     if (!kit.growth || !SR.level) return;
     var lv = SR.level.lv(u.id), g = SR.lvGrowth, d = lv - 1; u.lv = lv; if (!d) return;
-    u.maxHp = Math.round(u.maxHp * (1 + g.hp * d)); u.hp = u.maxHp; u.maxK += g.k * d; u.k = u.maxK;
+    u.maxHp = Math.round(u.maxHp * (1 + g.hp * d)); u.hp = u.maxHp; u.maxK += g.k * d; u.k = u.maxK; u.speed += (g.spd || 0) * d;
     u.bonus = Object.assign({}, u.bonus); u.bonus.hp = (u.bonus.hp || 0) + g.dmg * d; u.bonus.kd = (u.bonus.kd || 0) + g.kd * d;
   });
   function bon(u, k) { return (u && u.bonus && u.bonus[k]) || 0; }
