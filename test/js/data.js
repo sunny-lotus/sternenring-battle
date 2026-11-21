@@ -763,7 +763,8 @@ SR.moneyHTML = function (n) {
 // 戦場に立つドット絵（2026-11-22 サニー：戦場はドット絵、カットインは水彩）。RPG本体の絵（4方向×4コマ、左右反転はしない）
 // row 1 ＝左向き（味方は右側に立って左の敵を向く）。fill＝コマの中で人が占める高さ、foot＝足もとの下の余白
 SR.PIX = {
-  N: { src: 'img/pix/nacht_idle.png', atlas: { cols: 4, rows: 4, row: 1, frames: 4, fps: 4, fill: .68, foot: .13 } },
+  // ナハト：構えの絵から作ったドット絵（162マス・96色）。外套と腰布がなびく8コマ
+  N: { src: 'img/pix/nacht_flutter.png', atlas: { cols: 8, rows: 1, row: 0, frames: 8, fps: 7, fill: .953, foot: .006 } },
   V: { src: 'img/pix/volt_idle.png', atlas: { cols: 4, rows: 4, row: 1, frames: 4, fps: 4, fill: .68, foot: .13 } }
 };
 // カットインの大きな絵（新しい水彩があるキャラだけ）
