@@ -201,9 +201,9 @@ SR.growthBonus = function (who) {
 // ・柱の色が星の高さまで届くと、その技を覚える。となり合う二つの柱のあいだの星は、両方の色が届くと覚える。
 // ・ユニーク技はサブクエスト・イベントで覚える（試作では「覚えたことにする」で試せる）。
 // 育ちの数字（開発用に「設定」から変えられる。この端末に保存）
-SR.growthDefaults = { exp1: 60, exp2: 120, exp3: 220, expSkill: 3, expBasic: 1, expDefend: 2, focusNormal: 10, focusBoss: 30, loseMul: 0.5, goldNormal: 50, goldBoss: 150, price2: 300, price3: 800 };
+SR.growthDefaults = { exp1: 60, exp2: 120, exp3: 220, expSkill: 3, expBasic: 1, expDefend: 2, focusNormal: 10, focusBoss: 30, loseMul: 0.5, goldNormal: 500, goldBoss: 1500, price2: 3000, price3: 8000 };   // お金は銅貨の枚数で数える（500＝銀貨5枚）
 SR.growthLabels = { exp1: '初級の段の経験値（短め）', exp2: '中級の段の経験値', exp3: '上級の段の経験値（長め）', expSkill: '技を1回使ったときの経験値', expBasic: 'ブレイブ攻撃・基本攻撃の経験値', expDefend: '防御の経験値',
-  focusNormal: '重点の経験値（通常戦）', focusBoss: '重点の経験値（ボス戦）', loseMul: '負けたときの経験値の倍率', goldNormal: '金貨（通常戦の勝ち）', goldBoss: '金貨（ボス戦の勝ち）', price2: '中級の本の値段', price3: '上級の本の値段' };
+  focusNormal: '重点の経験値（通常戦）', focusBoss: '重点の経験値（ボス戦）', loseMul: '負けたときの経験値の倍率', goldNormal: 'お金（通常戦の勝ち・銅貨の枚数）', goldBoss: 'お金（ボス戦の勝ち・銅貨の枚数）', price2: '中級の本の値段（銅貨の枚数）', price3: '上級の本の値段（銅貨の枚数）' };
 SR.growthCfg = (function () {
   var c = Object.assign({}, SR.growthDefaults);
   try { Object.assign(c, JSON.parse(localStorage.getItem('sr-battle-dev-v1')) || {}); } catch (e) {}
@@ -706,4 +706,47 @@ SR.level = (function () {
     d.exp[id] = e; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (x) {}
     L.reload();
   };
+})();
+
+// ---- お金（2026-11-22 世界設定 §41 レグナス王国の貨幣）----
+// 6種類：銅貨（いちばん小さい）・大銅貨＝銅貨10・銀貨＝大銅貨10・大銀貨＝銀貨10・金貨＝大銀貨10・大金貨＝金貨10。
+// ゲームの中では「銅貨何枚ぶんか」で数え、見せるときに6種類へ分ける。
+SR.COINS = [
+  { id: 'dk', name: '大金貨', v: 1000000, metal: 'gold', big: true },
+  { id: 'k', name: '金貨', v: 100000, metal: 'gold', big: false },
+  { id: 'dg', name: '大銀貨', v: 10000, metal: 'silver', big: true },
+  { id: 'g', name: '銀貨', v: 1000, metal: 'silver', big: false },
+  { id: 'dd', name: '大銅貨', v: 100, metal: 'copper', big: true },
+  { id: 'd', name: '銅貨', v: 10, metal: 'copper', big: false }
+];
+// v は「円の目安」（作者の物価設計用）。ゲームの数え方は銅貨＝1。
+SR.COINS.forEach(function (c) { c.n = c.v / 10; });
+SR.coinSVG = function (c) {
+  var col = { gold: ['#fff1b8', '#f2c94c', '#9a6a10'], silver: ['#ffffff', '#cfd6e6', '#6a7290'], copper: ['#ffd8b8', '#c8753c', '#6a3010'] }[c.metal];
+  var gid = 'cg' + c.id + (SR._coinN = (SR._coinN || 0) + 1);   // 隠れた画面の中の同じ名前を使わないよう、毎回ちがう名前にする
+  return '<svg class="coin' + (c.big ? ' cbig' : '') + '" viewBox="0 0 20 20" aria-hidden="true"><defs><radialGradient id="' + gid + '" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="' + col[0] + '"/><stop offset=".55" stop-color="' + col[1] + '"/><stop offset="1" stop-color="' + col[2] + '"/></radialGradient></defs>' +
+    '<circle cx="10" cy="10" r="8.6" style="fill:url(#' + gid + ');stroke:' + col[2] + ';stroke-width:1"/>' +
+    (c.big ? '<circle cx="10" cy="10" r="6.4" style="fill:none;stroke:' + col[2] + ';stroke-width:.9;opacity:.8"/><path d="M10 6.2l1.1 2.7 2.7 1.1-2.7 1.1L10 13.8l-1.1-2.7L6.2 10l2.7-1.1z" style="fill:' + col[2] + ';stroke:none;opacity:.75"/>'
+      : '<circle cx="10" cy="10" r="3" style="fill:none;stroke:' + col[2] + ';stroke-width:.9;opacity:.7"/>') + '</svg>';
+};
+// 銅貨の枚数を、多い貨幣から順に分ける（0枚の種類は出さない）
+SR.coinSplit = function (n) {
+  n = Math.max(0, Math.floor(n || 0)); var out = [];
+  SR.COINS.forEach(function (c) { var k = Math.floor(n / c.n); if (k > 0) { out.push({ c: c, k: k }); n -= k * c.n; } });
+  return out;
+};
+SR.moneyHTML = function (n) {
+  var s = SR.coinSplit(n); if (!s.length) return '<span class="money"><span class="cn">' + SR.coinSVG(SR.COINS[5]) + '<b>0</b></span></span>';
+  return '<span class="money">' + s.map(function (x) { return '<span class="cn" title="' + x.c.name + '">' + SR.coinSVG(x.c) + '<b>' + x.k + '</b></span>'; }).join('') + '</span>';
+};
+SR.moneyText = function (n) { var s = SR.coinSplit(n); return s.length ? s.map(function (x) { return x.c.name + x.k; }).join('・') : '銅貨0'; };
+// 前の「金貨」の数字（ゲームの中だけの単位）を、銅貨の数え方へ一度だけ直す（×10）
+(function () {
+  try {
+    if (localStorage.getItem('sr-money-v2')) return;
+    var d = SR.growth.data(); d.gold = Math.round((d.gold || 0) * 10); localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d));
+    var cfg = JSON.parse(localStorage.getItem('sr-battle-dev-v1') || 'null');
+    if (cfg) { ['goldNormal', 'goldBoss', 'price2', 'price3'].forEach(function (k) { if (cfg[k] != null) cfg[k] *= 10; }); localStorage.setItem('sr-battle-dev-v1', JSON.stringify(cfg)); Object.assign(SR.growthCfg, cfg); SR.applyGrowthCfg(); }
+    localStorage.setItem('sr-money-v2', '1');
+  } catch (e) {}
 })();

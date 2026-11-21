@@ -29,7 +29,7 @@
       return '<button class="btn' + (tab === b[0] ? ' sel' : '') + '" data-nav data-lo="btab" data-id="' + b[0] + '">' + b[1] + '</button>';
     }).join('') + '</div><div class="row bk-era"><span class="small">時期</span>' + [1, 2, 3].map(function (n) {
       return '<button class="btn mini' + (era === n ? ' sel' : '') + '" data-nav data-lo="era" data-id="' + n + '">' + SR.eraName[n] + '</button>';
-    }).join('') + '<span class="gold">金貨 <b>' + G.gold() + '</b></span></div></div>';
+    }).join('') + '<span class="gold">' + SR.moneyHTML(G.gold()) + '</span></div></div>';
     h += '<div class="bk-main">';
     if (tab === 'common') {
       // ---- 左：ツリー ----
@@ -102,9 +102,9 @@
         h += '<div class="small">本を買うと、その体系の柱の上限が上がる（仲間みんな）。時期が進むと中級・上級が並ぶ。</div><div class="shop">' + SR.baseSystems.map(function (s) {
           var have = G.books(s), next = have + 1;
           if (next > 3) return '<span class="shopi"><b style="color:' + SYSCOL[s] + '">' + s + '</b>上級まで持っている</span>';
-          var why = next > era ? SR.eraName[next] + 'から売られる' : G.gold() < SR.bookPrice[next] ? '金貨が足りない' : '';
+          var why = next > era ? SR.eraName[next] + 'から売られる' : G.gold() < SR.bookPrice[next] ? 'お金が足りない' : '';
           return '<span class="shopi"><b style="color:' + SYSCOL[s] + '">' + s + '</b>' + SR.bookTier[have] + 'まで' +
-            '<button class="btn mini' + (why ? '' : ' primary') + '" data-nav data-lo="buy" data-id="' + s + '"' + (why ? ' disabled' : '') + '>' + SR.bookTier[next] + 'を買う（' + SR.bookPrice[next] + '）</button>' + (why ? '<small>' + why + '</small>' : '') + '</span>';
+            '<button class="btn mini' + (why ? '' : ' primary') + '" data-nav data-lo="buy" data-id="' + s + '"' + (why ? ' disabled' : '') + '>' + SR.bookTier[next] + 'を買う ' + SR.moneyHTML(SR.bookPrice[next]) + '</button>' + (why ? '<small>' + why + '</small>' : '') + '</span>';
         }).join('') + '</div>';
       } else {
         var cs = SR.ctree.filter(function (n) { return SR.skills[n.id]; }).sort(function (a, b) { return a.tier - b.tier || SR.baseSystems.indexOf(a.sys) - SR.baseSystems.indexOf(b.sys); });
@@ -274,7 +274,7 @@
     else if (act === 'focus') SR.growth.setFocus(lo.who, id);
     else if (act === 'buy') { if (SR.growth.buy(id)) SR.sound.se('ok'); }
     else if (act === 'gexp') ['V', 'F', 'S', 'L'].forEach(function (w) { SR.growth.addExp(w, SR.growth.focus(w), 50); });
-    else if (act === 'ggold') SR.growth.addGold(500);
+    else if (act === 'ggold') SR.growth.addGold(5000);
     else if (act === 'gall') SR.growth.unlockAll();
     else if (act === 'uniq') SR.growth.toggleU(lo.who, id);
     else if (act === 'lev') SR.growth.toggleLinkEv(id);
@@ -409,9 +409,12 @@
           '<small>次のLvまで ' + (i.next ? i.next - i.cur : '－') + '</small></div>';
       }).join('') + '<div class="row"><button class="btn mini" data-nav data-dv="lvall" data-v="1">全員 Lv1 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="10">全員 Lv10 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="' + SR.LV_MAX + '">全員 最大に</button></div>';
     } else if (devTab === 'gold') {
-      h += '<div class="dvr"><b class="dvn">お金</b><input type="number" min="0" value="' + G.gold() + '" data-dvi="gold" class="wide">' +
-        ['-1000', '+100', '+1000', '+10000'].map(function (v) { return '<button class="btn mini" data-nav data-dv="gold" data-v="' + v + '">' + v + '</button>'; }).join('') + '<button class="btn mini" data-nav data-dv="goldset" data-v="0">0にする</button></div>' +
-        '<div class="small dvnote">いまのゲームの中では、お金は一種類（金貨）で数えている。本文（第一巻）では大銅貨・大銀貨が使われていて、金貨は出てこない。両替の割合は本文に書かれていない。</div>';
+      h += '<div class="dvr"><b class="dvn">お金</b>' + SR.moneyHTML(G.gold()) + '</div>' +
+        '<div class="dvr"><b class="dvn">銅貨で</b><input type="number" min="0" value="' + G.gold() + '" data-dvi="gold" class="wide"><button class="btn mini" data-nav data-dv="goldset" data-v="0">0にする</button></div>' +
+        '<div class="dvr dvcoins">' + SR.COINS.slice().reverse().map(function (c) {
+          return '<span class="dvcn">' + SR.coinSVG(c) + '<b>' + c.name + '</b><button class="btn mini" data-nav data-dv="gold" data-v="-' + c.n + '">-1</button><button class="btn mini" data-nav data-dv="gold" data-v="' + c.n + '">+1</button></span>';
+        }).join('') + '</div>' +
+        '<div class="small dvnote">お金は「銅貨何枚ぶんか」で数えて、見せるときに6種類へ分ける。銅貨→大銅貨→銀貨→大銀貨→金貨→大金貨は、となり同士が10枚ずつ（世界設定 §41）。</div>';
     } else if (devTab === 'exp') {
       h += '<div class="dvgrid"><span></span>' + SYS.map(function (s) { return '<b class="dvh">' + s + '<small>本：' + SR.bookTier[G.books(s)] + '</small></b>'; }).join('') + '<span></span>';
       ['V', 'F', 'S', 'L'].forEach(function (id) {
@@ -481,7 +484,7 @@
         '<div class="rps"><span class="hp">体力 <b>' + Math.round(u.maxHp) + '</b></span><span class="k">気力 <b>' + Math.round(u.maxK) + '</b></span><span class="m">精神力 <b>' + Math.round(u.maxMp) + '</b></span></div></div>';
     }).join('');
     var G = SR.growth, info = $('menuInfo');
-    if (info) info.innerHTML = '<div><span>金貨</span><b>' + G.gold() + '</b></div><div><span>時期</span><b>' + SR.eraName[G.era()] + '</b></div>';
+    if (info) info.innerHTML = '<div><span>お金</span><b>' + SR.moneyHTML(G.gold()) + '</b></div><div><span>時期</span><b>' + SR.eraName[G.era()] + '</b></div>';
   }
   // ステータス：今の育ち・装備で戦いを始めたときの数字を見せる
   function drawStatus() {
@@ -523,7 +526,7 @@
     for (var i = 0; i < 140; i++) h += '<circle cx="' + (rnd() * 1200).toFixed(1) + '" cy="' + (rnd() * 520).toFixed(1) + '" r="' + (rnd() * 1.4 + .3).toFixed(2) + '" opacity="' + (rnd() * .7 + .2).toFixed(2) + '"/>';
     if (g) g.innerHTML = h;
     var p0 = null; try { p0 = sessionStorage.getItem('sr-page'); } catch (e) {}
-    if (p0 && document.getElementById('pg-' + p0)) $('title').setAttribute('data-page', p0);
+    if (p0 && document.getElementById('pg-' + p0)) { $('title').setAttribute('data-page', p0); setTimeout(function () { try { if (p0 === 'menu') drawMenu(); else if (p0 === 'status') drawStatus(); else if (p0 === 'dev') drawDevMenu(); } catch (e) {} }, 0); }
   })();
 
   function start() {
@@ -1056,7 +1059,9 @@
   function skillButton(o) {
     var a = o.skill, h = '<button class="sk' + catClass(o.id) + '" data-nav data-act="skill" data-id="' + o.id + '" data-tip="' + o.id + '"' + (o.ok ? '' : ' disabled') + '>';
     var nm = a.label || a.id;
-    h += '<b' + (nm.length > 6 ? ' class="nlong"' : '') + '>' + nm + '</b><span class="c">' + (o.cost ? o.cost : '0') + '</span>';
+    h += '<b' + (nm.length > 7 ? ' class="nlong xl"' : nm.length > 4 ? ' class="nlong"' : '') + '>' + nm + '</b>';
+    var costH = '<span class="c' + (nm.length > 6 ? ' inrow' : '') + '">' + (o.cost ? o.cost : '0') + '</span>';   // 名前が長い技は、数字をアイコンの行の右はしへ
+    if (nm.length <= 6) h += costH;
     if (a.link) h += '<span class="lkf">' + a.with.map(function (c) { return '<img src="img/' + SR.img[c] + '_serious.jpg" alt="' + SR.names[c] + '">'; }).join('') + '</span>';
     var tags = SR.typeBadge(o.id), foes = B.living();
     if (B.statusOn && a.inflict && foes.some(function (e) { return (e.weak === a.inflict[0] || e.weak2 === a.inflict[0]) && B.weakKnown(e); })) tags = '<span class="badge b-hit">弱点を突ける</span>' + tags;
@@ -1070,7 +1075,7 @@
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') tags += '<span class="badge ' + (SR.weight(a) < 1 ? 'b-buff' : 'b-charge') + '">' + wl + '</span>';
     var stx = (B.statusOn && a.inflict ? '<span class="stinf" title="' + SR.statuses[a.inflict[0]].name + 'を付ける">' + SR.statusIcon(a.inflict[0]) + '</span>' : '') +
       (B.statusOn && a.exploit ? '<span class="stexp" title="' + SR.statuses[a.exploit[0]].name + 'の相手に威力×' + a.exploit[1] + '">' + SR.statusIcon(a.exploit[0]) + '</span>' : '');
-    if (tags || stx) h += '<div class="sktags">' + SR.iconizeTags(tags) + stx + '</div>';
+    if (tags || stx || nm.length > 6) h += '<div class="sktags">' + SR.iconizeTags(tags) + stx + (nm.length > 6 ? costH : '') + '</div>';
     h += stLine(a);
     if (a.kind === 'attack') {
       var hits = a.hits || 1;
@@ -1122,7 +1127,7 @@
       try { var best = JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {}, key = B.enc.name; if ((s.maxHit || 0) > (best[key] || 0)) { B.bestNew = !!best[key] || s.maxHit > 0; best[key] = Math.round(s.maxHit); localStorage.setItem('sr-battle-best-v1', JSON.stringify(best)); } B.best = best[key] || 0; } catch (e) { B.best = 0; }
     }
     var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">自己ベスト更新！</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
-    return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh + (B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>金貨 +' + B.grown.gold + '</div>' : '') + '</div>' : '') +
+    return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh + (B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '') +
       '<div>' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
       '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
       '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
@@ -1300,7 +1305,7 @@
     playOrder = null; playActor = null; st.auto = false;
     if (B.outcome) {
       SR.sound.fadeBgm(900); SR.sound.se(B.outcome === 'win' ? 'win' : 'lose'); st.mode = 'result'; logLine(B.outcome === 'win' ? '勝利！' : '全員倒れてしまった…', 't');
-      if (!B.grown) {   // 経験値・重点・金貨（勝ちは全部、負けは半分）
+      if (!B.grown) {   // 経験値・重点・お金（勝ちは全部、負けは半分）
         var G = SR.growth, GC = SR.growthCfg, mult = B.outcome === 'win' ? 1 : GC.loseMul, big = B.isBoss || B.enemies.some(function (e) { return e.type === 'twin'; });
         var before = {}, res = { lines: [], learned: [], gold: 0 };
         ['V', 'F', 'S', 'L'].forEach(function (w) { before[w] = SR.ctree.filter(function (n) { return G.has(w, n.id); }).map(function (n) { return n.id; }); });
@@ -1320,7 +1325,7 @@
         B.grown = res;
         res.lines.forEach(function (l) { logLine('経験値　' + l, 's'); });
         res.learned.forEach(function (l) { logLine(l, 's'); });
-        if (res.gold) logLine('金貨+' + res.gold, 's');
+        if (res.gold) logLine('お金+' + SR.moneyText(res.gold), 's');
       }
       draw(); return;
     }
