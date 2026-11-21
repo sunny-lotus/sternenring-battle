@@ -629,13 +629,27 @@ SR.SKILL_NAMES = {
   // ヴォルト（導機術）
   '連射': 'トリプルショット', '分散連射': 'スプレッドショット', '放電弾': 'スパークバレット', '閃光弾': 'フラッシュバン', '術式妨害': 'ジャミング',
   '解析': 'アナライズ', '導機照準': 'ロックオン', '星落とし': 'スターフォール',
-  // フレア（黒魔術）
-  '火槍': '焔槍', '収束火槍': '穿つ紅蓮', '火の粉': '魔女の火の粉', '炎撃': '焦がす掌', '集中火力': '業火の楔', '炎圧': '熱の檻',
-  '焼き付け': '呪いの烙印', '熱波': '魔女の吐息', '灰燼': '灰に還す', '業火': '禁呪・業火',
+  // フレア（黒魔術）：隠されたせいで禁忌と呼ばれただけ。邪悪な名前にしない（森の魔女の、少し不思議で明るい炎）
+  '火槍': '焔槍', '収束火槍': '紅蓮の槍', '火の粉': 'ほたる火', '炎撃': '紅蓮撃', '集中火力': '烈火', '炎圧': '熱風',
+  '焼き付け': '火の刻印', '熱波': '陽炎',
   // セレナ（祈祷術）
   '連弾': '清流の刺突', '氷結弾': '凍てつく雫', '氷霧': '白霜の帳', '深癒': '深き祈り', '癒しの波': '慈雨', '蘇生': '目覚めの鐘',
   // リヒト（大剣術）
   '閃光': '閃光剣', '斬光': '光裂き', '立て直し': '立て直しの号令'
 };
 Object.keys(SR.SKILL_NAMES).forEach(function (id) { if (SR.skills[id]) SR.skills[id].label = SR.SKILL_NAMES[id]; });
-SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || id; };
+// パッシブの表示名（ヴォルトは技に合わせて横文字）
+SR.PASSIVE_NAMES = { '連撃調整': 'コンボチューン', '照準共有': 'シェアロック', '蓄積照準': 'スタックエイム', '急所観測': 'ウィークポイント', '照準維持': 'ロックキープ', '連撃継続': 'コンボブースト', '集積回路': 'チャージサーキット' };
+SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || SR.PASSIVE_NAMES[id] || id; };
+// パッシブの説明に出てくる技の名前も、新しい名前にする（長い名前から順に）
+(function () {
+  var olds = Object.keys(SR.SKILL_NAMES).concat(Object.keys(SR.PASSIVE_NAMES)).sort(function (a, b) { return b.length - a.length; });
+  Object.keys(SR.passives).forEach(function (p) {
+    var d = SR.passives[p][2], out = '', i = 0;
+    while (i < d.length) {
+      var hit = olds.find(function (o) { return d.substr(i, o.length) === o; });
+      if (hit) { out += SR.SKILL_NAMES[hit] || SR.PASSIVE_NAMES[hit]; i += hit.length; } else { out += d[i]; i++; }
+    }
+    SR.passives[p][2] = out;
+  });
+})();

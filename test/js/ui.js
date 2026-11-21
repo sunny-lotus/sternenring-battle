@@ -845,7 +845,7 @@
   }
   function tipHTML(id, who) {
     var a = SR.skills[id], P = SR.passives[id];
-    if (!a && P) return '<b>' + id + '</b><span class="tk">パッシブ・コスト' + P[1] + '</span><div>' + P[2] + '</div>';
+    if (!a && P) return '<b>' + SR.skillName(id) + '</b><span class="tk">パッシブ・コスト' + P[1] + '</span><div>' + P[2] + '</div>';
     if (!a) {
       var nd = SR.ctreeNode(id);
       return nd ? '<b>' + id + '</b><span class="tk">能力の星</span><div>' + nd.fx + '</div>' : '';
