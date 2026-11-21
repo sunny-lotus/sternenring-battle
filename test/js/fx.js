@@ -129,6 +129,8 @@ window.SR = window.SR || {};
       else if (t >= 3) quake(1);
     },
     resetSlot: function () { slot = 0; },
+    // 斬撃の線（当たったところに3本走る）
+    slash: function (el, big) { var p = at(el); add('fxslash' + (big ? ' big' : ''), '<i></i><i></i><i></i>', 600, p.x, p.y); if (big) add('fxflash', '', 260); },
     total: function (el, sum, n) {
       var p = at(el), big = sum >= 5000;
       add('fxtotal' + (big ? ' big' : ''), '<small>' + n + 'ヒット 合計</small>' + Math.round(sum).toLocaleString(), 1500, p.w / 2, Math.max(40, p.y - 70));

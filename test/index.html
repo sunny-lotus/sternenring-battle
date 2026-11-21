@@ -902,6 +902,59 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #battle.hd .sndbox>.mnu{display:block;width:max(calc(var(--u)*2.6),28px);height:max(calc(var(--u)*2.6),28px);padding:0;border:1px solid rgba(232,195,114,.6);background:linear-gradient(180deg,rgba(40,34,80,.85),rgba(12,12,30,.9));border-radius:2px;cursor:pointer;position:relative}
 #battle.hd .sndbox>.mnu i,#battle.hd .sndbox>.mnu::before,#battle.hd .sndbox>.mnu::after{content:"";position:absolute;left:24%;right:24%;height:2px;background:#f2d48a}
 #battle.hd .sndbox>.mnu::before{top:30%}#battle.hd .sndbox>.mnu i{top:calc(50% - 1px)}#battle.hd .sndbox>.mnu::after{bottom:30%}
+/* ===== 文字を大きく（スマホでも読める下限つき） ===== */
+#battle.hd .bub{min-width:max(calc(var(--u)*15),150px);padding:max(calc(var(--u)*.6),6px) max(calc(var(--u)*1.6),16px) max(calc(var(--u)*.6),6px) max(calc(var(--u)*1.8),18px)}
+#battle.hd .bub b{font-size:max(calc(var(--u)*2.2),21px)}
+#battle.hd .bub small{font-size:max(calc(var(--u)*.95),11px)}
+#battle.hd .bub .n{font-size:max(calc(var(--u)*1),11px)}
+#battle.hd .hdrow .btn,#battle.hd #panel .row .btn{font-size:max(calc(var(--u)*1.1),12px)!important;padding:4px 12px!important}
+#battle.hd #panel .sk b{font-size:max(calc(var(--u)*1.3),14px)!important}
+#battle.hd #panel .sk .c{font-size:max(calc(var(--u)*1),12px)!important}
+#battle.hd #panel .sk .badge{font-size:max(calc(var(--u)*.8),10px)!important}
+#battle.hd #panel .sk{padding:5px 8px!important}
+#battle.hd #panel .tgt span{font-size:max(calc(var(--u)*1.7),18px)!important}
+#battle.hd #panel .tgt{min-width:max(calc(var(--u)*12),110px)!important;padding:5px 16px!important}
+#battle.hd #panel .tghead{font-size:max(calc(var(--u)*1.3),15px)}
+#battle.hd .bst .bt{font-size:max(calc(var(--u)*1.2),14px)}
+#battle.hd .bst .be{font-size:max(calc(var(--u)*1.1),13px)}
+#battle.hd #partyHud .hn{font-size:max(calc(var(--u)*1.15),13px)}
+#battle.hd #partyHud .hr.hp span{font-size:max(calc(var(--u)*1),12px)}
+#battle.hd .hdu .lab .nm{font-size:max(calc(var(--u)*1.3),13px)!important}
+#battle.hd #banner{font-size:max(calc(var(--u)*1.4),15px)!important}
+#battle.hd .hdwarn span{font-size:max(calc(var(--u)*1),12px)}
+#battle.hd .sndbox .btn{font-size:max(calc(var(--u)*1.1),13px)!important;padding:5px 12px!important}
+#battle.hd .hdu .lab .est{font-size:max(calc(var(--u)*1),12px)}
+/* ===== バトル開始（3秒） ===== */
+#battle.hd #intro{position:absolute;inset:0;z-index:9;pointer-events:auto;overflow:hidden}
+#battle.hd #intro.hidden{display:none}
+#battle.hd.intro-on #partyHud,#battle.hd.intro-on #order,#battle.hd.intro-on #reserveArea,#battle.hd.intro-on #topline,#battle.hd.intro-on .sndbox,#battle.hd.intro-on .hdu .lab{opacity:0}
+#intro .lb{position:absolute;left:0;right:0;height:13%;background:#000;transform:scaleY(0)}
+#intro .lb.t{top:0;transform-origin:top}#intro .lb.b{bottom:0;transform-origin:bottom}
+#intro.on .lb{animation:ilb 3s ease forwards}
+@keyframes ilb{0%{transform:scaleY(0)}10%,85%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+#intro .ln{position:absolute;left:0;right:0;top:50%;height:2px;background:linear-gradient(90deg,transparent,#f2d48a 20%,#fff6dc 50%,#f2d48a 80%,transparent);box-shadow:0 0 12px #f2d48a;transform:scaleX(0);opacity:0}
+#intro.on .ln{animation:iln 3s ease forwards}
+@keyframes iln{0%,8%{transform:scaleX(0);opacity:1}25%,62%{transform:scaleX(1);opacity:1}72%,100%{transform:scaleX(1);opacity:0}}
+#intro .nm{position:absolute;left:0;right:0;top:50%;transform:translateY(-110%);text-align:center;opacity:0}
+#intro .nm small{display:block;font-family:Cinzel,serif;letter-spacing:.6em;color:#c9cfee;font-size:max(calc(var(--u)*1.1),12px)}
+#intro .nm b{display:block;font-family:"Shippori Mincho B1",serif;font-weight:800;color:#f6e2a8;letter-spacing:.3em;font-size:max(calc(var(--u)*3.6),30px);text-shadow:0 0 18px rgba(242,212,138,.7),0 3px 0 #3a2808}
+#intro.on .nm{animation:inm 3s ease forwards}
+@keyframes inm{0%,14%{opacity:0;letter-spacing:.9em;filter:blur(8px)}32%,60%{opacity:1;letter-spacing:.3em;filter:blur(0)}70%,100%{opacity:0;filter:blur(4px)}}
+#intro .go{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%) scale(2.6);text-align:center;font-family:Cinzel,serif;font-weight:900;font-style:italic;color:#fff;letter-spacing:.12em;font-size:max(calc(var(--u)*5.5),44px);text-shadow:0 0 22px #ffb43c,0 0 50px rgba(255,120,40,.9),0 4px 0 #6a2a08;opacity:0}
+#intro.on .go{animation:igo 3s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes igo{0%,66%{opacity:0;transform:translateY(-50%) scale(2.6)}74%{opacity:1;transform:translateY(-50%) scale(1)}90%{opacity:1;transform:translateY(-50%) scale(1.05)}100%{opacity:0;transform:translateY(-50%) scale(1.4)}}
+#intro .fl{position:absolute;inset:0;background:radial-gradient(circle,#fff 0%,rgba(255,230,170,.7) 40%,transparent 75%);opacity:0}
+#intro.on .fl{animation:ifl 3s ease forwards}
+@keyframes ifl{0%,66%{opacity:0}70%{opacity:.85}82%,100%{opacity:0}}
+/* ===== 斬撃の線 ===== */
+.fxslash{position:absolute;width:0;height:0;z-index:5;pointer-events:none}
+.fxslash i{position:absolute;left:-100px;top:-2px;width:200px;height:4px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff 35%,#ffe08a 65%,transparent);box-shadow:0 0 10px #ffd27a,0 0 22px rgba(255,180,60,.7);opacity:0;--r:-32deg;animation:fxsl .34s ease-out forwards}
+.fxslash i:nth-child(2){--r:28deg;animation-delay:.07s;top:8px}
+.fxslash i:nth-child(3){--r:-74deg;animation-delay:.14s;left:-80px;width:160px}
+.fxslash.big i{left:-160px;width:320px;height:7px;box-shadow:0 0 16px #fff,0 0 34px rgba(255,170,50,.95)}
+.fxslash.big i:nth-child(3){left:-130px;width:260px}
+@keyframes fxsl{0%{opacity:1;transform:rotate(var(--r)) scaleX(0)}55%{opacity:1;transform:rotate(var(--r)) scaleX(1)}100%{opacity:0;transform:rotate(var(--r)) scaleX(1.15) translateY(-4px)}}
+#battle.hd .sndbox.open>.btn{min-width:120px;text-align:right;border-radius:2px!important;border:1px solid rgba(232,195,114,.55)!important;background:linear-gradient(165deg,rgba(44,36,88,.95),rgba(10,10,28,.97))!important;color:#f3e6c0!important;font-family:"Shippori Mincho B1",serif;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.6)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1015,6 +1068,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
   <canvas id="stage3d"></canvas>
   <div id="cutin" class="hidden"></div>
   <div id="partyHud"></div>
+  <div id="intro" class="hidden"></div>
   <div id="order" class="hidden"></div>
   <div id="field">
     <div class="topline" id="topline"></div>
@@ -1030,14 +1084,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1121a"></script>
-<script src="js/icons.js?v=t1121a"></script>
-<script src="js/engine.js?v=t1121a"></script>
-<script src="js/loadout.js?v=t1121a"></script>
-<script src="js/sound.js?v=t1121a"></script>
-<script src="js/fx.js?v=t1121a"></script>
-<script src="js/tree3d.js?v=t1121a"></script>
-<script src="js/ui.js?v=t1121a"></script>
-<script type="module" src="js/stage3d.js?v=t1121a"></script>
+<script src="js/data.js?v=t1121b"></script>
+<script src="js/icons.js?v=t1121b"></script>
+<script src="js/engine.js?v=t1121b"></script>
+<script src="js/loadout.js?v=t1121b"></script>
+<script src="js/sound.js?v=t1121b"></script>
+<script src="js/fx.js?v=t1121b"></script>
+<script src="js/tree3d.js?v=t1121b"></script>
+<script src="js/ui.js?v=t1121b"></script>
+<script type="module" src="js/stage3d.js?v=t1121b"></script>
 </body>
 </html>

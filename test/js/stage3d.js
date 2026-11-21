@@ -141,7 +141,77 @@ function sync(states) {
     u.m.visible = u.sh.visible = s.show !== false;
   });
 }
-function hit(id) { const u = units[id]; if (u) u.hitT = clock.getElapsedTime(); }
+// ---- 当たったときの演出：火花・衝撃の輪・光・カメラのゆれ ----
+const SPN = 600;
+let spk = null, spkPos, spkCol, spkVel, spkLife, spkHead = 0, rings = [], flashL = null, shakeA = 0, introT0 = -1, introDur = 0;
+function ensureFx() {
+  if (spk || !scene) return;
+  const g = new THREE.BufferGeometry();
+  spkPos = new Float32Array(SPN * 3); spkCol = new Float32Array(SPN * 3); spkVel = new Float32Array(SPN * 3); spkLife = new Float32Array(SPN);
+  for (let i = 0; i < SPN; i++) spkPos[i * 3 + 1] = -99;
+  g.setAttribute('position', new THREE.BufferAttribute(spkPos, 3)); g.setAttribute('color', new THREE.BufferAttribute(spkCol, 3));
+  const dot = tex(64, 64, (c, w) => { const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, '#fff'); gr.addColorStop(.3, 'rgba(255,255,255,.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, w); });
+  spk = new THREE.Points(g, new THREE.PointsMaterial({ size: .32, map: dot, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  spk.frustumCulled = false; scene.add(spk);
+  for (let i = 0; i < 4; i++) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(.86, 1, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    r.visible = false; scene.add(r); rings.push({ m: r, t: -9, dur: .6, max: 4 });
+  }
+  flashL = new THREE.PointLight(0xffe6b0, 0, 14, 1.6); scene.add(flashL);
+}
+const tmpC = new THREE.Color();
+function sparks(x, y, z, n, col, sp) {
+  ensureFx(); if (!spk) return;
+  for (let k = 0; k < n; k++) {
+    const i = spkHead; spkHead = (spkHead + 1) % SPN;
+    spkPos[i * 3] = x; spkPos[i * 3 + 1] = y; spkPos[i * 3 + 2] = z;
+    const a = Math.random() * Math.PI * 2, b = (Math.random() - .3) * Math.PI * .8, s = sp * (.4 + Math.random() * .8);
+    spkVel[i * 3] = Math.cos(a) * Math.cos(b) * s; spkVel[i * 3 + 1] = Math.sin(b) * s + sp * .3; spkVel[i * 3 + 2] = Math.sin(a) * Math.cos(b) * s;
+    tmpC.set(Array.isArray(col) ? col[k % col.length] : col); spkCol[i * 3] = tmpC.r; spkCol[i * 3 + 1] = tmpC.g; spkCol[i * 3 + 2] = tmpC.b;
+    spkLife[i] = .5 + Math.random() * .5;
+  }
+}
+function ring(x, z, col, max, dur, up) {
+  ensureFx(); const r = rings.find(q => clock.getElapsedTime() - q.t > q.dur) || rings[0];
+  r.t = clock.getElapsedTime(); r.max = max; r.dur = dur; r.m.material.color.set(col); r.m.visible = true;
+  r.up = !!up; r.m.position.set(x, up ? 1.2 : .05, z);
+}
+// power 1 ふつう / 2 強い / 3 ブレイク・とどめ
+function hit(id, power) {
+  const u = units[id]; if (!u) return; const t = clock.getElapsedTime(); u.hitT = t; power = power || 1;
+  const x = u.m.position.x, z = u.base[1], y = u.h * .55;
+  const col = u.hero ? ['#ff6a6a', '#ffb0a0', '#ffffff'] : power >= 3 ? ['#9fe6ff', '#ffffff', '#5cc8f0', '#ffe08a'] : ['#ffe08a', '#ffffff', '#ffb43c'];
+  sparks(x, y, z, power >= 3 ? 90 : power >= 2 ? 45 : 26, col, power >= 3 ? 7 : 4.5);
+  ring(x, z, power >= 3 ? '#9fe6ff' : u.hero ? '#ff7070' : '#ffd27a', power >= 3 ? 5 : 2.6, power >= 3 ? .7 : .4);
+  if (power >= 3) ring(x, z, '#ffffff', 3.2, .5, true);
+  if (flashL) { flashL.position.set(x, y + .6, z + .8); flashL.color.set(power >= 3 ? 0xbfefff : u.hero ? 0xff8080 : 0xffe0a0); flashL.intensity = power >= 3 ? 90 : 40; }
+  shakeA = Math.max(shakeA, power >= 3 ? .45 : power >= 2 ? .22 : .1);
+}
+function cast(id) {   // 技を出す人のまわりに光
+  const u = units[id]; if (!u) return;
+  sparks(u.m.position.x, u.h * .3, u.base[1], 30, u.hero ? ['#ffe08a', '#ffffff'] : ['#ff5a64', '#ffb0a0'], 2.2);
+  ring(u.m.position.x, u.base[1], u.hero ? '#ffd27a' : '#ff5a64', 2.2, .5);
+}
+function intro(sec) { introT0 = clock.getElapsedTime(); introDur = sec || 3; }
+function fxFrame(t, dt) {
+  if (spk) {
+    for (let i = 0; i < SPN; i++) {
+      if (spkLife[i] <= 0) continue;
+      spkLife[i] -= dt; spkVel[i * 3 + 1] -= 9 * dt;
+      spkPos[i * 3] += spkVel[i * 3] * dt; spkPos[i * 3 + 1] = Math.max(.05, spkPos[i * 3 + 1] + spkVel[i * 3 + 1] * dt); spkPos[i * 3 + 2] += spkVel[i * 3 + 2] * dt;
+      if (spkLife[i] <= 0) spkPos[i * 3 + 1] = -99;
+      else if (spkLife[i] < .25) { spkCol[i * 3] *= .9; spkCol[i * 3 + 1] *= .9; spkCol[i * 3 + 2] *= .9; }
+    }
+    spk.geometry.attributes.position.needsUpdate = true; spk.geometry.attributes.color.needsUpdate = true;
+    rings.forEach(r => {
+      const k = (t - r.t) / r.dur; if (k > 1 || k < 0) { r.m.visible = false; return; }
+      const s = .3 + (r.max - .3) * (1 - Math.pow(1 - k, 3)); r.m.scale.setScalar(s); r.m.material.opacity = (1 - k) * .95;
+      if (r.up) r.m.quaternion.copy(camera.quaternion); else r.m.rotation.set(-Math.PI / 2, 0, 0);
+    });
+    if (flashL) flashL.intensity *= Math.pow(.004, dt);
+  }
+  shakeA *= Math.pow(.01, dt);
+}
 const v = new THREE.Vector3();
 // 板の画面上の四角（canvas の左上から、CSSの px）
 function rect(id) {
@@ -180,7 +250,11 @@ function frame() {
   tP.set(S.p[0] + Math.sin(t * .12) * S.sway + fx, S.p[1] + Math.sin(t * .2) * .08, S.p[2]); tL.set(S.l[0] + fx, S.l[1], S.l[2]);
   const k = 1 - Math.pow(.02, Math.min(.05, Math.max(0, t - (SR._lastT || t))) * 2.2);
   SR._lastT = t;
-  camP.lerp(tP, k); camL.lerp(tL, k); camera.position.copy(camP); camera.lookAt(camL);
+  if (introT0 >= 0 && t - introT0 < introDur) {
+    const q = (t - introT0) / introDur, e = q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2, a = (1 - e) * 2.4, R = 8.5 + 5 * e;
+    camP.set(Math.sin(a) * R + .6 * e, 6.5 - 4 * e, Math.cos(a) * R); camL.set(-3 + 3.4 * e, 1.2 + .7 * e, -2.5 * e);
+  } else { camP.lerp(tP, k); camL.lerp(tL, k); }
+  camera.position.copy(camP); camera.lookAt(camL);
   Object.keys(units).forEach((id, i) => {
     const u = units[id], s = u.state || {};
     u.m.quaternion.copy(camera.quaternion);
@@ -195,6 +269,8 @@ function frame() {
     u.rn.material.opacity += (want - u.rn.material.opacity) * .15; u.rn.visible = u.rn.material.opacity > .01 && u.m.visible;
     u.rn.rotation.z = t * (s.target ? .6 : .25) * (u.hero ? -1 : 1); u.rn.scale.setScalar(u.h * (1.15 + (s.target ? Math.sin(t * 4) * .05 : 0)));
   });
+  ensureFx(); fxFrame(t, Math.min(.05, Math.max(0, t - (SR._fxT || t)))); SR._fxT = t;
+  if (shakeA > .002) { camera.position.x += (Math.random() - .5) * shakeA; camera.position.y += (Math.random() - .5) * shakeA; }
   SR._motes.rotation.y = t * .02; SR._red.intensity = 6 + Math.sin(t * 3) * 1.2;
   composer.render();
   if (onFrame) onFrame();
@@ -202,5 +278,5 @@ function frame() {
 function start() { if (!scene) build(); resize(); if (!running) { running = true; frame(); } }
 function stop() { running = false; }
 
-SR.stage3d = { setup, sync, hit, rect, focus, shot, setCamMode, start, stop, resize, onFrame: (cb) => { onFrame = cb; } };
+SR.stage3d = { setup, sync, hit, cast, intro, rect, focus, shot, setCamMode, start, stop, resize, onFrame: (cb) => { onFrame = cb; } };
 if (SR.stage3dReady) SR.stage3dReady();

@@ -343,7 +343,15 @@
     $('log').innerHTML = ''; lastCmds = null; prevBar = {};
     logLine(SR.encounters[encKey].name + '／' + SR.tunes[pick.tune].name, 's');
     SR.sound.playBgm(B.isBoss || SR.encounters[encKey].bgm === 'boss' ? 'boss' : 'normal');
-    newTurn();
+    st.mode = 'intro'; st.actor = null; draw();
+    var io = $('intro'), en = SR.encounters[encKey].name;
+    if (io && $('battle').classList.contains('hd')) {
+      io.innerHTML = '<div class="lb t"></div><div class="lb b"></div><div class="ln"></div><div class="nm"><small>ENCOUNTER</small><b>' + en + '</b></div><div class="go">BATTLE START</div><div class="fl"></div>';
+      io.classList.remove('hidden'); void io.offsetWidth; io.classList.add('on'); $('battle').classList.add('intro-on');
+      if (SR.stage3d && SR.stage3d.intro) SR.stage3d.intro(3);
+      setTimeout(function () { if (SR.sound.se) SR.sound.se('boost'); }, 2000);
+      setTimeout(function () { io.classList.add('hidden'); io.classList.remove('on'); $('battle').classList.remove('intro-on'); newTurn(); }, 3000);
+    } else newTurn();
   }
   // 音のオン・オフ（タイトルと戦闘画面の両方）
   function drawSnd() {
@@ -967,6 +975,7 @@
     var allDown = B.enemies.every(function (e) { return val(e, ev.snap).hp <= 0; });
     if (f.actor) {
       var ael = $('u-' + f.actor);
+      if (SR.stage3d && SR.stage3d.cast && !f.charge) SR.stage3d.cast(f.actor);
       if (f.charge) F.charge(ael);
       else if (f.big) { F.big(B.unit(f.actor).name); hold = 1100; }
       else if (f.skill && SIGNATURE[f.skill]) { F.skill(f.skill, B.unit(f.actor).name, $('enemyArea')); hold = 1150; }
@@ -987,7 +996,8 @@
     var el = $('u-' + f.target); if (!el) return hold;
     var hero = B.unit(f.target).hero;
     if (f.dmg !== undefined) {
-      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target);
+      el.classList.add('shake'); if (SR.stage3d && SR.stage3d.hit) SR.stage3d.hit(f.target, f.broke || (f.down && !hero) ? 3 : f.dmg >= 700 || (hero && fxs.big) ? 2 : 1);
+      if (!hero && !f.statusTick) F.slash(el, f.dmg >= 700 || f.broke);
       var best = !hero && !f.statusTick && B.fxBest > 0 && f.dmg > B.fxTop;
       if (!hero && f.dmg > B.fxTop) B.fxTop = f.dmg;
       F.num(el, f.dmg, { hurt: hero, big: hero && fxs.big, best: best });
@@ -1195,6 +1205,7 @@
   try { if (localStorage.getItem('sr_cam') === 'fixed') camMode = 'fixed'; } catch (e) {}
   (function () {
     var m = $('mnuBtn'); if (!m) return;
+    $('battle').appendChild(m.parentNode);   // 帯や吹き出しより前に出す
     m.onclick = function (e) { e.stopPropagation(); m.parentNode.classList.toggle('open'); };
     document.addEventListener('click', function (e) { if (!m.parentNode.contains(e.target)) m.parentNode.classList.remove('open'); });
   })();
