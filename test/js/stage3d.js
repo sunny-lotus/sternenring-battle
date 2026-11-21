@@ -391,7 +391,7 @@ const SHOTS = {
   party:  { p: [8.2, 2.3, 8.2], l: [-2.6, 1.5, -.4], sway: .25 },
   target: { p: [-.9, 3.1, 9.2], l: [-.9, .1, -1], sway: .15 },
   strike: { p: [.2, 1.8, 8.6], l: [-3.2, 1.1, -.2], sway: .1 },
-  enemy:  { p: [-5.8, 2.3, 6.4], l: [3, 1.2, .4], sway: .25 },
+  enemy:  { p: [-6.6, 2.7, 7.6], l: [3, .7, .4], sway: .25 },   // 2026-11-22 少し引いて見下ろし、味方が下の帯に隠れないように
 };
 let shotName = 'wide', camMode = 'auto', focusX = 0;
 const camP = new THREE.Vector3(.6, 2.5, 13.5), camL = new THREE.Vector3(.4, 1.9, -2.5), tP = new THREE.Vector3(), tL = new THREE.Vector3();

@@ -3,6 +3,7 @@ window.SR = window.SR || {};
 (function () {
   var css = [
     '#fxLayer{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}',
+    '#battle.hd>#fxLayer{z-index:6}',
     '#fxLayer>*{position:absolute}',
     // ---- 画面の揺れ ----
     '.quake1{animation:quake1 .25s}.quake2{animation:quake2 .4s}.quake3{animation:quake3 .65s}',
@@ -81,7 +82,10 @@ window.SR = window.SR || {};
   function field() { return document.getElementById('field'); }
   function layer() {
     var l = document.getElementById('fxLayer');
-    if (!l) { l = document.createElement('div'); l.id = 'fxLayer'; field().appendChild(l); }
+    if (!l) { l = document.createElement('div'); l.id = 'fxLayer'; }
+    // 2026-11-22：戦闘画面（HD）では、カットイン・味方の帯・コマンドより手前に出す（戦場は画面いっぱいなので位置は同じ）
+    var bt = document.getElementById('battle'), par = bt && bt.classList.contains('hd') ? bt : field();
+    if (l.parentNode !== par) par.appendChild(l);
     return l;
   }
   function add(cls, html, ms, x, y, style) {
@@ -121,6 +125,9 @@ window.SR = window.SR || {};
     num: function (el, v, o) {
       o = o || {};
       var p = at(el), t = tier(v), jx = [0, -34, 30, -16, 40, -44, 18][slot % 7], jy = [0, -22, 14, 30, -34, 6, -12][slot % 7]; slot++;
+      // 味方の帯（下）に重なるときは、帯の上まで持ち上げる
+      var hud = document.getElementById('partyHud'), fr = field().getBoundingClientRect();
+      if (hud && hud.offsetParent) { var top = hud.getBoundingClientRect().top - fr.top - 18 - t * 8; if (p.y + jy - 10 > top) p.y = top - jy + 10; }
       var cls = 'fxnum t' + t + (o.hurt ? ' hurt' : '') + (o.best ? ' best' : '');
       add(cls, (o.best ? '<small>自己ベスト！</small>' : '') + Math.round(v).toLocaleString(), 1900, clampX(p.x + jx, p.w, 30 + t * 14), Math.max(26, p.y + jy - 10));
       if (o.hurt) { if (t >= 3 || o.big) quake(o.big ? 3 : 2); }

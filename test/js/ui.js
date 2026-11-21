@@ -1318,7 +1318,19 @@
     if (f.miss) popup(el, 'ミス', 'kd');
     return hold;
   }
-  function popup(el, text, cls) { var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text; el.appendChild(s); }
+  function popup(el, text, cls) {
+    var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text;
+    var bt = $('battle');
+    if (bt && bt.classList.contains('hd')) {   // 2026-11-22：カットインや帯に隠れないよう、いちばん手前の層に（その人の上に重ねた枠の中）
+      var L = document.getElementById('fxLayer'); if (!L) { L = document.createElement('div'); L.id = 'fxLayer'; }
+      if (L.parentNode !== bt) bt.appendChild(L);
+      var r = el.getBoundingClientRect(), b = bt.getBoundingClientRect(), w = document.createElement('div');
+      w.style.cssText = 'position:absolute;left:' + (r.left - b.left) + 'px;top:' + (r.top - b.top) + 'px;width:' + r.width + 'px;height:' + r.height + 'px';
+      w.appendChild(s); L.appendChild(w); setTimeout(function () { if (w.parentNode) w.parentNode.removeChild(w); }, 2000);
+      return;
+    }
+    el.appendChild(s);
+  }
   function finishTurn() {
     playOrder = null; playActor = null; st.auto = false;
     if (B.outcome) {
