@@ -1161,7 +1161,7 @@
         var lq = lastPos[d.id]; if (lq) { d.style.width = lq[0]; d.style.height = lq[1]; d.style.left = lq[2]; d.style.top = lq[3]; }
         d.innerHTML = '<div class="spr"><img class="st" src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""></div><div class="lab"><span class="nm">' + u.name + '</span>' + '<div class="tgs">' + tags + '</div></div>';
         pa.appendChild(d);
-        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn">' + u.name + '</div>' + hudBars(u, v) + '</div></div>';
+        hud += '<div class="hc' + (st.actor === u ? ' cur' : '') + (v.hp <= 0 ? ' down' : '') + (v.brk ? ' brk' : '') + '"><div class="hf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="hb"><div class="hn">' + u.name + (u.id === 'N' ? ' <span class="fm f-' + v.form + '">' + SR.formNames[v.form] + '</span>' : '') + '</div>' + hudBars(u, v) + '</div></div>';
       }
       if (can.indexOf(u.id) >= 0 && !(st.mode !== 'target' && st.mode.indexOf('swap') < 0 && st.actor === u)) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(u.id); }; }
     });
@@ -1195,7 +1195,7 @@
     var v = val(u), w = SR.weapons && SR.weapons[u.id], fav = SR.tree && SR.tree.start && SR.tree.start[u.id];
     var again = c.getAttribute('data-who') === u.id && !c.classList.contains('hidden');
     c.classList.remove('hidden'); c.setAttribute('data-who', u.id);
-    var html = '<img src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""' + (again ? ' style="animation:none"' : '') + '><div class="band"></div><div class="cname">' + u.name + '</div>' +
+    var html = '<img src="img/' + SR.img[u.id] + '_stand.png?v=clean3" alt=""' + (again ? ' style="animation:none"' : '') + '><div class="band"></div><div class="cname">' + u.name + '</div>' + (u.id === 'N' ? '<div class="cform f-' + val(u).form + '">' + SR.formNames[val(u).form] + '</div>' : '') +
       '';
     c.innerHTML = html;
   }
