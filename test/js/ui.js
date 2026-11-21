@@ -389,11 +389,30 @@
   $('title').addEventListener('click', function (ev) { var b = ev.target.closest('[data-help]'); if (!b || b.disabled) return; helpPage += +b.getAttribute('data-help'); paginateHelp(); nav.refresh(); });
   window.addEventListener('resize', function () { if (!$('title').classList.contains('hidden')) fitPage(); });
   // ---- メニュー画面：ページの切り替え ----
+  // ステータス：今の育ち・装備で戦いを始めたときの数字を見せる
+  function drawStatus() {
+    var box = $('statusBox'); if (!box) return;
+    var key = Object.keys(SR.encounters).find(function (k) { return !SR.encounters[k].random; });
+    var T; try { T = new SR.Battle({ kit: pick.kit, encounter: key, tune: pick.tune, seed: 1 }); } catch (e) { box.innerHTML = '<div class="small">読み込めなかった</div>'; return; }
+    var G = SR.growth;
+    box.innerHTML = T.heroes.slice().sort(function (a, b) { return ['N', 'V', 'F', 'S', 'L'].indexOf(a.id) - ['N', 'V', 'F', 'S', 'L'].indexOf(b.id); }).map(function (u) {
+      var w = SR.weapons[u.id], own = Object.keys(SR.skills).filter(function (s) { return SR.skills[s].owner === u.id; });
+      var nU = own.filter(function (s) { return G.hasU(u.id, s); }).length;
+      var nM = u.id === 'N' ? 0 : SR.ctree.filter(function (n) { return SR.skills[n.id] && G.has(u.id, n.id); }).length;
+      var nL = u.id === 'N' ? Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && G.hasLink(s); }).length : 0;
+      var pas = T.passivesOf(u).map(SR.skillName);
+      return '<div class="stc"><div class="sf"><img src="img/' + SR.img[u.id] + '_serious.jpg" alt=""></div><div class="sn">' + u.name + '</div>' +
+        '<div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
+        '<dl><dt class="hp">体力</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">気力</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">精神力</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
+        '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div></div>';
+    }).join('');
+  }
   function goPage(p) {
     $('title').setAttribute('data-page', p); var pgEl = document.getElementById('pg-' + p); if (pgEl) pgEl.scrollTop = 0;
     try { sessionStorage.setItem('sr-page', p); } catch (e) {}
     if (p === 'book') drawLoadout();
     if (p === 'settings') drawDev();
+    if (p === 'status') drawStatus();
     requestAnimationFrame(fitPage);
     lastMode = null; nav.refresh();
   }
