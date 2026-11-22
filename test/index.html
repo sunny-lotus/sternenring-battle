@@ -1593,6 +1593,13 @@ svg.coin.cbig{width:18px;height:18px}
 #title .mhead{background:linear-gradient(180deg,rgba(20,12,6,.55),rgba(20,12,6,0))!important;border-bottom:1px solid rgba(217,178,94,.35)}
 @media (max-height:520px){#title .pcar{padding:3px 8px;margin-bottom:3px;gap:6px}#title .pcar>.small,#title .colosel>.small,#title .colosel .btn .small{display:none}#title .colosel{margin-top:3px;padding-top:3px}#title .pcu img{width:22px;height:22px}}
 #title[data-page="home"] .sky{display:block}#title[data-page="home"] .mhome{background:none}#title[data-page="home"] .mhome::before,#title[data-page="home"] .mhome::after{display:none}
+/* 2026-11-22 サニー：はじめの画面の背景はChatGPTが描いた星空（_作業/新背景/title_bg_v01.png）。前の手描きSVGは、星のまたたきだけ残す */
+#title[data-page="home"]{background:#0b0d22 url(img/title_bg.jpg) center 58%/cover no-repeat}
+#title[data-page="home"] .sky rect,#title[data-page="home"] .sky>path,#title[data-page="home"] .sky>g:not(.stars){display:none}
+#title[data-page="home"] .sky .stars circle{opacity:.5;animation:twk 3.4s ease-in-out infinite}
+#title[data-page="home"] .sky .stars circle:nth-child(3n){animation-duration:4.6s;animation-delay:-1.2s}#title[data-page="home"] .sky .stars circle:nth-child(4n){animation-duration:2.6s;animation-delay:-2s}
+@keyframes twk{0%,100%{opacity:.08}50%{opacity:.75}}
+#title[data-page="home"] .mhero{background:radial-gradient(ellipse at center,rgba(8,10,30,.5) 0%,rgba(8,10,30,0) 70%)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1759,15 +1766,15 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123j"></script>
-<script src="js/icons.js?v=t1123j"></script>
-<script src="js/engine.js?v=t1123j"></script>
-<script src="js/loadout.js?v=t1123j"></script>
-<script src="js/sound.js?v=t1123j"></script>
-<script src="js/fx.js?v=t1123j"></script>
-<script src="js/tree3d.js?v=t1123j"></script>
-<script src="js/tex.js?v=t1123j"></script>
-<script src="js/ui.js?v=t1123j"></script>
-<script type="module" src="js/stage3d.js?v=t1123j"></script>
+<script src="js/data.js?v=t1123k"></script>
+<script src="js/icons.js?v=t1123k"></script>
+<script src="js/engine.js?v=t1123k"></script>
+<script src="js/loadout.js?v=t1123k"></script>
+<script src="js/sound.js?v=t1123k"></script>
+<script src="js/fx.js?v=t1123k"></script>
+<script src="js/tree3d.js?v=t1123k"></script>
+<script src="js/tex.js?v=t1123k"></script>
+<script src="js/ui.js?v=t1123k"></script>
+<script type="module" src="js/stage3d.js?v=t1123k"></script>
 </body>
 </html>
