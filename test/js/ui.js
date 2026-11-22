@@ -200,7 +200,7 @@
       if (!passive) {   // 技はコストなし：覚えていれば全部使える
         var a0 = SR.skills[s], t0 = SR.typeBadge(s);
         if (a0.brave) t0 += '<span class="badge b-brk">ブレイク可</span>';
-        if (a0.form) t0 += '<span class="badge b-form">→' + SR.formNames[a0.form] + '</span>';
+        if (a0.form) t0 += '<span class="badge b-form"><i class="sep sm"></i>' + SR.formNames[a0.form] + '</span>';
         if (a0.era > 1) t0 += '<span class="badge b-charge">' + (a0.era === 3 ? '終盤' : '中盤') + 'の技</span>';
         if (a0.phen) t0 += '<span class="badge b-sys">' + SR.phenText(a0.phen) + '</span>';
         if (lock) t0 += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
@@ -211,7 +211,7 @@
       if (passive && lock) desc = '<b style="color:#ffb38a">サブクエスト・イベントで覚える</b>　' + desc;
       var a = SR.skills[s], tags = a ? SR.typeBadge(s) : '';
       if (a && a.brave) tags += '<span class="badge b-brk">ブレイク可</span>';
-      if (a && a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
+      if (a && a.form) tags += '<span class="badge b-form"><i class="sep sm"></i>' + SR.formNames[a.form] + '</span>';
       if (a && a.era > 1) tags += '<span class="badge b-charge">' + (a.era === 3 ? '終盤' : '中盤') + 'の技</span>';
       if (a && a.phen) tags += '<span class="badge b-sys">' + SR.phenText(a.phen) + '</span>';
       if (lock) tags += '<span class="badge b-risk">' + (SR.isCommon(s) ? '技の書のツリーで覚える' : 'サブクエスト・イベントで覚える') + '</span>';
@@ -1018,7 +1018,7 @@
     }
     if (a.inflict) h += '<span class="tchip">' + SR.statusIcon(a.inflict[0]) + SR.statuses[a.inflict[0]].name + '+' + a.inflict[1] + '</span>';
     if (a.exploit) h += '<span class="tchip"><span class="stexp">' + SR.statusIcon(a.exploit[0]) + '</span>' + SR.statuses[a.exploit[0]].name + 'の相手に×' + a.exploit[1] + '</span>';
-    if (a.form) h += '<span class="tchip">→' + SR.formNames[a.form] + '</span>';
+    if (a.form) h += '<span class="tchip"><i class="sep sm"></i>' + SR.formNames[a.form] + '</span>';
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') h += '<span class="tchip">' + wl.replace('次の番', '次') + '</span>';
     h += '</div>';
     if (a.kind === 'attack') {
@@ -1084,7 +1084,7 @@
         if (r.kills && !a.scatter) notes.push('<em>倒せる</em>');
         if (r.aff > 1) notes.push('よく効く'); else if (r.aff < 1) notes.push('効きにくい');
         if (e.weak && B.weakKnown(e) && a.inflict && (a.inflict[0] === e.weak || a.inflict[0] === e.weak2)) notes.push('弱点の状態を付けられる');
-        h += '<tr><td>' + e.name + '</td><td>ブレイクゲージ ' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : kd))) + '</td><td>HP -' + dmg.toLocaleString() + '</td><td>' + notes.join('・') + '</td></tr>';
+        h += '<tr><td>' + e.name + '</td><td>ブレイクゲージ ' + Math.round(r.kNow) + '<i class="sep sm"></i>' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : kd))) + '</td><td>HP -' + dmg.toLocaleString() + '</td><td>' + notes.join('・') + '</td></tr>';
       });
       h += '</table><div class="tl sm">見込みはおおよそ。暗闇で外れることや、ブーストは入っていない</div>';
     }
@@ -1154,7 +1154,7 @@
     if (a.hits) tags += '<span class="badge b-form">' + a.hits + '連撃</span>';
     var who = st.actor, ph = who ? SR.attackPhen(who, a) : a.phen, pc = who && who.id === 'S' && SR.phenList(ph).indexOf('貫通') >= 0;
     if (ph && a.kind === 'attack') { var ms = foes.map(function (e) { return SR.affMul(e, ph, pc); }), am = ms.length ? Math.max.apply(null, ms) : 1, an = ms.length ? Math.min.apply(null, ms) : 1; tags += '<span class="badge b-sys">' + SR.phenText(ph) + '</span>'; if (am > 1) tags = '<span class="badge b-hit">よく効く相手がいる</span>' + tags; else if (an < 1 && foes.length === 1) tags += '<span class="badge b-risk">効きにくい</span>'; if (foes.some(function (e) { return e.kPhen && SR.phenList(ph).some(function (p) { return e.kPhen[p]; }); })) tags = '<span class="badge b-hit">急所を突ける</span>' + tags; }
-    if (a.form) tags += '<span class="badge b-form">→' + SR.formNames[a.form] + '</span>';
+    if (a.form) tags += '<span class="badge b-form"><i class="sep sm"></i>' + SR.formNames[a.form] + '</span>';
     var wl = SR.weightLabel(a); if (wl !== '次の番ふつう') tags += '<span class="badge ' + (SR.weight(a) < 1 ? 'b-buff' : 'b-charge') + '">' + wl + '</span>';
     var stx = (B.statusOn && a.inflict ? '<span class="stinf" title="' + SR.statuses[a.inflict[0]].name + 'を付ける">' + SR.statusIcon(a.inflict[0]) + '</span>' : '') +
       (B.statusOn && a.exploit ? '<span class="stexp" title="' + SR.statuses[a.exploit[0]].name + 'の相手に威力×' + a.exploit[1] + '">' + SR.statusIcon(a.exploit[0]) + '</span>' : '');
@@ -1460,14 +1460,19 @@
     var u = f.actor && B.unit(f.actor), m = t.match(/^([^：]+)：(.+?)(?: → (.+))?$/);
     if (u && m) {
       var col = u.hero ? (SR.THEME[u.id] || '#f2d48a') : '#ff8a7a';
-      return '<span class="bn-who" style="color:' + col + '">' + esc(m[1]) + '</span><span class="bn-sk' + (u.hero ? '' : ' foe') + '">' + esc(m[2]) + '</span>' + (m[3] ? '<span class="bn-to">▶ ' + esc(m[3]) + '</span>' : '');
+      return '<span class="bn-who" style="color:' + col + '">' + esc(m[1]) + '</span><span class="bn-sk' + (u.hero ? '' : ' foe') + '">' + esc(m[2]) + '</span>' + (m[3] ? '<span class="bn-to"><i class="sep"></i>' + esc(m[3]) + '</span>' : '');
     }
     var cls = f.broke ? 'brk' : f.stop ? 'stop' : f.big || f.charge ? 'foe' : f.down ? 'down' : 'info';
-    return '<span class="bn-msg ' + cls + '">' + esc(t) + '</span>';
+    return '<span class="bn-msg ' + cls + '">' + esc(t).replace(/ ?→ ?/g, '<i class="sep"></i>') + '</span>';   // →は描いた区切りに
   }
   function popup(el, text, cls) {
     var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text;
     if (cls === 'kd') s.innerHTML = '<i>BREAK</i>' + String(text).replace(/^ブレイクゲージ/, '');   // ブレイクゲージのダメージ：水色・別の字体
+    if (cls === 'heal' || cls === 'mp') {   // 2026-11-22 サニー：回復は、やわらかく光って、ふわっと上がる。小さな光の粒つき
+      var mm = String(text).match(/^(.*?)(\+\s*[\d,]+)$/), lab = mm ? mm[1] : '', num = mm ? mm[2].replace(/\s/g, '') : text;
+      if (lab === 'ブレイクゲージ') lab = 'BREAK';
+      s.innerHTML = (lab ? '<i>' + lab + '</i>' : '') + '<b>' + num + '</b>' + '<u></u><u></u><u></u><u></u><u></u>';
+    }
     var bt = $('battle');
     if (bt && bt.classList.contains('hd')) {   // 2026-11-22：カットインや帯に隠れないよう、いちばん手前の層に（その人の上に重ねた枠の中）
       var L = document.getElementById('fxLayer'); if (!L) { L = document.createElement('div'); L.id = 'fxLayer'; }
@@ -1629,7 +1634,7 @@
       var sti = stIcons(v.st), est = '';
       if (tgtSkill && v.hp > 0) {
         var r = B.estimate(st.actor.id, tgtSkill, e.id);
-        if (r) est = '<div class="est">' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : r.kd))) + (r.breaks ? ' <b>BREAK</b>' : '') + '　-' + Math.round(r.dmg).toLocaleString() + (r.kills ? ' <b>KO</b>' : '') + (r.aff > 1 ? ' ▲' : r.aff < 1 ? ' ▼' : '') + '</div>';
+        if (r) est = '<div class="est">' + Math.round(r.kNow) + '<i class="sep sm"></i>' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : r.kd))) + (r.breaks ? ' <b>BREAK</b>' : '') + '　-' + Math.round(r.dmg).toLocaleString() + (r.kills ? ' <b>KO</b>' : '') + (r.aff > 1 ? ' ▲' : r.aff < 1 ? ' ▼' : '') + '</div>';
       }
       d.innerHTML = '<div class="spr">' + beastSVG(e) + '</div><div class="lab"><span class="nm">' + e.name + (e.lv ? '<em class="elv">Lv' + e.lv + '</em>' : '') + '</span>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + bars(e, v) + '<div class="tgs">' + SR.iconizeTags(tags) + '</div>' + est + '</div>';
       var lp = lastPos[d.id]; if (lp) { d.style.width = lp[0]; d.style.height = lp[1]; d.style.left = lp[2]; d.style.top = lp[3]; }
@@ -1690,7 +1695,7 @@
         if (o.label === '大技') { tag = '大技'; hot = true; } else if (o.label === '溜め') { tag = '溜め'; hot = true; }
       } else { icon = '<img src="img/' + SR.img[o.id] + '_face.jpg?v=5" alt="">'; tag = o.kind === 'support' ? '支援' : ''; }
       if (o.label.indexOf('ブレイク明け') === 0 || o.label === '動けない') tag = '休み';
-      if (i === nNext) tag = '次';
+      if (i === nNext) tag = 'NEXT';
       return '<div class="oc o-' + o.kind + (i === 0 ? ' cur' : '') + (i === nNext ? ' pvn' : '') + '" data-u="' + o.id + '" style="opacity:' + Math.max(.4, 1 - i * .08).toFixed(2) + '" title="' + o.name + '：' + o.label + '"><div class="oi">' + icon + '</div>' + (tag ? '<span' + (hot ? ' class="hot"' : '') + '>' + tag + '</span>' : '') + '</div>';
     }).join('') + '</div>';
     if (!old.length && !gone.length) return;

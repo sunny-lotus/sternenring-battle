@@ -706,11 +706,12 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #battle.hd #order .oc>span.hot{background:#c23a2a}
 /* 2026-11-22 順番の帯：左へつめる動き・技を選びかけたときの先読み */
 #battle.hd #order .oc.ogone{position:absolute;top:0;margin:0;pointer-events:none;z-index:1}
-#battle.hd #order.pv .otrack{filter:drop-shadow(0 0 6px rgba(143,200,255,.55))}
-#battle.hd #order.pv .oc{border-style:dashed}
-#battle.hd #order.pv .oc.cur{border-style:solid}
-#battle.hd #order .oc.pvn{border:2px solid #8fe0ff;box-shadow:0 0 10px rgba(143,224,255,.9);z-index:2;opacity:1!important}
-#battle.hd #order .oc.pvn>span{background:#2a7fb8;font-weight:800}
+#battle.hd #order.pv .otrack{filter:none}
+#battle.hd #order.pv .oc:not(.cur):not(.pvn){filter:saturate(.6) brightness(.72)}
+#battle.hd #order.pv .oc{transition:filter .25s}
+#battle.hd #order .oc.pvn{border-color:#f2d48a!important;box-shadow:0 0 0 1px rgba(255,236,180,.6) inset,0 0 14px rgba(242,212,138,.85);z-index:2;opacity:1!important;filter:none;animation:pvnglow 1.6s ease-in-out infinite}
+@keyframes pvnglow{50%{box-shadow:0 0 0 1px rgba(255,236,180,.6) inset,0 0 22px rgba(242,212,138,1)}}
+#battle.hd #order .oc.pvn>span{background:linear-gradient(90deg,rgba(40,26,6,.9),rgba(90,60,14,.9))!important;color:#ffe08a;font-family:Cinzel,serif;font-weight:900;letter-spacing:.12em}
 /* カットイン：番のキャラの大きな姿と、名前の帯 */
 #battle.hd #cutin{position:absolute;inset:0;z-index:2;pointer-events:none}
 #battle.hd #cutin.hidden{display:none}
@@ -1567,6 +1568,25 @@ svg.coin.cbig{width:18px;height:18px}
 #banner .bn-msg.down{color:#c9cfee}
 #fxLayer .pop.kd,.pop.kd{font-family:"Arial Narrow","Roboto Condensed",Arial,sans-serif;font-style:italic;font-weight:900;color:#8fe4ff;font-size:calc(var(--fs,1)*19px);letter-spacing:.02em;text-shadow:0 0 6px rgba(60,180,255,.9),0 2px 0 #001a33,0 0 2px #000;top:62%}
 .pop.kd i{font-family:Cinzel,serif;font-style:normal;font-size:.55em;letter-spacing:.12em;margin-right:.3em;color:#cdf3ff;vertical-align:.25em}
+/* 2026-11-22 サニー：→ と ▶ をやめて、金の細い線と小さなひし形の区切りに */
+.sep{display:inline-block;position:relative;width:1.6em;height:1px;margin:0 .45em;vertical-align:middle;background:linear-gradient(90deg,rgba(242,212,138,0),#f2d48a)}
+.sep::after{content:"";position:absolute;right:-2px;top:50%;width:5px;height:5px;background:#f2d48a;transform:translateY(-50%) rotate(45deg);box-shadow:0 0 4px rgba(242,212,138,.8)}
+.sep.sm{width:1em;margin:0 .3em}.sep.sm::after{width:4px;height:4px}
+/* 回復の数字：やわらかい光・ふわっと上がる・光の粒 */
+#fxLayer .pop.heal,#fxLayer .pop.mp,.pop.heal,.pop.mp{font-family:Cinzel,serif;font-weight:900;font-size:calc(var(--fs,1)*24px);line-height:1;white-space:nowrap;animation:healrise 1.5s cubic-bezier(.2,.8,.3,1) forwards!important}
+.pop.heal b,.pop.mp b{color:transparent;background:linear-gradient(180deg,#ffffff 0%,#d8ffe6 40%,#5ee0a0 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 6px rgba(90,240,160,.85)) drop-shadow(0 2px 0 rgba(0,40,20,.9))}
+.pop.mp b{background-image:linear-gradient(180deg,#ffffff 0%,#efe0ff 40%,#b48cff 100%);filter:drop-shadow(0 0 6px rgba(180,140,255,.85)) drop-shadow(0 2px 0 rgba(30,10,50,.9))}
+.pop.heal i,.pop.mp i{font-style:normal;font-size:.48em;letter-spacing:.12em;margin-right:.3em;vertical-align:.45em;color:#bff5d4}
+.pop.mp i{color:#e2d2ff}
+.pop.heal u,.pop.mp u{position:absolute;left:50%;top:60%;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle,#fff,#7dffb4 55%,transparent 70%);text-decoration:none;opacity:0;animation:healmote 1.3s ease-out forwards}
+.pop.mp u{background:radial-gradient(circle,#fff,#c9a8ff 55%,transparent 70%)}
+.pop.heal u:nth-of-type(1),.pop.mp u:nth-of-type(1){--mx:-26px;animation-delay:.05s}
+.pop.heal u:nth-of-type(2),.pop.mp u:nth-of-type(2){--mx:-10px;animation-delay:.2s}
+.pop.heal u:nth-of-type(3),.pop.mp u:nth-of-type(3){--mx:8px;animation-delay:.1s}
+.pop.heal u:nth-of-type(4),.pop.mp u:nth-of-type(4){--mx:24px;animation-delay:.3s}
+.pop.heal u:nth-of-type(5),.pop.mp u:nth-of-type(5){--mx:0px;animation-delay:.4s}
+@keyframes healrise{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}18%{opacity:1;transform:translate(-50%,0) scale(1.08)}30%{transform:translate(-50%,-4px) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
+@keyframes healmote{0%{opacity:0;translate:0 0}25%{opacity:1}100%{opacity:0;translate:var(--mx) -46px}}
 @media (prefers-reduced-motion:reduce){#fxLayer .fxbk-shard,#fxLayer .fxbk-ring,#fxLayer .fxsh,#fxLayer .fxfin-rays,#fxLayer .fxfin-mono{display:none}}
 /* ============ 2026-11-22 サニー：メニューを「冒険の書」に（革の表紙・古い羊皮紙のページ・金の飾り） ============ */
 #title{background:#1a110a var(--tex-leather,none);background-size:384px}
@@ -1766,15 +1786,15 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123k"></script>
-<script src="js/icons.js?v=t1123k"></script>
-<script src="js/engine.js?v=t1123k"></script>
-<script src="js/loadout.js?v=t1123k"></script>
-<script src="js/sound.js?v=t1123k"></script>
-<script src="js/fx.js?v=t1123k"></script>
-<script src="js/tree3d.js?v=t1123k"></script>
-<script src="js/tex.js?v=t1123k"></script>
-<script src="js/ui.js?v=t1123k"></script>
-<script type="module" src="js/stage3d.js?v=t1123k"></script>
+<script src="js/data.js?v=t1123l"></script>
+<script src="js/icons.js?v=t1123l"></script>
+<script src="js/engine.js?v=t1123l"></script>
+<script src="js/loadout.js?v=t1123l"></script>
+<script src="js/sound.js?v=t1123l"></script>
+<script src="js/fx.js?v=t1123l"></script>
+<script src="js/tree3d.js?v=t1123l"></script>
+<script src="js/tex.js?v=t1123l"></script>
+<script src="js/ui.js?v=t1123l"></script>
+<script type="module" src="js/stage3d.js?v=t1123l"></script>
 </body>
 </html>
