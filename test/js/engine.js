@@ -247,9 +247,17 @@ SR.Battle = function (opts) {
   this.linkReady = function (id) { return linkReady(skills[id] || {}); };
   // 二段構えの2回目は、技のMPが2倍
   function priceNow(u, a) { return price(u, a) * (u.twinSecond ? 2 : 1); }
+  function itemUseful(a, v) {   // 2026-11-22 サニー：効き目がない相手には使えない（HP満タンに薬草など）
+    if (!v || !v.hero || v.hp <= 0) return false;
+    if (a.fx === 'hp') return v.hp < v.maxHp;
+    if (a.fx === 'mp') return v.mp < v.maxMp;
+    if (a.fx === 'cure') return Object.keys(v.st || {}).some(function (s) { return v.st[s] > 0; });
+    return true;
+  }
+  this.itemUseful = function (id, v) { return itemUseful(skills[id], v); };
   function available(u, id) {
     var a = skills[id];
-    if (a && a.item) return !!u.hero && (self.bag[id] || 0) > 0 && (a.kind !== 'revive' || downFront().length > 0);   // アイテム
+    if (a && a.item) return !!u.hero && (self.bag[id] || 0) > 0 && (a.kind === 'revive' ? downFront().length > 0 : front().some(function (v) { return itemUseful(a, v); }));   // アイテム（効き目のある相手がいるときだけ）
     if (a && !linkReady(a)) return false;
     if (a && a.kind === 'revive' && !downFront().length) return false;
     if (a && a.needBroken && !living().some(broken)) return false;   // ブレイクのあとの切り札

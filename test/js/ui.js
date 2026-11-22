@@ -853,7 +853,8 @@
     var u = st.actor, tk = B.targetKind(u, st.skill);
     if (tk === 'enemy') return B.living();
     if (tk === 'allyDown') return B.downFront();
-    return B.front().filter(function (v) { return v.hp > 0 && (tk !== 'allyOther' || v !== u); });
+    var ia = SR.skills[st.skill];
+    return B.front().filter(function (v) { return v.hp > 0 && (tk !== 'allyOther' || v !== u) && (!ia || !ia.item || B.itemUseful(st.skill, v)); });   // アイテムは効き目のある相手だけ
   }
   function byPos(a, b) { return a.pos - b.pos; }
   function swapOutCands() {
