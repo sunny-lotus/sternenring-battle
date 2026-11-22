@@ -522,7 +522,29 @@
         '<div class="sp"><b>' + SR.uniqueName(u.id) + '</b> ' + nU + '／' + own.length + (u.id === 'N' ? '　<b>' + SR.LINK_NAME + '</b> ' + nL : '　<b>' + SR.COMMON_NAME + '</b> ' + nM) + '<br><b>パッシブ</b> ' + (pas.length ? pas.join('・') : 'なし') + '</div><button class="btn mini" data-nav data-lvup="' + u.id + '">Lv+1（試し）</button></div>';
     }).join('');
   }
+  // 2026-11-22 アイテム：持ち物・店で買う・素材から作る（作るほうが安い）
+  function drawItems() {
+    var box = $('itemBox'); if (!box || !SR.bag) return;
+    var bg = SR.bag, gold = SR.growth.gold();
+    var h = '<div class="itmoney"><b>お金</b>' + SR.moneyHTML(gold) + '<span class="small">戦いには1種類' + SR.ITEM_CARRY + '個まで持っていける。使うとその人の番を1回使う。</span></div><div class="itlist">';
+    Object.keys(SR.ITEMS).forEach(function (id) {
+      var I = SR.ITEMS[id], rc = Object.keys(I.recipe).map(function (m) { return '<span class="' + (bg.m(m) >= I.recipe[m] ? 'ok' : 'no') + '">' + m + '×' + I.recipe[m] + '</span>'; }).join('');
+      h += '<div class="itcard"><div class="ith"><b>' + id + '</b><span class="itn">持っている ' + bg.n(id) + '</span></div><div class="small">' + I.fx + '</div>' +
+        '<div class="itact"><button class="btn mini" data-nav data-itbuy="' + id + '"' + (gold >= I.price ? '' : ' disabled') + '>買う ' + SR.moneyText(I.price) + '</button>' +
+        '<button class="btn mini primary" data-nav data-itcraft="' + id + '"' + (bg.canCraft(id) ? '' : ' disabled') + '>作る' + (I.fee ? '（' + SR.moneyText(I.fee) + '）' : '') + '</button><span class="itrc">' + rc + '</span></div></div>';
+    });
+    h += '</div><div class="grp">素材（戦いに勝つと拾える）</div><div class="itmats">' + Object.keys(SR.MATERIALS).map(function (m) {
+      return '<div class="itmat" title="' + SR.MATERIALS[m] + '"><b>' + m + '</b><span>' + bg.m(m) + '</span></div>';
+    }).join('') + '</div>';
+    box.innerHTML = h;
+  }
+  $('title').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-itbuy],[data-itcraft]'); if (!b || !SR.bag) return;
+    var ok = b.hasAttribute('data-itbuy') ? SR.bag.buy(b.getAttribute('data-itbuy')) : SR.bag.craft(b.getAttribute('data-itcraft'));
+    SR.sound.se(ok ? 'ok' : 'back'); var keep = nav.idx; drawItems(); nav.idx = keep; nav.refresh();
+  });
   function goPage(p) {
+    if (p === 'items') setTimeout(drawItems, 0);
     $('title').setAttribute('data-page', p); var pgEl = document.getElementById('pg-' + p); if (pgEl) pgEl.scrollTop = 0;
     try { sessionStorage.setItem('sr-page', p); } catch (e) {}
     if (p === 'book') drawLoadout();
@@ -548,13 +570,13 @@
     for (var i = 0; i < 140; i++) h += '<circle cx="' + (rnd() * 1200).toFixed(1) + '" cy="' + (rnd() * 520).toFixed(1) + '" r="' + (rnd() * 1.4 + .3).toFixed(2) + '" opacity="' + (rnd() * .7 + .2).toFixed(2) + '"/>';
     if (g) g.innerHTML = h;
     var p0 = null; try { p0 = sessionStorage.getItem('sr-page'); } catch (e) {}
-    if (p0 && document.getElementById('pg-' + p0)) { $('title').setAttribute('data-page', p0); setTimeout(function () { try { if (p0 === 'menu') drawMenu(); else if (p0 === 'status') drawStatus(); else if (p0 === 'dev') drawDevMenu(); else if (p0 === 'help') paginateHelp(); else if (p0 === 'book') drawLoadout(); } catch (e) {} }, 0); }
+    if (p0 && document.getElementById('pg-' + p0)) { $('title').setAttribute('data-page', p0); setTimeout(function () { try { if (p0 === 'menu') drawMenu(); else if (p0 === 'status') drawStatus(); else if (p0 === 'dev') drawDevMenu(); else if (p0 === 'help') paginateHelp(); else if (p0 === 'book') drawLoadout(); else if (p0 === 'items') drawItems(); } catch (e) {} }, 0); }
   })();
 
   function start() {
     var encKey = pick.enc;
     if (encKey === 'random') { var keys = Object.keys(SR.encounters).filter(function (k) { return !SR.encounters[k].random; }); encKey = keys[Math.floor(Math.random() * keys.length)]; }
-    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0 });
+    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0, bag: SR.bag ? SR.bag.carry() : null });   // アイテムは1種類3個まで持っていく
     $('title').classList.add('hidden'); $('battle').classList.remove('hidden');
     $('log').innerHTML = ''; lastCmds = null; prevBar = {};
     logLine(SR.encounters[encKey].name + '／' + SR.tunes[pick.tune].name, 's');
@@ -993,6 +1015,7 @@
   }
   function tipHTML(id, who) {
     var a = SR.skills[id], P = SR.passives[id];
+    if (a && a.item) return '<b>' + id + '</b><span class="tk">アイテム' + (B && B.bag ? '・残り' + (B.bag[id] || 0) : '') + '</span><div>' + SR.ITEMS[id].fx + '</div><div class="small">使うとその人の番を1回使う。1つの戦いに' + SR.ITEM_CARRY + '個まで</div>';
     if (!a && P) return '<b>' + SR.skillName(id) + '</b><span class="tk">パッシブ・コスト' + P[1] + '</span><div>' + P[2] + '</div>';
     if (!a) {
       var nd = SR.ctreeNode(id);
@@ -1109,6 +1132,12 @@
   }
   function listHTML() {
     var u = st.actor, opts = B.options(u), h;
+    if (st.list === 'item') {   // 2026-11-22 アイテム
+      h = actorTabs() + '<div class="grp">アイテム（使うと番を1回使う・残りの数）</div><div class="list">' + opts.filter(function (o) { return o.skill.item; }).map(function (o) {
+        return '<button class="sk t-item" data-nav data-act="skill" data-id="' + o.id + '" data-tip="' + o.id + '"' + (o.ok ? '' : ' disabled') + '><b>' + o.id + '</b><span class="c">残り' + (B.bag[o.id] || 0) + '</span><span class="d">' + SR.ITEMS[o.id].fx + '</span></button>';
+      }).join('') + '</div>';
+      return h + '<div class="row"><button class="btn" data-nav data-back data-act="toMenu">戻る</button></div>';
+    }
     h = actorTabs() + '<div class="row" style="margin-top:0">' + (u.id === 'N' ? ['unique'].concat(opts.some(function (o) { return SR.isLink(o.id); }) ? ['link'] : []) : ['unique', 'common']).map(function (k) { return '<button class="btn' + (st.list === k ? ' sel' : '') + '" data-nav data-act="list" data-id="' + k + '">' + (k === 'unique' ? SR.uniqueName(u.id) : k === 'link' ? SR.LINK_NAME : SR.COMMON_NAME) + '</button>'; }).join('') + '</div>' + boostRow(u) +
       '<div class="row cattabs">' + [['all', '全部'], ['skillAtk', '攻撃'], ['skillDef', '守備'], ['skillSup', '回復・補助']].map(function (c) { return '<button class="btn' + ((st.cat || 'all') === c[0] ? ' sel' : '') + '" data-nav data-act="cat" data-id="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>';
     var rank = function (o) { return ['skillAtk', 'skillDef', 'skillSup'].indexOf(SR.category(o.id)); };
@@ -1351,6 +1380,16 @@
           SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
+        if (SR.bag) {   // 2026-11-22 使ったアイテムを持ち物から減らす。勝ったら素材を拾う
+          var usedI = Object.keys(B.bagStart || {}).map(function (k) { var n = (B.bagStart[k] || 0) - (B.bag[k] || 0); if (n > 0) SR.bag.add(k, -n); return n > 0 ? k + '×' + n : ''; }).filter(Boolean);
+          if (usedI.length) res.learned.push('使ったアイテム：' + usedI.join('・'));
+          if (B.outcome === 'win') {
+            var rg = big ? SR.matDrop.boss : SR.matDrop.normal, cnt = rg[0] + Math.floor(Math.random() * (rg[1] - rg[0] + 1)), MK = Object.keys(SR.MATERIALS), got = {};
+            for (var mi = 0; mi < cnt; mi++) { var mk = MK[Math.floor(Math.random() * MK.length)]; got[mk] = (got[mk] || 0) + 1; SR.bag.addMat(mk, 1); }
+            res.mats = Object.keys(got).map(function (k) { return k + '×' + got[k]; });
+            res.learned.push('素材を拾った：' + res.mats.join('・'));
+          }
+        }
         if (SR.level) {   // レベルの経験値（全員・控えも）
           var lx = Math.round((big ? SR.lvExp.boss : SR.lvExp.normal) * (B.outcome === 'win' ? 1 : SR.lvExp.loseMul));
           res.lines.unshift('レベル経験値　全員+' + lx);
@@ -1653,7 +1692,8 @@
       bub('', 'list', 'unique', SR.uniqueName(u.id), SR.names[u.id] + 'だけの技', nU, nU > 0) +
       (u.id === 'N' ? (nL ? bub('lnk', 'list', 'link', SR.LINK_NAME, '仲間と出す技', nL, nL > 0) : '') : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
       bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) +
-      (scan ? bub('', 'skill', 'scan', '調べる', '敵の弱点がわかる', null, scan.ok) : '') + '</div>';
+      (scan ? bub('', 'skill', 'scan', '調べる', '敵の弱点がわかる', null, scan.ok) : '') +
+      (Object.keys(B.bagStart || {}).length ? bub('itm', 'list', 'item', 'アイテム', '使うと番を1回使う', Object.keys(B.bag).reduce(function (s, k) { return s + B.bag[k]; }, 0), opts.some(function (o) { return o.skill.item && o.ok; })) : '') + '</div>';
     return h;
   }
 

@@ -98,6 +98,7 @@ SR.Battle = function (opts) {
 
   this.heroes = heroes; this.enemies = enemies; this.kit = kit; this.enc = enc; this.isBoss = isBoss;
   this.expLog = {};
+  this.bag = Object.assign({}, opts.bag || {}); this.bagStart = Object.assign({}, this.bag);   // 2026-11-22 持っていくアイテム
   this.t = 0; this.events = []; this.stat = { breaks: 0, allyBreaks: 0, chases: 0, counters: 0, swaps: 0 };
 
   var t = 0, cover = null, taunt = null, chaseCount = 0, counterCount = 0;
@@ -248,6 +249,7 @@ SR.Battle = function (opts) {
   function priceNow(u, a) { return price(u, a) * (u.twinSecond ? 2 : 1); }
   function available(u, id) {
     var a = skills[id];
+    if (a && a.item) return !!u.hero && (self.bag[id] || 0) > 0 && (a.kind !== 'revive' || downFront().length > 0);   // アイテム
     if (a && !linkReady(a)) return false;
     if (a && a.kind === 'revive' && !downFront().length) return false;
     if (a && a.needBroken && !living().some(broken)) return false;   // ブレイクのあとの切り札
@@ -261,6 +263,7 @@ SR.Battle = function (opts) {
   this.options = function (u) {
     var ss = statusSkillOf(u);
     var ids = ['basic'].concat(ss ? [ss] : [], u.abilities.filter(function (s) { return skills[s]; }), ['defend'], statusOn ? ['scan'] : []);
+    if (u.hero) ids = ids.concat(Object.keys(self.bagStart).filter(function (k) { return skills[k] && self.bagStart[k] > 0; }));
     return ids.map(function (id) { return { id: id, skill: skills[id], cost: priceNow(u, skills[id]), ok: available(u, id) }; });
   };
   this.passivesOf = function (u) { return u.abilities.filter(function (s) { return SR.passives[s]; }); };
@@ -276,6 +279,7 @@ SR.Battle = function (opts) {
     if (a.kind === 'aim') return has(u, '照準共有') ? 'ally' : 'none';
     if (a.kind === 'heal') return a.allies ? 'none' : 'ally';
     if (a.kind === 'revive') return 'allyDown';
+    if (a.kind === 'item') return 'ally';
     if (a.kind === 'ward' || a.kind === 'rally') return 'ally';
     if (['energy', 'protect', 'kProtect', 'kBarrier', 'power', 'haste'].indexOf(a.kind) >= 0) return 'ally';
     return 'none';
@@ -422,6 +426,13 @@ SR.Battle = function (opts) {
     if (a.kind === 'flank') { target.flank = true; emit(target.name + 'を挟み撃ちにする構え（次に攻撃が当たると追い打ち）', { target: target.id }, 600); return; }
     if (a.kind === 'might') { front().forEach(function (v) { if (v.hp > 0) v.might = 2; }); emit('陽だまりの加護（前線全員、2ターン威力1.15倍）', { actor: u.id }, 600); return; }
     if (a.kind === 'bless') { target.bless = 2; emit(target.name + 'に祝福（次の2回の攻撃の威力1.3倍）', { target: target.id }, 600); return; }
+    if (a.kind === 'item') {   // 2026-11-22 アイテム
+      if (!target || !target.hero || target.hp <= 0) target = u;
+      if (a.fx === 'hp') { var ib = target.hp; target.hp = Math.min(target.maxHp, target.hp + Math.round(target.maxHp * a.v)); emit(u.name + 'は' + a.id + 'を使った　' + target.name + '　HP+' + Math.round(target.hp - ib), { target: target.id, heal: Math.round(target.hp - ib) }, 450); }
+      else if (a.fx === 'mp') { var im = target.mp; target.mp = Math.min(target.maxMp, target.mp + a.v); emit(u.name + 'は' + a.id + 'を使った　' + target.name + '　MP+' + Math.round(target.mp - im), { target: target.id, mheal: Math.round(target.mp - im) }, 450); }
+      else if (a.fx === 'cure') { target.st = {}; emit(u.name + 'は' + a.id + 'を使った　' + target.name + 'の悪い状態が治った', { target: target.id }, 450); }
+      return;
+    }
     if (a.kind === 'zanshin') { u.zanshin = true; emit(u.name + 'は残心の構え（次の番、刀剣術を2回続けて振る）', { target: u.id }, 600); return; }
     if (a.kind === 'twin') { u.twinNext = true; emit(u.name + 'は二段構え（次の番、2回続けて動ける）', { target: u.id }, 600); return; }
     if (a.kind === 'overclock') {
@@ -489,7 +500,7 @@ SR.Battle = function (opts) {
   // ---- ブースト：1ターンに1たまる（最大2）。使ったターンの次はたまらない。威力だけ上がり、回数は増えない ----
   var boostCfg = tune.boost || null;
   this.boostCfg = boostCfg;
-  function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy' || a.kind === 'revive'); }
+  function boostable(id) { var a = skills[id]; return !!boostCfg && !!a && !a.item && (a.kind === 'attack' || a.kind === 'heal' || a.kind === 'energy' || a.kind === 'revive'); }
   this.boostable = boostable;
 
   function SR_TARGETED(a) { return !(a.all || a.scatter || a.kind === 'wait' || a.kind === 'defend' || a.kind === 'guard' || a.kind === 'teamKProtect' || a.kind === 'might' || a.kind === 'zanshin' || a.kind === 'twin' || (a.kind === 'heal' && a.allies)); }
@@ -593,6 +604,7 @@ SR.Battle = function (opts) {
     if (!target) target = foeKind ? living().slice().sort(function (x, y) { return x.k - y.k; })[0] : a.kind === 'revive' ? downFront()[0] : a.kind === 'overclock' ? front().filter(function (v) { return v !== u && v.hp > 0 && !broken(v); })[0] : u;
     var second = !!u.twinSecond;
     var cost = priceNow(u, a); u.mp -= cost; u.discount = false; u.twinSecond = false;
+    if (a.item) self.bag[a.id] = Math.max(0, (self.bag[a.id] || 0) - 1);   // アイテムを1つ使う
     if (a.form) u.form = a.form;
     if (a.kind === 'defend') u.defend = 1;
     var bn = boostable(a.id) && a !== skills.wait ? Math.max(0, Math.min(c.boost || 0, u.bp)) : 0;
@@ -858,7 +870,7 @@ SR.Battle = function (opts) {
     var cands = [];
     function add(skill, target, s, why) { cands.push({ skill: skill, target: target, s: s, why: why }); }
     self.options(u).forEach(function (o) {
-      if (!o.ok) return;
+      if (!o.ok || skills[o.id].item) return;   // おまかせはアイテムを使わない
       var a = skills[o.id], cost = o.cost || 0, mpPen = cost * 0.25 + (u.mp - cost < 20 ? 8 : 0), wPen = (SR.weight(a) - 1) * 20;
       if (a.kind === 'attack') {
         var targets = a.all || a.scatter ? [null] : alive;

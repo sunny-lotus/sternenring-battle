@@ -483,6 +483,7 @@ SR.category = function (id) {
   if (id === 'defend') return 'defend';
   if (id === 'scan') return 'scan';
   if (id === 'wait') return 'wait';
+  if (a && a.item) return 'item';   // アイテム
   if (['cover', 'guard', 'kProtect', 'teamKProtect', 'protect', 'kBarrier', 'ward', 'rally'].indexOf(a.kind) >= 0) return 'skillDef';
   return a.kind === 'attack' ? 'skillAtk' : 'skillSup';
 };
@@ -896,3 +897,41 @@ SR.skills['五人の一太刀'].needBroken = true; // ブレイク中の敵が�
   };
 })();
 SR.skills['分散連射'].kd = 10;   // 2026-11-22 試し打ち2回目：まだ使われすぎ（12→10）
+
+// ---- アイテム（2026-11-22 サニー：まずは戦いで使う回復アイテム。名前・数値は仮）----
+// 使うとその人の番を1回使う。1つの戦いに持っていけるのは、1種類3個まで。
+// 店で買える。素材を集めて自分で作ると安い（現地調達）。素材は戦いに勝つと拾える。
+SR.ITEM_CARRY = 3;
+skill('薬草', 'item', 0, 0, { kind: 'item', item: true, fx: 'hp', v: 0.35, label: '薬草' });        // 仲間一人：最大HPの35%回復
+skill('霊水', 'item', 0, 0, { kind: 'item', item: true, fx: 'mp', v: 35, label: '霊水' });          // 仲間一人：MP35回復
+skill('清め薬', 'item', 0, 0, { kind: 'item', item: true, fx: 'cure', label: '清め薬' });           // 仲間一人：悪い状態（やけど・出血・凍結・暗闇など）を全部治す
+skill('気付け薬', 'item', 0, 0, { kind: 'revive', item: true, amount: 0.3, label: '気付け薬' });     // 倒れた仲間一人：HP30%で起き上がる
+SR.ITEMS = {
+  '薬草': { price: 120, fx: '仲間一人のHPを最大HPの35%回復', recipe: { '野草': 2 }, fee: 0 },
+  '霊水': { price: 200, fx: '仲間一人のMPを35回復', recipe: { '澄んだ水': 1, '光る苔': 1 }, fee: 20 },
+  '清め薬': { price: 150, fx: '仲間一人の悪い状態（やけど・出血・凍結・暗闇など）を全部治す', recipe: { '野草': 1, '白い塩': 1 }, fee: 10 },
+  '気付け薬': { price: 500, fx: '倒れた仲間一人を、HP30%で起こす', recipe: { '苦い根': 2, '澄んだ水': 1 }, fee: 60 }
+};
+SR.MATERIALS = { '野草': '道ばたや森に生える草。薬草のもと', '澄んだ水': '湧き水。霊水や薬に使う', '光る苔': '星の光をためる苔', '白い塩': '清めに使う塩', '苦い根': '気付け薬の苦み' };
+SR.matDrop = { normal: [1, 2], boss: [3, 5] };   // 勝ったときに拾える素材の数（はんい）
+SR.bag = (function () {   // 持ち物（アイテムと素材）。この端末に保存
+  var KEY = 'sr-battle-bag-v1', d;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!d || !d.items) d = { items: { '薬草': 3 }, mats: {} };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  return {
+    items: function () { return d.items; }, mats: function () { return d.mats; },
+    n: function (id) { return d.items[id] || 0; }, m: function (id) { return d.mats[id] || 0; },
+    add: function (id, k) { d.items[id] = Math.max(0, (d.items[id] || 0) + k); save(); },
+    addMat: function (id, k) { d.mats[id] = Math.max(0, (d.mats[id] || 0) + k); save(); },
+    carry: function () { var o = {}; Object.keys(SR.ITEMS).forEach(function (id) { var k = Math.min(SR.ITEM_CARRY, d.items[id] || 0); if (k) o[id] = k; }); return o; },   // 戦いに持っていく分
+    canCraft: function (id) { var r = SR.ITEMS[id].recipe; return Object.keys(r).every(function (m) { return (d.mats[m] || 0) >= r[m]; }) && SR.growth.gold() >= (SR.ITEMS[id].fee || 0); },
+    craft: function (id) { if (!this.canCraft(id)) return false; var I = SR.ITEMS[id]; Object.keys(I.recipe).forEach(function (m) { d.mats[m] -= I.recipe[m]; }); SR.growth.addGold(-(I.fee || 0)); d.items[id] = (d.items[id] || 0) + 1; save(); return true; },
+    buy: function (id) { var p = SR.ITEMS[id].price; if (SR.growth.gold() < p) return false; SR.growth.addGold(-p); d.items[id] = (d.items[id] || 0) + 1; save(); return true; },
+    reset: function () { d = { items: { '薬草': 3 }, mats: {} }; save(); }
+  };
+})();
+(function () {   // 説明・経験値の文
+  var ds = SR.describe; SR.describe = function (a) { if (a && a.item) return SR.ITEMS[a.id].fx + '（1つの戦いに' + SR.ITEM_CARRY + '個まで）'; return ds(a); };
+})();
+(function () { var ae = SR.actionExp; SR.actionExp = function (a) { return a && a.item ? null : ae(a); }; })();   // アイテムでは経験値なし

@@ -1195,6 +1195,21 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .itempty{display:flex;flex-direction:column;align-items:center;gap:8px;margin:40px auto;color:#c9cfee}
 .itempty svg{width:56px;height:56px;fill:none;stroke:#e8c372;stroke-width:1.4}
 .itempty b{font-family:"Shippori Mincho B1",serif;font-size:20px;color:#f6e2a8}
+/* 2026-11-22 アイテム：持ち物・店・作る */
+.itmoney{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.itmoney>b{font-family:"Shippori Mincho B1",serif;color:#f6e2a8}
+.itlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.itcard{background:rgba(20,22,52,.85);border:1px solid #5d6aa8;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ith{display:flex;justify-content:space-between;align-items:baseline}
+.ith b{font-family:"Shippori Mincho B1",serif;font-size:18px;color:#f6e2a8}
+.itn{color:#bfe0ff;font-weight:700}
+.itact{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.itrc span{font-size:12px;margin-right:6px;padding:1px 5px;border-radius:4px;background:#1c2448}
+.itrc .ok{color:#9fe3b0}.itrc .no{color:#ff9a7a}
+.itmats{display:flex;flex-wrap:wrap;gap:8px}
+.itmat{background:#1c2448;border:1px solid #3d4680;border-radius:8px;padding:5px 10px;display:flex;gap:8px}
+.itmat b{color:#e8ecff}.itmat span{color:#ffd27a;font-weight:800}
+.sk.t-item{border-color:#6fd0a0}.sk.t-item .c{color:#9fe3b0}
 /* 活かす状態（〜中に×倍）：金の枠で囲む／付ける状態：そのまま */
 .stexp{display:inline-grid;place-items:center;box-shadow:inset 0 0 0 1.5px #f2d48a,0 0 6px rgba(242,212,138,.6)!important;border-radius:3px;background:rgba(80,60,10,.55)!important}
 #battle.hd #panel .sk .sktags>.stexp{background:linear-gradient(180deg,rgba(140,100,24,.9),rgba(60,40,6,.95))!important;box-shadow:inset 0 0 0 1.5px #ffe08a!important}
@@ -1497,7 +1512,7 @@ svg.coin.cbig{width:18px;height:18px}
 
   <div class="mpage" id="pg-items">
     <div class="mhead"><button class="btn mback" data-nav data-back data-page="menu">戻る</button><h2>アイテム</h2></div>
-    <div class="mbody"><div class="itempty"><svg viewBox="0 0 32 32"><path d="M7 12 L25 12 L23 27 L9 27 Z M11 12 Q11 5 16 5 Q21 5 21 12"/></svg><b>持ち物はまだない</b><span>アイテムのしくみは、これから決める（準備中）。</span></div></div>
+    <div class="mbody"><div id="itemBox"></div></div>
   </div>
 
   <div class="mpage" id="pg-battle">
@@ -1594,14 +1609,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122zs"></script>
-<script src="js/icons.js?v=t1122zs"></script>
-<script src="js/engine.js?v=t1122zs"></script>
-<script src="js/loadout.js?v=t1122zs"></script>
-<script src="js/sound.js?v=t1122zs"></script>
-<script src="js/fx.js?v=t1122zs"></script>
-<script src="js/tree3d.js?v=t1122zs"></script>
-<script src="js/ui.js?v=t1122zs"></script>
-<script type="module" src="js/stage3d.js?v=t1122zs"></script>
+<script src="js/data.js?v=t1122zt"></script>
+<script src="js/icons.js?v=t1122zt"></script>
+<script src="js/engine.js?v=t1122zt"></script>
+<script src="js/loadout.js?v=t1122zt"></script>
+<script src="js/sound.js?v=t1122zt"></script>
+<script src="js/fx.js?v=t1122zt"></script>
+<script src="js/tree3d.js?v=t1122zt"></script>
+<script src="js/ui.js?v=t1122zt"></script>
+<script type="module" src="js/stage3d.js?v=t1122zt"></script>
 </body>
 </html>
