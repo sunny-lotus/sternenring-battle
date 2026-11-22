@@ -197,6 +197,8 @@ SR.sound = (function () {
   }
   function se(name) {
     if (!on.se) return;
+    // フィールドから開いたメニュー（?field=1&page=…）では、ページを移るときの決定音・戻る音を鳴らさない（フィールドが本をめくる音を鳴らすので重なる。2026-11-22 作者「ページをめくる音にSEが重なっている」）
+    if ((name === 'ok' || name === 'back') && /[?&]field=1(&|$)/.test(location.search) && /[?&]page=/.test(location.search)) return;
     if (name === 'hit' && Math.random() < 0.5) name = 'hit2';
     if (playFile(name)) return;
     if (name === 'hit2') name = 'hit';
