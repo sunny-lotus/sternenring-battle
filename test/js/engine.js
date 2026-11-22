@@ -65,11 +65,14 @@ SR.Battle = function (opts) {
     return a.reduce(function (s, v) { var g = v.gs || 1; return s + g * Math.pow(eg / g, p) * (v.hf || 1); }, 0) / a.length * (SR.enemyAtkMulAt ? SR.enemyAtkMulAt((enemies[0] && enemies[0].lv) || 1) : SR.enemyAtkMul || 1);
   }
   function HF() { var a = heroes.filter(function (v) { return v.pos < 3; }); return a.length ? a.reduce(function (s, v) { return s + (v.hf || 1); }, 0) / a.length : 1; }
-  function capDmg(src, n, dst) {   // 1発の上限：9999。低いLvのうちは「その相手へのふだんの一撃×SR.hitCapMul」まで（相手のLvの倍率で決まる）。限界突破で外れる
-    if (src && src.limitBreak) return n;
-    var cap = SR.DMG_CAP || 1e9; if (src && src.hero && dst && SR.hitCapMul) cap = Math.min(cap, Math.round(SR.hitCapMul * 100 * (dst.gs || 1) * gapOf(src, dst)));
-    return Math.min(cap, n);
+  // 2026-11-22 サニー：Lvごとの上限はつけない。かわりに「ふだんの一撃」の何倍にもなる大きな一撃は、伸びがゆるやかになる（足すほど必ず増えるが、跳ね上がりすぎない）。
+  // ふだんの一撃＝100×相手のLvの倍率×Lv差。3倍までは そのまま、その先は 3＋2×log(1＋(倍−3)/3)。最後に9999で止まる（限界突破で外れる）
+  function softDmg(src, n, dst) {
+    if (!src || !src.hero || !dst || !SR.softDmg) return n;
+    var T = 100 * (dst.gs || 1) * gapOf(src, dst), x = n / T, k = SR.softDmg;
+    return x <= k.knee ? n : T * (k.knee + k.slope * Math.log(1 + (x - k.knee) / k.knee));
   }
+  function capDmg(src, n, dst) { n = softDmg(src, n, dst); return src && src.limitBreak ? n : Math.min(SR.DMG_CAP || 1e9, n); }
   function gapOf(src, dst) {   // Lv差の効き目。Lv10までの「慣れの期間」は、Lvが足りなくても不利にならない（上回っているときの有利だけ残す）
     var g = Math.pow((src.gs || 1) / (dst.gs || 1), SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW), E = SR.EASY_LV || 0;
     if (src.hero && g < 1 && (dst.lv || 1) <= E) g = 1;
