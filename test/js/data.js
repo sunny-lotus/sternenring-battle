@@ -673,6 +673,23 @@ SR.lvScale = function (lv) {
   for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
   return p[p.length - 1][1] + (lv - p[p.length - 1][0]) * 2;
 };
+// 2026-11-22 サニー：味方のHPは伸びをゆるく（Lv1で500・Lv10で1500・Lv30で5000・Lv50で9999、9999まで）。
+// そのぶん味方が受けるダメージ・回復も同じ割合で小さくして、「何発で倒れるか」は変えない。
+SR.heroHpPts = [[1, 500], [10, 1500], [30, 5000], [50, 9999]];
+SR.HP_CAP = 9999;
+SR.heroHp = function (lv) {
+  var p = SR.heroHpPts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return Math.round(p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]));
+  return SR.HP_CAP;
+};
+// 敵のHPの倍率。こちらの一撃は9999で止まるので、敵のHPはダメージの倍率より少しゆるく伸ばして、戦いの長さをそろえる（試し打ちで合わせた）
+SR.enemyHpPts = [[1, 1], [10, 10], [30, 25], [50, 28]];   // 通常の敵
+SR.bossHpPts = [[1, 1], [10, 6.5], [30, 10.5], [50, 12]];   // ボス・双子の大獣（大きな一撃が9999で止まりやすいので、もっとゆるく）
+SR.enemyHpScale = function (lv, boss) {
+  var p = boss ? SR.bossHpPts : SR.enemyHpPts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
+  return p[p.length - 1][1] * (1 + 0.03 * (lv - p[p.length - 1][0]));   // Lv50より上は少しずつ（限界突破の出番）
+};
 SR.DMG_CAP = 9999;   // 1回のダメージの上限。パッシブ「限界突破」を持つと外れる
 SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れる", lv: 51 };   // Lv51あたりのサブクエで手に入る（今は開発者設定で試せる）
 SR.limitBreak = (function () {   // 限界突破を持っているか（キャラごと・試し用に開発者設定で切りかえ）

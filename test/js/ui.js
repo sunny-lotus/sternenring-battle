@@ -1027,7 +1027,7 @@
       });
       h += '</table><div class="tl sm">見込みはおおよそ。暗闇で外れることや、ブーストは入っていない</div>';
     }
-    if (u && (a.kind === 'heal')) h += '<div class="tl">回復量 ' + Math.round(a.amount * (SR.hpScale || 1)) + (a.allies ? '（前線全員）' : '') + '</div>';
+    if (u && (a.kind === 'heal')) h += '<div class="tl">回復量 ' + Math.round(a.amount * (SR.hpScale || 1) * (u.gs || 1) * (u.hf || 1)) + (a.allies ? '（前線全員）' : '') + '</div>';
     if (who && !u && SR.ctreeNode(id) && SR.growth) {
       var gw = SR.growth.has(who, id) ? '覚えた' : SR.growth.why(who, id);
       h += '<div class="tl">' + SR.names[who] + '：' + gw + '</div>';
