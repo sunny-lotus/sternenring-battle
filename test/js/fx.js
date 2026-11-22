@@ -267,11 +267,21 @@ window.SR = window.SR || {};
       var p = at(el); add('fxpillar', '', 1200, p.x, null); add('fxflash gold', '', 450);
       for (var i = 0; i < 12; i++) add('fxember', '', 1500, p.x + rnd(-30, 30), p.y + rnd(0, 40), { '--dx': rnd(-20, 20) + 'px', '--dy': -rnd(80, 180) + 'px', '--dl': rnd(0, .4).toFixed(2) + 's' });
     },
-    // とどめ
-    finale: function () {
-      add('fxflash long', '', 1300); quake(3);
-      add('fxword gold', '撃破！', 1500, at().w / 2, at().h * .42);
-      setTimeout(function () { quake(2); }, 500);
+    // とどめ（2026-11-22 サニー：かっこよく）：時が止まったように色が抜け、画面を一閃が走る。光の筋が回り、金の輪と火の粉。「撃破」が筆のように現れる
+    finale: function (el) {
+      var A = at(), p = el ? at(el) : { x: A.w / 2, y: A.h * .45, w: A.w, h: A.h };
+      add('fxflash', '', 260);
+      add('fxfin-mono', '', 1000);
+      add('fxfin-slash', '<i></i>', 700, p.x, p.y, { '--rz': rnd(-28, -14).toFixed(1) + 'deg' });
+      quake(3);
+      setTimeout(function () {
+        add('fxfin-rays', '', 1600, p.x, p.y);
+        add('fxbk-ring gold', '', 900, p.x, p.y); add('fxbk-ring gold r2', '', 1150, p.x, p.y);
+        for (var i = 0; i < 26; i++) add('fxember', '', 1700, p.x + rnd(-60, 60), p.y + rnd(-10, 50), { '--dx': rnd(-80, 80) + 'px', '--dy': -rnd(120, 300) + 'px', '--dl': rnd(0, .5).toFixed(2) + 's' });
+        try { if (SR.stage3d && SR.stage3d.hit && el && el.id) SR.stage3d.hit(el.id.replace(/^u-/, ''), 3, '#ffd27a'); } catch (e) {}
+        add('fxfin-title', '<small>FINISH</small><b><span>撃</span><span>破</span></b><i class="ln"></i>', 1600, A.w / 2, Math.max(80, A.h * .4));
+        quake(2);
+      }, 220);
     },
     mood: function (brk, charge) {
       var f = field(); if (!f) return;

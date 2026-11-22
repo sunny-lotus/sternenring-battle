@@ -1445,7 +1445,7 @@
     if (f.broke) { F.breakHit(el, hero); hold = Math.max(hold, hero ? 800 : 1150); }
     if (f.down) {
       F.down(el, hero);
-      if (!hero && allDown) { F.finale(); hold = 1800; } else hold = Math.max(hold, 800);
+      if (!hero && allDown) { F.finale(el); hold = 1800; } else hold = Math.max(hold, 800);
     }
     if (f.status) { var sp = document.createElement('div'); sp.className = 'pop stpop'; sp.innerHTML = SR.statusIcon(f.status) + SR.statuses[f.status].name; el.appendChild(sp); }
     if (f.miss) popup(el, 'ミス', 'kd');
