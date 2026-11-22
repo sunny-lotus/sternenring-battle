@@ -80,7 +80,7 @@ SR.Battle = function (opts) {
     return g;
   }
   function atkMulOf(src) { return src.hero ? 1 : (SR.enemyAtkMulAt ? SR.enemyAtkMulAt(src.lv || 1) : SR.enemyAtkMul || 1); }
-  heroes.concat(enemies).forEach(function (u) { var bz = isBoss || u.type === "twin", hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, bz) * (bz ? 1 : SR.normalHpMul || 1) : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * u.gs; });
+  heroes.concat(enemies).forEach(function (u) { var bz = isBoss || u.type === "twin", hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, bz) * (bz ? 1 : SR.normalHpMul || 1) : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * hs; });   // 敵の回復はHPの倍率に合わせる
   heroes.forEach(function (u) { var h = Math.min(SR.HP_CAP || 9999, SR.heroHp ? SR.heroHp(u.lv || 1) : u.maxHp); u.hf = h / u.maxHp; u.maxHp = h; u.hp = h; });   // 味方のHPはゆるい伸び。受けるダメージ・回復も hf をかける
   // 2026-11-22 サニー：MPもLvで伸びる。ステータスのパッシブ（だれでも付けられる）
   heroes.forEach(function (u) {
