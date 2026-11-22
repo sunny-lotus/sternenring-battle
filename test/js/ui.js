@@ -303,7 +303,7 @@
         b.className += ' enc';
         b.innerHTML = (img ? '<img class="th" src="img/enemies/' + img + '.png" alt="">' : '<span class="th">？</span>') +
           '<span class="tx"><b>' + e.name + '</b><span class="meta">' + (e.era ? '<span class="badge b-form">' + ['', '序盤', '中盤', '終盤'][e.era] + '</span>' : '') +
-          (rl ? '<span class="reclv' + (avgLv < rl ? ' low' : '') + '">推奨Lv ' + rl + '</span>' : '') +
+          (rl ? '<span class="reclv' + (avgLv < rl ? ' low' : '') + '" title="推奨レベル＝敵のレベル">敵Lv ' + rl + '</span>' : '') +
           (d ? '<span>難しさ<span class="dp">' + pips + '</span></span>' : '') + (best ? '<span class="bestd">自己ベスト ' + best.toLocaleString() + '</span>' : '') +
           '</span><span class="small">' + e.note + '</span></span>';
       }
@@ -1456,7 +1456,7 @@
         var r = B.estimate(st.actor.id, tgtSkill, e.id);
         if (r) est = '<div class="est">' + Math.round(r.kNow) + '→' + Math.max(0, Math.round(r.kNow - (r.brk ? 0 : r.kd))) + (r.breaks ? ' <b>BREAK</b>' : '') + '　-' + Math.round(r.dmg).toLocaleString() + (r.kills ? ' <b>KO</b>' : '') + (r.aff > 1 ? ' ▲' : r.aff < 1 ? ' ▼' : '') + '</div>';
       }
-      d.innerHTML = '<div class="spr">' + beastSVG(e) + '</div><div class="lab"><span class="nm">' + e.name + '</span>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + bars(e, v) + '<div class="tgs">' + SR.iconizeTags(tags) + '</div>' + est + '</div>';
+      d.innerHTML = '<div class="spr">' + beastSVG(e) + '</div><div class="lab"><span class="nm">' + e.name + (e.lv ? '<em class="elv">Lv' + e.lv + '</em>' : '') + '</span>' + (sti ? '<div class="sts">' + sti + '</div>' : '') + bars(e, v) + '<div class="tgs">' + SR.iconizeTags(tags) + '</div>' + est + '</div>';
       var lp = lastPos[d.id]; if (lp) { d.style.width = lp[0]; d.style.height = lp[1]; d.style.left = lp[2]; d.style.top = lp[3]; }
       if (can.indexOf(e.id) >= 0) { d.classList.add('pickable'); d.onclick = function () { onUnitClick(e.id); }; }
       ea.appendChild(d);

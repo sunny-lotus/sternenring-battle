@@ -71,6 +71,7 @@ SR.Battle = function (opts) {
     heroes.forEach(function (v) { if (v.pos < 3 && has(v, '勝ち鬨') && once(v, 'cryTurn')) gainMp(v, 8); });
   }
 
+  enemies.forEach(function (e) { e.lv = (SR.recLv && SR.recLv[opts.encounter]) || 1; });   // 2026-11-22 サニー：推奨Lvをそのまま敵のレベルに
   this.heroes = heroes; this.enemies = enemies; this.kit = kit; this.enc = enc; this.isBoss = isBoss;
   this.expLog = {};
   this.t = 0; this.events = []; this.stat = { breaks: 0, allyBreaks: 0, chases: 0, counters: 0, swaps: 0 };
