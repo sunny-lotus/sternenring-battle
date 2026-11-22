@@ -4,14 +4,27 @@
 // 数値は未採用の仮値。本番ゲーム・原作の設定ではない。
 var SR = window.SR || (window.SR = {});
 
-SR.C = { maxMp: 100, maxK: 100, recovery: 26, ap: 24, maxRounds: 24 };
+SR.C = { maxMp: 100, maxK: 100, recovery: 26, ap: 24, maxRounds: 24,
+  ctBase: 1000, brkDelay: 0.5, releaseWeight: 0.6,
+  weak2K: [1, 1.5, 2.5], openK: 1.3 };   // 弱点が二つのボス：片方1.5倍・両方2.5倍。大技・全体攻撃の直後のすき：1.3倍   // アクティブカウント：番の間隔＝ctBase÷素早さ。ブレイクで順番が半分下がる。ブレイク明けの敵は次の番が早い
+// 2026-11-21 アクティブカウント：味方の素早さ（敵は enemyTypes の speed）
+SR.heroSpeed = { N: 70, S: 66, V: 62, F: 58, L: 54 };   // 2026-11-22 サニー：セレナは2番目に速い・リヒトがいちばん遅い
+// 技の重さ：次の番までの間隔の倍率。軽い技ほど早く次の番が来る
+SR.weight = function (a) {
+  if (!a) return 1;
+  if (a.kind === 'wait') return 0.6;
+  if (a.kind === 'defend' || a.kind === 'scan') return 0.8;
+  if (a.id === 'basic' || a.id === 'light') return 0.9;
+  return 0.85 + (a.ap || 4) * 0.04;
+};
+SR.weightLabel = function (a) { var w = SR.weight(a); return w < 0.95 ? '次の番が早い' : w > 1.05 ? '次の番が遅い' : '次の番ふつう'; };
 
 // 難しさ。sandbox は試算の数値そのまま。tense は試作で足した調整（試算からの変更）。
-// atk: 敵の通常攻撃 [気力削り, 威力]。big: 溜めのあとの大技。
+// atk: 敵の通常攻撃 [ブレイクゲージ削り, 威力]。big: 溜めのあとの大技。
 SR.tunes = {
   sandbox: { name: '試算どおり', note: '相談の試算と同じ数値。溜め攻撃なし', recovery: 26, mpRecovery: 18, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: false,
     boss: { single: [18, 52], aoe: [23, 82] }, mob: { single: [10, 24], aoe: [12, 38] } },
-  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。気力回復20・精神力回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 1, bossK: 0.8, bossKMul: 1, chargeK: 1.5,
+  tense: { name: '緊張感あり', note: '敵が力を溜めて大技を撃つ。ブレイクで止められる。ブレイクゲージ回復20・MP回復14', recovery: 20, mpRecovery: 14, breakMaxHp: 0.1, foeStack: { max: 3, k: 0.15, dmg: 0.15 }, charge: true, status: true, reserveRegen: 0.05, boost: { max: 2, mult: [1, 1.5, 2], kd: 0 }, dmg: { base: 0.2, slope: 0.3, broken: 2 }, heroDmg: { base: 0.5, slope: 0.5, broken: 1.5 }, bossHp: 2.5, bossActs: 1, bossK: 0.8, bossKMul: 1, chargeK: 1.5,
     boss: { single: [23, 99], aoe: [29, 151], aoeAlways: [25, 97], big: [99, 323] }, mob: { single: [20, 69], aoe: [14, 55], big: [77, 196] } },
 };
 
@@ -70,11 +83,11 @@ skill('連弾', 'S', 5, 22, { kind: 'attack', kd: 12, hp: 14, hits: 3 });
 // ---- 2026-11-08 時期（era）：1=序盤 2=中盤 3=終盤。相手の時期より後の技は、その戦いでは使えない ----
 // 終盤の大技：次のターンに倒れるくらいのリスクと引きかえ。リスクは補助（守りの祈り・立て直し・かばう）で打ち消せる
 skill('業火', 'F', 7, 48, { kind: 'attack', kd: 10, hp: 210, fire: true, era: 3, exhaust: true, expose: true });   // 撃った次のターンは動けず無防備
-skill('決死の一閃', 'L', 7, 20, { kind: 'attack', kd: 40, hp: 120, brave: true, era: 3, allK: true, expose: true }); // 残りの気力を全部注ぐ
-skill('星落とし', 'V', 7, 44, { kind: 'attack', kd: 24, hp: 95, all: true, era: 3, teamRecoil: 0.5 });          // 敵全体。前線の味方全員の体力も半分に
+skill('決死の一閃', 'L', 7, 20, { kind: 'attack', kd: 40, hp: 120, brave: true, era: 3, allK: true, expose: true }); // 残りのブレイクゲージを全部注ぐ
+skill('星落とし', 'V', 7, 44, { kind: 'attack', kd: 24, hp: 95, all: true, era: 3, teamRecoil: 0.5 });          // 敵全体。前線の味方全員のHPも半分に
 // リスクを打ち消す補助
 skill('守りの祈り', 'S', 4, 20, { kind: 'ward', era: 2 });   // 次の反動・無防備・燃え尽きを打ち消す（2ターン）
-skill('立て直し', 'L', 4, 22, { kind: 'rally', era: 2 });    // 反動で減った体力を戻し、無防備を解く
+skill('立て直し', 'L', 4, 22, { kind: 'rally', era: 2 });    // 反動で減ったHPを戻し、無防備を解く
 skill('深癒', 'S', 6, 30, { kind: 'heal', amount: 300 });
 skill('癒しの波', 'S', 7, 40, { kind: 'heal', amount: 150, allies: true });
 skill('蘇生', 'S', 5, 36, { kind: 'revive', amount: 0.4 });         // 2026-11-08 ボスを強くした分、倒れても立て直せるように
@@ -84,21 +97,21 @@ skill('守勢の号令', 'L', 6, 28, { kind: 'teamKProtect' });
 skill('決着の一閃', 'L', 6, 32, { kind: 'attack', kd: 10, hp: 90, finisher: 1.65 });
 
 // ---- 状態付与（2026-11-08 相談で決定。効果は小さめ・数値は仮） ----
-// 状態そのものは気力に関わらない。目的はコンボ（活かす技）と、敵ごとの弱点で気力を崩しやすくすること。
+// 状態そのものはブレイクゲージに関わらない。目的はコンボ（活かす技）と、敵ごとの弱点でブレイクゲージを崩しやすくすること。
 SR.statuses = {
-  burn: { name: '燃焼', color: '#ff7a3a', fx: 'ターンの終わりに最大体力の3%が減る' },
-  bleed: { name: '裂傷', color: '#e05a6a', fx: '行動するたびに最大体力の2%が減る' },
+  burn: { name: '燃焼', color: '#ff7a3a', fx: 'ターンの終わりに最大HPの3%が減る' },
+  bleed: { name: '裂傷', color: '#e05a6a', fx: '行動するたびに最大HPの2%が減る' },
   freeze: { name: '凍結', color: '#7fd4ff', fx: '受けるダメージが1割増える' },
   daze: { name: '目眩', color: '#ffe27a', fx: '与えるダメージが1割減る' },
-  shock: { name: '感電', color: '#c9a4ff', fx: '行動が遅くなる' },
+  shock: { name: '感電', color: '#c9a4ff', fx: '次の番が遅くなる（間隔1.3倍）' },
   blind: { name: '暗闇', color: '#9aa0c8', fx: '攻撃が1割の確率で外れる' },
 };
 SR.statusOrder = ['burn', 'bleed', 'freeze', 'daze', 'shock', 'blind'];
 SR.statusMax = 6;
-// 2026-11-08 数字が大きい方が気持ちいい → 体力・ダメージ・回復をまとめて10倍で表示（比率は同じなのでバランスは変わらない）
+// 2026-11-08 数字が大きい方が気持ちいい → HP・ダメージ・回復をまとめて10倍で表示（比率は同じなのでバランスは変わらない）
 SR.hpScale = 10;
-SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blind: 0.1, weakK: 2, weakRegen: 0,
-  cap: { '燃焼': 18, '裂傷が開いた': 12 } }; // 体力の多いボスで強くなりすぎないよう、1回の上限
+SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, shockDelay: 1.3, blind: 0.1, weakK: 2, weakRegen: 0,
+  cap: { '燃焼': 18, '裂傷が開いた': 12 } }; // HPの多いボスで強くなりすぎないよう、1回の上限
 // 技が付ける状態 [状態, ターン数] と、活かす状態 [状態, 倍率]
 (function () {
   function s(id, inflict, exploit) { var a = SR.skills[id]; if (inflict) a.inflict = inflict; if (exploit) a.exploit = exploit; }
@@ -129,50 +142,276 @@ SR.statusFx = { burn: 0.03, bleed: 0.02, freeze: 1.1, daze: 0.9, shock: 12, blin
   SR.statusSkill = { N: '裂き払い', V: '放電弾', F: '焼き付け', S: '氷結弾', L: '閃光' };
 })();
 
-// ---- 2026-11-14 星律魔法の七体系（仮の割り当て） ----
-// 魔法は七体系の組み合わせで、炎や水は術式から起きる現象（物語の設定）。属性ではなく体系で相性を見る。
-// 体系の相性は体力へのダメージだけを変える（気力の削り方は状態の弱点が受け持つ）。
-// ナハトの技には体系を付けない（本人は剣術だと思っている。原初魔法《共鳴》は明かさない）。
-// 2026-11-14 先生のイメージ：フレア＝炎を生み出す（原初もあるが星律も使える）、ヴォルト＝電気を操る、セレナ＝氷や温度・水、リヒト＝光・構築系
+// ---- 2026-11-15 魔法の体系ツリーと、現象による削り方（手元の試作・相談中） ----
+// 七体系は属性ではなく「操作」（構築＝形を作る・固定／循環＝流す／観測＝状態を知る／干渉＝既存の現象を変える）。
+// コモンスキルは、体系を鍛えて必要な組み合わせを満たすと覚えられる（スキルツリー）。
+// 因果・時環・星核は高度な領域で、能力は設定でまだ決まっていない → 名前だけ見せて鍛えられない。
+// HPの削り方は「現象」（炎・雷・冷気・光・衝撃）で変わる。ブレイクゲージの削り方は今までどおり状態の弱点。
+// ナハトはツリーなし・技に現象なし（本人は剣術だと思っている。原初魔法《共鳴》は明かさない）。
 SR.systems = ['構築', '循環', '観測', '干渉', '因果', '時環', '星核'];
-SR.sysAff = { weak: 1.3 };   // 目安。敵ごとの倍率は enemyTypes の aff
+SR.baseSystems = ['構築', '循環', '観測', '干渉'];
+SR.sysNote = { 構築: '形を作る・固定する', 循環: '流す（魔力・熱・水・生命力）', 観測: '状態を知る', 干渉: 'すでにある現象を変える',
+  因果: '高度な領域（まだ分からない）', 時環: '高度な領域（まだ分からない）', 星核: '高度な領域（まだ分からない）' };
+// ---- 2026-11-21 技の覚え方（手元の試作・先生の決定） ----
+// コモン：スキルツリー。戦いに勝つたびにポイントをもらい、時期ごとに手に入る本（〇〇の書・初級／中級／上級）の範囲で覚える。
+// ユニーク：サブクエストやイベントで覚える（どのクエストかは物語に関わるので未定）。試作では「覚えたことにする」で試せる。
+SR.tree = { start: { V: '観測', F: '干渉', S: '循環', L: '構築' } };   // 得意な体系（その枝の技は1ポイント安い）
+SR.bookTier = ['', '初級', '中級', '上級'];
+SR.passiveCap = [0, 8, 12, 16];   // パッシブのコスト上限（序盤・中盤・終盤）
+SR.eraName = ['', '序盤', '中盤', '終盤'];
+// コモンのツリー。sys：枝（主な体系）、books：必要な本の体系、tier：本の段階、req：前に覚える技
+SR.ctree = [
+  { id: '小回復', sys: '循環', books: ['循環', '観測'], tier: 1, req: [] },
+  { id: '気力支援', sys: '循環', books: ['循環'], tier: 1, req: [] },
+  { id: '中回復', sys: '循環', combo: ['循環', '観測'], books: ['循環', '観測'], tier: 2, req: ['小回復', '見極め'] },   // 観測を先に、循環を組む（第一巻の術学院の場面）
+  { id: '集中付与', sys: '構築', combo: ['構築', '循環'], books: ['構築', '循環'], tier: 2, req: ['防護', '気力支援'] },
+  { id: '加速', sys: '循環', books: ['循環'], tier: 2, req: ['気力支援'] },
+  { id: '連環回復', sys: '循環', combo: ['循環', '観測'], books: ['循環', '観測'], tier: 3, req: ['中回復'] },
+  { id: '気付け', sys: '観測', combo: ['循環', '観測', '干渉'], books: ['循環', '観測', '干渉'], tier: 3, req: ['中回復'] },   // 三つの体系を育てて覚える
+  { id: '防護', sys: '構築', books: ['構築', '観測'], tier: 1, req: [] },
+  { id: '気力障壁', sys: '構築', books: ['構築'], tier: 2, req: ['防護'] },
+  { id: '気力防護', sys: '観測', books: ['観測'], tier: 2, req: ['見極め'] },
+  { id: '衝撃', sys: '干渉', books: ['干渉'], tier: 1, req: [] },
+  { id: '目くらまし', sys: '干渉', books: ['干渉'], tier: 1, req: [] },
+  { id: '痺れ針', sys: '観測', combo: ['観測', '干渉'], books: ['観測', '干渉'], tier: 2, req: ['見極め', '衝撃'] },
+  { id: '衝撃波', sys: '干渉', books: ['干渉'], tier: 2, req: ['衝撃'] },
+  { id: '重圧', sys: '干渉', books: ['干渉'], tier: 3, req: ['衝撃波'] },
+  // 2026-11-21 能力の星（FF10のスフィア盤・スカイリムの星座のような、技と技のあいだの小さな強化）
+  { id: '気力の器', stat: { maxK: 10 }, fx: '最大ブレイクゲージ+10', sys: '構築', books: ['構築'], tier: 1, req: [] },
+  { id: '守りの型', stat: { guard: 0.05 }, fx: '受けるダメージ-5%', sys: '構築', books: ['構築'], tier: 2, req: ['防護'] },
+  { id: '精神の流れ', stat: { mp: 2 }, fx: '番ごとのMP回復+2', sys: '循環', books: ['循環'], tier: 1, req: [] },
+  { id: '癒しの流れ', stat: { heal: 0.1 }, fx: '回復量+10%', sys: '循環', books: ['循環'], tier: 2, req: ['小回復'] },
+  { id: '見極め', stat: { weakKd: 0.1 }, fx: '弱点の状態が付いた相手へのブレイクゲージ削り+10%', sys: '観測', books: ['観測'], tier: 1, req: [] },
+  { id: '先読み', stat: { spd: 3 }, fx: '素早さ+3（番が少し早く来る）', sys: '観測', books: ['観測'], tier: 2, req: ['見極め'] },
+  { id: '崩しの手', stat: { kd: 0.05 }, fx: 'ブレイクゲージ削り+5%', sys: '干渉', books: ['干渉'], tier: 1, req: [] },
+  { id: '押し込み', stat: { hp: 0.05 }, fx: 'HPダメージ+5%', sys: '干渉', books: ['干渉'], tier: 2, req: ['衝撃'] },
+  // 四つの体系をすべて育てて覚える能力の星（四本の柱のまん中、上級の高さ）
+  { id: '四系統の調和', stat: { maxK: 10, kd: 0.05, heal: 0.05 }, fx: '最大ブレイクゲージ+10・ブレイクゲージ削り+5%・回復量+5%', sys: '循環', combo: ['構築', '循環', '観測', '干渉'], books: ['構築', '循環', '観測', '干渉'], tier: 3, req: [] },
+];
+SR.ctreeNode = function (id) { return SR.ctree.find(function (n) { return n.id === id; }); };
+// 覚えた能力の星の合計（自分で編成のときだけ戦闘に効く）
+SR.growthBonus = function (who) {
+  var b = { maxK: 0, guard: 0, mp: 0, heal: 0, weakKd: 0, spd: 0, kd: 0, hp: 0 };
+  SR.ctree.forEach(function (n) { if (n.stat && SR.growth.has(who, n.id)) Object.keys(n.stat).forEach(function (k) { b[k] += n.stat[k]; }); });
+  return b;
+};
+// ---- 2026-11-21 育ち方（先生の決定・2回目） ----
+// ・本を買うと、その体系の柱の「透明な部分」の高さ上限が上がる（初級→中級→上級）。本は仲間みんなで使う。
+// ・戦いでの自分の行動と、一人ひとつ選ぶ「重点」の体系に、少しずつ経験値がたまる。たまった分だけ柱に色がつく。
+// ・柱の色が星の高さまで届くと、その技を覚える。となり合う二つの柱のあいだの星は、両方の色が届くと覚える。
+// ・ユニーク技はサブクエスト・イベントで覚える（試作では「覚えたことにする」で試せる）。
+// 育ちの数字（開発用に「設定」から変えられる。この端末に保存）
+SR.growthDefaults = { exp1: 60, exp2: 120, exp3: 220, expSkill: 3, expBasic: 1, expDefend: 2, focusNormal: 10, focusBoss: 30, loseMul: 0.5, goldNormal: 500, goldBoss: 1500, price2: 3000, price3: 8000 };   // お金は銅貨の枚数で数える（500＝銀貨5枚）
+SR.growthLabels = { exp1: '初級の段の経験値（短め）', exp2: '中級の段の経験値', exp3: '上級の段の経験値（長め）', expSkill: '技を1回使ったときの経験値', expBasic: 'ブレイブ攻撃・基本攻撃の経験値', expDefend: '防御の経験値',
+  focusNormal: '重点の経験値（通常戦）', focusBoss: '重点の経験値（ボス戦）', loseMul: '負けたときの経験値の倍率', goldNormal: 'お金（通常戦の勝ち・銅貨の枚数）', goldBoss: 'お金（ボス戦の勝ち・銅貨の枚数）', price2: '中級の本の値段（銅貨の枚数）', price3: '上級の本の値段（銅貨の枚数）' };
+SR.growthCfg = (function () {
+  var c = Object.assign({}, SR.growthDefaults);
+  try { Object.assign(c, JSON.parse(localStorage.getItem('sr-battle-dev-v1')) || {}); } catch (e) {}
+  return c;
+})();
+SR.applyGrowthCfg = function () { SR.bookPrice = [0, 0, SR.growthCfg.price2, SR.growthCfg.price3]; };
+// 段ごとに必要な経験値（初級は短く、上級は長く）。柱の段の長さもこれに合わせる
+SR.tierExp = function (t) { return Math.max(1, SR.growthCfg['exp' + t] || 1); };
+// 高さ（0〜3。段の数＋その中の割合）→ そこまでに要る経験値
+SR.cumExp = function (h) { var t = Math.floor(Math.min(3, Math.max(0, h))), e = 0; for (var i = 1; i <= t; i++) e += SR.tierExp(i); if (t < 3) e += (h - t) * SR.tierExp(t + 1); return e; };
+// 経験値 → 高さ
+SR.heightOf = function (e) { var h = 0; for (var t = 1; t <= 3; t++) { var c = SR.tierExp(t); if (e >= c) { e -= c; h++; } else return h + e / c; } return 3; };
+// 見た目の高さ（0〜1）：段の長さが経験値に比例する
+SR.visH = function (h) { return SR.cumExp(h) / SR.cumExp(3); };
+SR.setGrowthCfg = function (k, v) {
+  if (!(k in SR.growthDefaults) || !isFinite(v)) return;
+  SR.growthCfg[k] = Math.max(0, v); if (/^exp[123]$/.test(k)) SR.growthCfg[k] = Math.max(1, v);
+  try { localStorage.setItem('sr-battle-dev-v1', JSON.stringify(SR.growthCfg)); } catch (e) {}
+  SR.applyGrowthCfg();
+};
+SR.resetGrowthCfg = function () { SR.growthCfg = Object.assign({}, SR.growthDefaults); try { localStorage.removeItem('sr-battle-dev-v1'); } catch (e) {} SR.applyGrowthCfg(); };
+SR.applyGrowthCfg();
+// 星の高さ（0〜3。1段＝1）。段の中で、前の技ほど下
 (function () {
-  function set(ids, sys) { ids.forEach(function (id) { if (SR.skills[id]) SR.skills[id].sys = sys; }); }
+  function depth(n) { return n.req.length ? 1 + Math.max.apply(null, n.req.map(function (r) { var m = SR.ctreeNode(r); return m && m.tier === n.tier ? depth(m) : 0; })) : 0; }
+  SR.baseSystems.forEach(function (s) {
+    [1, 2, 3].forEach(function (t) {
+      var col = SR.ctree.filter(function (n) { return n.sys === s && n.tier === t && !n.combo; })
+        .sort(function (a, b) { return depth(a) - depth(b) || (a.stat ? 1 : 0) - (b.stat ? 1 : 0); });
+      col.forEach(function (n, i) { n.h = t - 1 + (i + 1) / (col.length + 1); });
+    });
+  });
+  SR.ctree.forEach(function (n) { if (n.combo) n.h = n.tier - 1 + [0, 0, 0.75, 0.85, 0.95][n.combo.length]; });   // 組み合わせの星：関わる柱すべての色がこの高さを超えたら覚える
+})();
+// 行動から、どの体系の経験値になるか
+SR.actionExp = function (a) {
+  if (!a || a.kind === 'wait') return null;
+  var node = SR.ctreeNode(a.id);
+  var C = SR.growthCfg;
+  if (node) return [node.sys, C.expSkill];
+  if (a.kind === 'defend') return ['構築', C.expDefend];
+  if (['guard', 'protect', 'kProtect', 'teamKProtect', 'kBarrier', 'cover'].indexOf(a.kind) >= 0) return ['構築', C.expSkill];
+  if (['heal', 'revive', 'energy', 'ward', 'rally', 'power', 'haste'].indexOf(a.kind) >= 0) return ['循環', C.expSkill];
+  if (['scan', 'analyze', 'aim', 'pressure'].indexOf(a.kind) >= 0 || a.inflict) return ['観測', C.expSkill];
+  if (a.kind === 'attack') return ['干渉', a.id === 'basic' || a.id === 'light' ? C.expBasic : C.expSkill];
+  return null;
+};
+// 最初から覚えているユニーク技。ほかはサブクエスト・イベントで覚える
+SR.uniqueStart = {
+  N: ['崩し斬り', 'かばう', '返し斬り', '踏み込み斬り'],
+  V: ['連射', '解析', '導機照準'],
+  F: ['火槍', '火の粉', '炎撃'],
+  S: ['連弾', '深癒', '蘇生'],
+  L: ['破陣剣', '守勢の号令', '決着の一閃'],
+};
+// 最初から覚えているパッシブ。ほかはユニーク技と同じく、サブクエスト・イベントで覚える
+SR.statPassive = { '頑健': { hp: 0.1 }, '魔力の器': { mp: 20 }, '俊足': { spd: 5 }, '剛力': { dmg: 0.08 }, '不屈': { k: 15 }, '堅守': { guard: 0.06 } };
+SR.pasOwner = function (s, id) { var o = SR.passives[s] && SR.passives[s][0]; return o === id || (o === 'all' && !!id); };   // そのキャラが付けられるパッシブか
+SR.passiveStart = { N: ['追撃の冴え', '勝ち鬨'], V: ['照準共有', '集積回路'], F: ['残熱回収'], S: ['静心'], L: ['陣頭指揮'] };
+// 育ち具合（この端末に保存）
+SR.growth = (function () {
+  var KEY = 'sr-battle-growth-v2', g;
+  function z() { return { 構築: 0, 循環: 0, 観測: 0, 干渉: 0 }; }
+  function fresh() {
+    return { era: 1, gold: 0, books: { 構築: 1, 循環: 1, 観測: 1, 干渉: 1 },
+      exp: { V: z(), F: z(), S: z(), L: z() }, focus: { V: SR.tree.start.V, F: SR.tree.start.F, S: SR.tree.start.S, L: SR.tree.start.L },
+      uniq: { N: [], V: [], F: [], S: [], L: [] }, pas: { N: [], V: [], F: [], S: [], L: [] } };
+  }
+  try { g = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!g || !g.exp) g = fresh();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(g)); } catch (e) {} }
+  var api = {
+    data: function () { return g; },
+    reset: function () { g = fresh(); save(); },
+    era: function () { return g.era; },
+    setEra: function (n) { g.era = n; save(); },
+    gold: function () { return g.gold; },
+    addGold: function (n) { g.gold += n; save(); },
+    books: function (s) { return g.books[s] || 0; },
+    hasBook: function (s, tier) { return (g.books[s] || 0) >= tier; },
+    // 本屋：時期が来た段の本だけ売っている
+    canBuy: function (s) { var t = (g.books[s] || 0) + 1; return t <= 3 && t <= g.era && g.gold >= SR.bookPrice[t]; },
+    buy: function (s) { var t = (g.books[s] || 0) + 1; if (!api.canBuy(s)) return false; g.gold -= SR.bookPrice[t]; g.books[s] = t; save(); return true; },
+    focus: function (who) { return g.focus[who]; },
+    setFocus: function (who, s) { if (who !== 'N') { g.focus[who] = s; save(); } },
+    exp: function (who, s) { return (g.exp[who] && g.exp[who][s]) || 0; },
+    // 経験値を足す。本の上限を超えた分はたまらない
+    addExp: function (who, s, n) {
+      if (who === 'N' || !g.exp[who]) return 0;
+      var cap = SR.cumExp(g.books[s] || 0), b = g.exp[who][s];
+      g.exp[who][s] = Math.min(cap, b + n); save(); return g.exp[who][s] - b;
+    },
+    // 柱の色の高さ（0〜3）と、透明な部分の上限
+    fill: function (who, s) { return Math.min(SR.heightOf(api.exp(who, s)), g.books[s] || 0); },
+    has: function (who, id) {
+      var n = SR.ctreeNode(id); if (!n || who === 'N') return false;
+      if (n.combo) return n.combo.every(function (s) { return api.fill(who, s) >= n.h; });
+      return api.fill(who, n.sys) >= n.h;
+    },
+    hasP: function (who, id) { return !!(SR.statPassive && SR.statPassive[id]) || (SR.passiveStart[who] || []).indexOf(id) >= 0 || ((g.pas && g.pas[who]) || []).indexOf(id) >= 0; },
+    togglePas: function (who, id) {
+      if ((SR.passiveStart[who] || []).indexOf(id) >= 0) return;
+      if (!g.pas) g.pas = {}; var l = g.pas[who] || (g.pas[who] = []), i = l.indexOf(id);
+      if (i >= 0) l.splice(i, 1); else l.push(id); save();
+    },
+    hasU: function (who, id) { return SR.uniqueStart[who].indexOf(id) >= 0 || (g.uniq[who] || []).indexOf(id) >= 0; },
+    // まだ覚えていない理由（覚えていれば空）
+    why: function (who, id) {
+      var n = SR.ctreeNode(id); if (!n) return '';
+      if (who === 'N') return 'ナハトは魔法を使わない';
+      if (api.has(who, id)) return '';
+      var ss = n.combo || [n.sys], nb = ss.filter(function (s) { return !api.hasBook(s, n.tier); });
+      if (nb.length) return nb.map(function (s) { return s + 'の書・' + SR.bookTier[n.tier]; }).join('・') + 'が必要';
+      return ss.map(function (s) { var need = Math.ceil(SR.cumExp(n.h) - api.exp(who, s)); return need > 0 ? s + 'の経験値あと' + need : ''; }).filter(Boolean).join('・');
+    },
+    // 試し用：時期を終盤にし、本を上級まで、経験値を満タンに、ユニーク技を全部覚えたことにする
+    unlockAll: function () {
+      g.era = 3; SR.baseSystems.forEach(function (s) { g.books[s] = 3; });
+      ['V', 'F', 'S', 'L'].forEach(function (w) { SR.baseSystems.forEach(function (s) { g.exp[w][s] = SR.cumExp(3); }); });
+      Object.keys(SR.uniqueStart).forEach(function (w) { g.uniq[w] = Object.keys(SR.skills).filter(function (s) { return SR.skills[s].owner === w; }); });
+      g.pas = {}; Object.keys(SR.uniqueStart).forEach(function (w) { g.pas[w] = Object.keys(SR.passives).filter(function (s) { return SR.pasOwner(s, w); }); });
+      save();
+    },
+    toggleU: function (who, id) {
+      if (SR.uniqueStart[who].indexOf(id) >= 0) return;
+      var l = g.uniq[who] || (g.uniq[who] = []), i = l.indexOf(id);
+      if (i >= 0) l.splice(i, 1); else l.push(id); save();
+    },
+  };
+  return api;
+})();
+// 編成で使えるか（覚えているか）。パッシブはいつでも使える
+SR.canLearn = function (tree, who, id) {
+  var a = SR.skills[id]; if (!a) return SR.passives[id] ? SR.growth.hasP(who, id) : true;
+  if (a.owner === 'common') return who !== 'N' && SR.growth.has(who, id);
+  if (a.owner === 'link') return who === 'N' && SR.growth.hasLink(id);
+  if (a.owner === who) return SR.growth.hasU(who, id);
+  return true;
+};
+// 現象。技が起こす現象で、敵ごとにHPダメージの効き方が変わる
+SR.phenomena = ['炎', '雷', '冷気', '光', '衝撃'];
+(function () {
   var S = SR.skills;
   Object.keys(S).forEach(function (id) {
     var a = S[id], o = a.owner;
-    if (o === 'all' || o === 'N') return;
-    if (o === 'V') a.sys = a.kind === 'attack' ? ['干渉', '観測'] : ['観測'];   // 電気を操る（導機・術式の専門）
-    if (o === 'F') a.sys = a.kind === 'attack' ? ['干渉', '循環'] : ['循環'];   // 炎を生み出す（原初魔法の感覚もあるが、星律も使える。原初は表に出さない）
-    if (o === 'S') a.sys = a.kind === 'attack' ? ['循環', '時環'] : ['循環'];   // 氷・温度・水
-    if (o === 'L') a.sys = a.kind === 'attack' ? ['構築', '星核'] : ['構築'];   // 光・構築
-    if (o === 'common') a.sys = a.kind === 'attack' ? ['干渉'] : a.kind === 'heal' || a.kind === 'revive' || a.kind === 'energy' ? ['循環'] : a.kind === 'haste' ? ['時環'] : a.kind === 'pressure' ? ['干渉'] : ['構築'];
+    if (a.kind !== 'attack' || o === 'all' || o === 'N') return;
+    a.phen = o === 'F' ? '炎' : o === 'V' ? '雷' : o === 'S' ? '冷気' : o === 'L' ? '光' : '衝撃';
   });
-  set(['術式妨害'], ['観測', '干渉']); set(['星落とし'], ['干渉', '星核']);
-  set(['守りの祈り'], ['構築', '循環']); set(['立て直し'], ['循環']);
+  S['閃光弾'].phen = '光'; S['目くらまし'].phen = '光'; S['痺れ針'].phen = '雷';
 })();
-SR.affMul = function (e, sys) { var m = 1; if (sys && e.aff) sys.forEach(function (s) { if (e.aff[s]) m *= e.aff[s]; }); return m; };
+// ---- 2026-11-21 武器と、斬撃・貫通（手元の試作・相談中） ----
+// 武器は作画基準（manga-rules.md）どおり。特性は現実の剣の特徴をもとにしたバトル用の案で、作品の設定ではない。
+SR.phenomena.push('斬撃', '貫通', '強撃');   // 強撃：重さで叩き潰す（ツヴァイハンダー）
+SR.weapons = {
+  N: { name: '刀', phen: '斬撃', note: '剣の技は斬撃' },
+  V: { name: 'ケインソード', phen: '貫通', note: 'ブレイブ攻撃・基本攻撃は貫通。不意を突く突きで、ブレイクゲージ削り1.2倍' },
+  F: { name: 'フランベルジュ', phen: '斬撃', note: '斬撃の技は、裂傷中の相手に威力1.3倍（波打つ刃で傷が広がる）' },
+  S: { name: 'レイピア', phen: '貫通', note: '貫通の技は、相手の「強い」を受けない（すき間を突く）' },
+  L: { name: 'ツヴァイハンダー', phen: '強撃', note: '強撃の技はブレイクゲージ削り1.2倍。そのぶん次の番が少し遅い' },
+};
+(function () {
+  var S = SR.skills;
+  function set(ids, p) { ids.forEach(function (id) { if (S[id]) S[id].phen = p; }); }
+  // ナハトの剣技＝斬撃（刀）
+  Object.keys(S).forEach(function (id) { if (S[id].owner === 'N' && S[id].kind === 'attack') S[id].phen = '斬撃'; });
+  // リヒトの剣技＝強撃（両手持ちの大剣で叩き潰す）、斬光は斬撃と光
+  set(['破陣剣', '決着の一閃', '決死の一閃'], '強撃');
+  set(['斬光'], ['斬撃', '光']);
+  // フレアの焼き付け＝斬撃と炎（刃で焼き付ける）
+  set(['焼き付け'], ['斬撃', '炎']);
+})();
+SR.phenList = function (p) { return !p ? [] : typeof p === 'string' ? [p] : p; };
+SR.phenText = function (p) { return SR.phenList(p).join('・'); };
+SR.affMul = function (e, phen, pierce) {
+  var m = 1;
+  SR.phenList(phen).forEach(function (s) { var v = e.aff && e.aff[s]; if (v && !(pierce && v < 1)) m *= v; });
+  return m;
+};
+// 武器の現象：ブレイブ攻撃・基本攻撃は使う人の武器で決まる
+SR.attackPhen = function (u, a) { return (a.id === 'basic' || a.id === 'light') && SR.weapons[u.id] ? SR.weapons[u.id].phen : a.phen; };
 
 SR.passives = {
   '追撃の冴え': ['N', 5, '無料追撃の威力が上がる（36→64）'],
   '追撃の極意': ['N', 9, '無料追撃が1ターンに2回まで'],
   '返し崩し': ['N', 8, '無料反撃で相手をブレイクできる'],
   '反攻の冴え': ['N', 6, '無料反撃の威力が上がる（34→62）'],
-  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技の精神力消費が3割引'],
-  '連撃調整': ['V', 6, '連撃の気力削り1.3倍、精神力消費1.25倍'],
+  '勝機の一閃': ['N', 5, '追撃でブレイクさせると次の技のMP消費が3割引'],
+  '連撃調整': ['V', 6, '連撃のブレイクゲージ削り1.3倍、MP消費1.25倍'],
   '照準共有': ['V', 5, '導機照準を仲間にもかけられる'],
-  '蓄積照準': ['V', 6, '同じ相手への連撃ほど気力削りが増える'],
-  '急所観測': ['V', 5, '解析した相手への気力削り1.2倍'],
+  '蓄積照準': ['V', 6, '同じ相手への連撃ほどブレイクゲージ削りが増える'],
+  '急所観測': ['V', 5, '解析した相手へのブレイクゲージ削り1.2倍'],
   '照準維持': ['V', 7, '照準が2回分続く'],
   '連撃継続': ['V', 7, '連撃中にブレイクさせた相手へ威力1.5倍'],
-  '残り火': ['F', 5, '炎撃を当てた相手の気力回復を抑える'],
-  '過熱': ['F', 7, '炎の威力1.4倍、精神力消費1.25倍'],
+  '残り火': ['F', 5, '炎撃を当てた相手のブレイクゲージ回復を抑える'],
+  '過熱': ['F', 7, '炎の威力1.4倍、MP消費1.25倍'],
   '火勢': ['F', 5, '炎技を続けるほど威力が上がる'],
-  '残熱回収': ['F', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
-  '勝ち鬨': ['N', 4, '敵がブレイクすると精神力8回復（だれが崩してもよい・1ターンに1回）'],
-  '集積回路': ['V', 3, 'ブレイクさせると精神力12回復（1ターンに1回）'],
-  '静心': ['S', 4, '毎ターンの精神力回復+5'],
-  '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間の精神力8回復（1ターンに1回）'],
+  '残熱回収': ['F', 3, 'ブレイクさせるとMP12回復（1ターンに1回）'],
+  '勝ち鬨': ['N', 4, '敵がブレイクするとMP8回復（だれが崩してもよい・1ターンに1回）'],
+  '集積回路': ['V', 3, 'ブレイクさせるとMP12回復（1ターンに1回）'],
+  '静心': ['S', 4, '毎ターンのMP回復+5'],
+  '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間のMP8回復（1ターンに1回）'],
+  // 2026-11-22 サニー：ステータスのパッシブ（だれでも付けられる。名前・数値は仮）
+  '頑健': ['all', 3, '最大HP+10%'],
+  '魔力の器': ['all', 3, '最大MP+20'],
+  '俊足': ['all', 3, '素早さ+5'],
+  '剛力': ['all', 4, '与えるダメージ+8%'],
+  '不屈': ['all', 3, '最大ブレイクゲージ+15'],
+  '堅守': ['all', 3, '受けるダメージ-6%'],
 };
 
 // 持ち込み構成（five-trial.cjs の kits）
@@ -199,40 +438,40 @@ SR.kits = {
 
 // 支援プリセット（five-trial の仮設定）
 SR.supportText = {
-  N: '気力の少ない前線一人の体力被ダメージを4%軽減（精神力8）',
-  V: '気力の少ない前線一人の、そのターンの技消費を2軽減（精神力8）',
-  F: '気力の少ない前線一人の、そのターンの体力への攻撃を4%強化（精神力8）',
-  S: '前線で体力の最も少ない一人を200回復（精神力10）',
-  L: '気力の少ない前線一人への、攻撃一発の気力ダメージを2軽減（精神力8）',
+  N: 'ブレイクゲージの少ない前線一人のHP被ダメージを4%軽減（MP8）',
+  V: 'ブレイクゲージの少ない前線一人の、そのターンの技消費を2軽減（MP8）',
+  F: 'ブレイクゲージの少ない前線一人の、そのターンのHPへの攻撃を4%強化（MP8）',
+  S: '前線でHPの最も少ない一人を200回復（MP10）',
+  L: 'ブレイクゲージの少ない前線一人への、攻撃一発のブレイクゲージダメージを2軽減（MP8）',
 };
 
-// 敵の種類（試作で追加。数値は仮）。aff は体系の効き方（1より小さいとその体系に強い・体力へのダメージだけ）。atk は攻撃の強さの倍率。
+// 敵の種類（試作で追加。数値は仮）。aff は現象の効き方（1より小さいとその現象に強い・HPへのダメージだけ）。atk は攻撃の強さの倍率。
 SR.enemyTypes = {
-  shell: { aff: { 構築: 0.6, 循環: 1.3 }, img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
+  shell: { aff: { 衝撃: 1.5, 貫通: 1.5, 強撃: 1.3, 冷気: 0.6, 斬撃: 0.6 }, img: 'js-golem', name: '甲殻獣', hp: 230, k: 95, regen: 14, speed: 40, brave: false, atk: 0.96, color: '#7d8fa3', glow: '#d8f0ff', tags: ['硬い'], weak: 'shock' },
   beast: { img: 'js-bolt', name: '星獣', hp: 150, k: 45, regen: 12, speed: 58, brave: true, atk: 1.2, color: '#8b6cd9', glow: '#ffe08a', tags: [], weak: 'bleed' },
-  swift: { aff: { 観測: 1.3 }, img: 'js-wind', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
-  ember: { aff: { 干渉: 0.5 }, img: 'js-fire', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
-  frost: { aff: { 干渉: 1.6 }, img: 'js-ice', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
-  caster: { aff: { 干渉: 0.7, 構築: 1.3 }, img: 'js-eye', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
-  healer: { aff: { 星核: 1.3 }, img: 'js-angel', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
+  swift: { aff: { 雷: 1.3, 斬撃: 1.3 }, img: 'js-wind', name: '疾風獣', hp: 110, k: 35, regen: 12, speed: 88, brave: true, atk: 0.9, color: '#3fb39b', glow: '#e6fff4', tags: ['すばやい'], weak: 'freeze', inflict: ['bleed', 2] },
+  ember: { aff: { 炎: 0.5, 冷気: 1.5 }, img: 'js-fire', name: '炎獣', hp: 170, k: 50, regen: 12, speed: 56, brave: true, atk: 0.9, color: '#d9603a', glow: '#ffd27a', tags: [], weak: 'freeze', inflict: ['burn', 2] },
+  frost: { aff: { 炎: 1.6, 冷気: 0.5 }, img: 'js-ice', name: '氷獣', hp: 170, k: 50, regen: 12, speed: 50, brave: true, atk: 1.2, color: '#6fb6e8', glow: '#ffffff', tags: [], weak: 'burn', inflict: ['freeze', 2] },
+  caster: { aff: { 光: 0.7, 雷: 1.3 }, img: 'js-eye', name: '術士', hp: 120, k: 60, regen: 16, speed: 66, brave: false, atk: 0.7, spell: true, aoeAll: true, color: '#b05ce0', glow: '#ffb8ff', tags: ['毎ターン全体攻撃', '術式妨害が効く'], weak: 'daze', inflict: ['blind', 1] },
+  healer: { aff: { 炎: 1.3 }, img: 'js-angel', name: '癒し手', hp: 130, k: 50, regen: 12, speed: 48, brave: false, atk: 0.84, heal: 60, color: '#4fae6a', glow: '#eaffd8', tags: ['仲間を回復'], weak: 'bleed' },
   pup: { img: 'js-wolf', imgs: ['js-wolf', 'js-wolfg', 'js-wolf', 'js-wolfg', 'js-wolf'], name: '子獣', hp: 70, k: 25, regen: 8, speed: 62, brave: false, atk: 0.83, noCharge: true, color: '#a58ad9', glow: '#fff3b0', tags: [], weak: 'burn' },
-  twin: { aff: { 星核: 0.7, 時環: 1.3 }, img: 'js-troll', imgs: ['js-troll', 'js-trollb'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 60, brave: true, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
+  twin: { aff: { 雷: 0.7, 光: 1.3, 貫通: 1.3 }, kPhen: { 貫通: 1.3 }, lonelyK: 1.3, img: 'js-troll', imgs: ['js-troll', 'js-trollb'], name: '双子の大獣', hp: 600, k: 200, regen: 20, speed: 48, brave: true, atk: 1.5, color: '#5a4aa8', glow: '#ff9a7a', tags: [], weak: 'daze', inflict: ['bleed', 1] },
 };
 
 // 相手（five-trial の encounters と normal-encounter-presets.json の五人期通常戦）
 SR.encounters = {
-  normal: { era: 1, imgs: ['js-tree', 'js-mino', 'js-smoke'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・気力45。目安3〜5ターン', engine: '集団',
+  normal: { era: 1, imgs: ['js-tree', 'js-mino', 'js-smoke'], weaks: ['burn', 'bleed', 'shock'], name: '通常戦（敵三体）', note: '五人期の調整候補：各HP1500・ブレイクゲージ45。目安3〜5ターン', engine: '集団',
     config: { hp: 150, maxHp: 150, k: 45, maxK: 45, regen: 12 } },
-  boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・気力240（緊張感ありは体力2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze' } },
-  aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・気力260（緊張感ありは体力2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
-    config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze', aff: { 観測: 0.7, 構築: 1.3 } } },
-  fireResist: { era: 2, img: 'js-demon', name: '干渉に強いボス', note: '干渉の技の体力ダメージが0.55倍（フレアの炎も干渉）。ほかの体系で削る（緊張感ありは体力2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', atk: 0.96 } },
+  boss: { era: 1, img: 'js-prince', name: '加入期ボス', note: 'HP14500・ブレイクゲージ240（緊張感ありはHP2.5倍の36250）。3ターンごとに全体攻撃', engine: '単体ボス', config: { weak: 'daze', weak2: 'shock', speed: 66 } },
+  aoe: { era: 3, img: 'js-lord', name: '全体攻撃ボス', note: 'HP16000・ブレイクゲージ260（緊張感ありはHP2.5倍の40000）。毎ターン全体攻撃の耐久戦', engine: '単体ボス',
+    config: { hp: 1600, maxHp: 1600, k: 260, maxK: 260, alwaysAoe: true, weak: 'freeze', aff: { 冷気: 0.7, 光: 1.3 }, kPhen: { 光: 1.3 }, speed: 63 } },
+  fireResist: { era: 2, img: 'js-demon', name: '炎に強いボス', note: '炎の技のHPダメージが0.55倍。フレア以外の現象で削る（緊張感ありはHP2.5倍の36250）', engine: '炎耐性ボス', config: { weak: 'freeze', weak2: 'bleed', kPhen: { 貫通: 1.3 }, atk: 0.96, speed: 66 } },
   // ここから試作で追加した戦い（数値は仮）
   shellSwift: { era: 2, name: '甲殻と疾風', note: '硬い甲殻獣と、前衛より先に動く疾風獣', engine: '集団', config: {}, party: ['shell', 'beast', 'swift'] },
   casters: { era: 2, name: '術士の一団', note: '毎ターン全体攻撃の術士と、仲間を治す癒し手。どちらから倒す？', engine: '集団', config: {}, party: ['caster', 'healer', 'beast'] },
-  elements: { era: 2, name: '炎と氷', note: '干渉が効きにくい炎獣と、干渉がよく効く氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
+  elements: { era: 2, name: '炎と氷', note: '炎が効きにくく冷気に弱い炎獣と、その逆の氷獣', engine: '集団', config: {}, party: ['ember', 'frost', 'ember'] },
   swarm: { era: 1, name: '子獣の群れ', note: '弱いが5体。全体技の出番', engine: '集団', config: {}, party: ['pup', 'pup', 'pup', 'pup', 'pup'] },
-  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありは体力2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
+  twins: { era: 3, name: '双子の大獣', note: 'ボス級が2体。溜めの時期がずれる（緊張感ありはHP2.5倍の各15000）', engine: '集団', config: {}, party: ['twin', 'twin'], bgm: 'boss' },
   random: { name: 'おまかせ（ランダム）', note: '毎回ちがう相手と戦う', random: true },
 };
 
@@ -244,6 +483,7 @@ SR.category = function (id) {
   if (id === 'defend') return 'defend';
   if (id === 'scan') return 'scan';
   if (id === 'wait') return 'wait';
+  if (a && a.item) return 'item';   // アイテム
   if (['cover', 'guard', 'kProtect', 'teamKProtect', 'protect', 'kBarrier', 'ward', 'rally'].indexOf(a.kind) >= 0) return 'skillDef';
   return a.kind === 'attack' ? 'skillAtk' : 'skillSup';
 };
@@ -258,45 +498,476 @@ SR.typeBadge = function (id) {
 
 SR.describe = function (a) {
   if (!a) return '';
-  if (a.kind === 'wait') return '何もしない。精神力を温存する';
-  if (a.kind === 'defend') return 'このターン、受けるダメージと気力ダメージが半分';
+  if (a.kind === 'wait') return '何もしない。MPを温存する';
+  if (a.kind === 'defend') return 'このターン、受けるダメージとブレイクゲージダメージが半分';
   if (a.kind === 'scan') return '敵一体の弱点を調べる。分かった弱点は次の戦いからも見える';
   if (a.kind === 'attack') {
     var p = [];
     p.push(a.all ? '敵全体' : a.scatter ? '敵にばらまく' : '敵一体');
     if (a.hits) p.push(a.hits + '連撃');
-    p.push('気力削り' + a.kd);
+    p.push('ブレイクゲージ削り' + a.kd);
     p.push('威力' + a.hp * (SR.hpScale || 1));
-    if (a.brave) p.push('ブレイブ（気力0でブレイク）');
-    if (a.sys) p.push('体系：' + a.sys.join('・'));
+    if (a.brave) p.push('ブレイク可（ブレイクゲージを0にするとブレイク）'); else if (a.kind === 'attack') p.push('ブレイクゲージは1（あと一押し）までしか減らせない');
+    if (a.phen) p.push('現象：' + SR.phenText(a.phen));
     if (a.finisher) p.push('ブレイク中の相手に' + a.finisher + '倍');
     if (a.breakBonus) p.push('この技でブレイクさせると威力' + a.breakBonus + '倍');
-    if (a.desperate) p.push('自分の気力が少ないほど強い');
-    if (a.allK) p.push('残りの気力が多いほど強い（撃つと気力0）');
-    if (a.recoilTo) p.push('反動で体力が今の' + Math.round(a.recoilTo * 100) + '%まで減る');
-    if (a.teamRecoil) p.push('反動で前線の味方全員の体力が半分');
+    if (a.desperate) p.push('自分のブレイクゲージが少ないほど強い');
+    if (a.allK) p.push('残りのブレイクゲージが多いほど強い（撃つとブレイクゲージ1）');
+    if (a.recoilTo) p.push('反動でHPが今の' + Math.round(a.recoilTo * 100) + '%まで減る');
+    if (a.teamRecoil) p.push('反動で前線の味方全員のHPが半分');
     if (a.exhaust) p.push('次のターンは動けない');
     if (a.expose) p.push('次のターンの終わりまで無防備（受けるダメージ2倍・回復を受けつけない）');
     if (a.taunt) p.push('相手の攻撃を自分へ引きつける');
-    if (a.antiSpell) p.push('術を使う相手に気力削り2倍');
+    if (a.antiSpell) p.push('術を使う相手にブレイクゲージ削り2倍');
     return p.join('・');
   }
   return {
     cover: '前線の仲間一人をかばう（このターン）',
-    guard: '自分への気力ダメージを0.65倍（このターン）',
-    heal: a.allies ? '前線全員の体力を' + a.amount * (SR.hpScale || 1) + '回復' : '仲間一人の体力を' + a.amount * (SR.hpScale || 1) + '回復',
-    revive: '倒れた前線の仲間一人を、体力' + Math.round(a.amount * 100) + '%で起こす',
+    guard: '自分へのブレイクゲージダメージを0.65倍（このターン）',
+    heal: a.allies ? '前線全員のHPを' + a.amount * (SR.hpScale || 1) + '回復' : '仲間一人のHPを' + a.amount * (SR.hpScale || 1) + '回復',
+    revive: '倒れた前線の仲間一人を、HP' + Math.round(a.amount * 100) + '%で起こす',
     ward: '仲間一人に、次の反動・無防備・燃え尽きを打ち消す祈り（2ターン）。今の無防備も解く',
-    rally: '仲間一人の、反動で減った体力を戻し、無防備・燃え尽きを解く',
-    energy: '仲間一人の気力を' + a.amount + '回復',
+    rally: '仲間一人の、反動で減ったHPを戻し、無防備・燃え尽きを解く',
+    energy: '仲間一人のブレイクゲージを' + a.amount + '回復',
     protect: '仲間一人の被ダメージを0.7倍（2ターン）',
-    kProtect: '仲間一人への気力ダメージを0.65倍（2ターン）',
-    teamKProtect: '前線全員への気力ダメージを0.65倍（2ターン）',
-    kBarrier: '仲間一人への次の気力ダメージを0.35倍',
-    pressure: '敵一体の気力回復を4割に抑える（2ターン）',
+    kProtect: '仲間一人へのブレイクゲージダメージを0.65倍（2ターン）',
+    teamKProtect: '前線全員へのブレイクゲージダメージを0.65倍（2ターン）',
+    kBarrier: '仲間一人への次のブレイクゲージダメージを0.35倍',
+    pressure: '敵一体のブレイクゲージ回復を4割に抑える（2ターン）',
     analyze: '敵一体を解析する（急所観測で効果）',
-    aim: '次の攻撃の気力削り1.55倍',
+    aim: '次の攻撃のブレイクゲージ削り1.55倍',
     power: '仲間一人の次の攻撃の威力1.4倍',
-    haste: '仲間一人を次のターン先に動かす',
+    haste: '仲間一人の次の番を早める（順番の帯で前に来る）',
   }[a.kind] || '';
 };
+
+// ---- 技の区分の呼び名（2026-11-21 先生：コモンは「魔法」、ユニークはキャラごと）----
+// 「星律魔法」は物語のあとで出てくる言葉なので使わない
+SR.COMMON_NAME = '魔法';
+SR.UNIQUE_NAMES = { N: '刀剣術', V: '導機術', F: '黒魔術', S: '祈祷術', L: '大剣術' };   // 2026-11-21 先生が決定。フレアの黒魔術は「魔女の禁忌」から
+SR.uniqueName = function (id) { return SR.UNIQUE_NAMES[id] || '固有技'; };
+
+// ---- ナハトの連携技（2026-11-21 先生の設計）----
+// ・4本の柱は仲間4人（ヴォルト・フレア・セレナ・リヒト）。それぞれとの親密度が経験値。
+// ・その仲間に関するイベント／サブクエストで、はじめての連携技が使えるようになる（どのイベントかは未定）。
+// ・連携技を使うたびに、いっしょに出した仲間との親密度が上がり、次の技や3人・4人・5人の連携技が開く。
+// ・ほかのイベントやサブクエストでも親密度が上がることがある。連携技はもともと終盤に手に入る。
+// ・二人で出す「合わせ技」（join）と、ナハトが仲間の力を借りる技（lend）がある。
+// ・技の名前と数値は仮。ナハト自身は魔法を乗せない（刀の技）。仲間の力の色（現象）が乗る。
+SR.LINK_NAME = '連携技';
+SR.LINK_MATES = ['V', 'F', 'S', 'L'];
+SR.bondLv = [0, 40, 100];   // 親密度の段：1＝イベントで開く／2＝40／3＝100（柱の目もり）
+SR.BOND_PER_USE = 8;        // 1回使うと、いっしょに出した仲間それぞれ +8
+function link(id, cost, need, join, props) { skill(id, 'link', 0, cost, Object.assign({ link: true, need: need, join: join, with: Object.keys(need) }, props)); }
+// 二人（ナハト＋1人）。各仲間：段1で1つ、段2で2つ、段3で1つ
+link('雷光斬り', 20, { V: 1 }, false, { kind: 'attack', kd: 26, hp: 60, phen: '雷' });
+link('照準一閃', 26, { V: 2 }, true, { kind: 'attack', kd: 46, hp: 64, phen: ['斬撃', '雷'] });
+link('雷鎖断ち', 28, { V: 2 }, false, { kind: 'attack', kd: 18, hp: 44, all: true, phen: '雷', inflict: ['shock', 2] });
+link('迅雷三連', 34, { V: 3 }, true, { kind: 'attack', kd: 20, hp: 40, hits: 3, phen: ['斬撃', '雷'] });
+link('焔纏い斬り', 22, { F: 1 }, false, { kind: 'attack', kd: 16, hp: 84, phen: '炎' });
+link('炎嵐双撃', 32, { F: 2 }, true, { kind: 'attack', kd: 16, hp: 62, all: true, phen: ['斬撃', '炎'] });
+link('紅蓮返し', 26, { F: 2 }, false, { kind: 'attack', kd: 10, hp: 96, phen: '炎', finisher: 1.5, inflict: ['burn', 2] });
+link('灼刃十字', 38, { F: 3 }, true, { kind: 'attack', kd: 24, hp: 150, phen: ['斬撃', '炎'] });
+link('氷刃', 20, { S: 1 }, false, { kind: 'attack', kd: 28, hp: 50, phen: '冷気', inflict: ['freeze', 2] });
+link('守り刃', 28, { S: 2 }, true, { kind: 'heal', amount: 150, allies: true });
+link('霜花の舞', 28, { S: 2 }, false, { kind: 'attack', kd: 20, hp: 40, all: true, phen: '冷気', inflict: ['freeze', 1] });
+link('凍結一閃', 34, { S: 3 }, true, { kind: 'attack', kd: 62, hp: 58, phen: ['斬撃', '冷気'], inflict: ['freeze', 3] });
+link('光刃', 22, { L: 1 }, false, { kind: 'attack', kd: 22, hp: 72, phen: '光' });
+link('双剣交差', 30, { L: 2 }, true, { kind: 'attack', kd: 34, hp: 46, hits: 2, phen: ['斬撃', '強撃'] });
+link('陣破り', 28, { L: 2 }, false, { kind: 'attack', kd: 48, hp: 40, brave: true, phen: '光' });
+link('光輪大斬', 38, { L: 3 }, true, { kind: 'attack', kd: 30, hp: 96, all: true, phen: ['強撃', '光'] });
+// 三人
+link('雷炎の太刀', 34, { V: 2, F: 2 }, true, { kind: 'attack', kd: 30, hp: 120, phen: ['雷', '炎'] });
+link('雷氷縛り', 32, { V: 2, S: 2 }, true, { kind: 'attack', kd: 44, hp: 60, phen: ['雷', '冷気'], inflict: ['shock', 2] });
+link('光雷の陣', 32, { V: 2, L: 2 }, true, { kind: 'teamKProtect' });
+link('氷炎二重', 34, { F: 2, S: 2 }, true, { kind: 'attack', kd: 26, hp: 110, phen: ['炎', '冷気'] });
+link('炎光の柱', 36, { F: 2, L: 2 }, true, { kind: 'attack', kd: 22, hp: 80, all: true, phen: ['炎', '光'] });
+link('白光の守り', 30, { S: 2, L: 2 }, true, { kind: 'heal', amount: 220, allies: true });
+// 四人
+link('四方斬り', 40, { V: 2, F: 2, L: 2 }, true, { kind: 'attack', kd: 24, hp: 90, all: true, phen: ['斬撃', '雷', '炎', '光'] });
+link('天地の太刀', 42, { V: 3, S: 2, L: 2 }, true, { kind: 'attack', kd: 70, hp: 110, phen: ['斬撃', '雷', '冷気', '光'] });
+link('三花の守り', 38, { F: 2, S: 3, L: 2 }, true, { kind: 'heal', amount: 300, allies: true });
+link('嵐の四重奏', 44, { V: 2, F: 3, S: 2 }, true, { kind: 'attack', kd: 30, hp: 120, all: true, phen: ['雷', '炎', '冷気'] });
+// 五人
+link('五人の一太刀', 50, { V: 3, F: 3, S: 3, L: 3 }, true, { kind: 'attack', kd: 60, hp: 200, brave: true, phen: ['斬撃', '雷', '炎', '冷気', '光'] });
+link('五人の誓い', 46, { V: 3, F: 3, S: 3, L: 3 }, true, { kind: 'heal', amount: 400, allies: true });
+SR.isLink = function (id) { return !!SR.skills[id] && SR.skills[id].owner === 'link'; };
+
+// 親密度と、イベントで開いたかどうか（この端末に保存）
+(function () {
+  var G = SR.growth, KEY = 'sr-battle-bond-v1', b;
+  function fresh() { return { bond: { V: 0, F: 0, S: 0, L: 0 }, ev: { V: false, F: false, S: false, L: false } }; }
+  try { b = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!b || !b.bond) b = fresh();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch (e) {} }
+  G.linkOpen = function () { return G.era() >= 3; };          // 連携技は終盤から
+  G.bond = function (c) { return b.bond[c] || 0; };
+  G.linkEv = function (c) { return !!b.ev[c]; };
+  G.toggleLinkEv = function (c) { b.ev[c] = !b.ev[c]; save(); };
+  G.setBond = function (c, v) { b.bond[c] = Math.max(0, Math.min(SR.bondLv[2] + 20, Math.round(v))); save(); };   // 開発者設定用
+  G.addBond = function (c, n) { if (!b.ev[c]) return; b.bond[c] = Math.min(SR.bondLv[2] + 20, (b.bond[c] || 0) + n); save(); };
+  // その仲間との段（0〜3）。イベントで1、親密度で2・3
+  G.bondLvOf = function (c) { if (!b.ev[c]) return 0; var v = b.bond[c] || 0; return v >= SR.bondLv[2] ? 3 : v >= SR.bondLv[1] ? 2 : 1; };
+  G.hasLink = function (id) {
+    var a = SR.skills[id]; if (!a || !a.link || !G.linkOpen()) return false;
+    return a.with.every(function (c) { return G.bondLvOf(c) >= a.need[c]; });
+  };
+  G.linkWhy = function (id) {
+    var a = SR.skills[id]; if (!a) return '';
+    if (!G.linkOpen()) return '終盤に手に入る';
+    if (G.hasLink(id)) return '';
+    return a.with.map(function (c) {
+      var lv = G.bondLvOf(c), nd = a.need[c];
+      if (lv >= nd) return '';
+      if (!b.ev[c]) return SR.names[c] + 'のイベント';
+      return SR.names[c] + 'との親密度あと' + Math.max(0, SR.bondLv[nd - 1] - (b.bond[c] || 0));
+    }).filter(Boolean).join('・');
+  };
+  var ua = G.unlockAll, rs = G.reset;
+  G.unlockAll = function () { ua(); SR.LINK_MATES.forEach(function (c) { b.ev[c] = true; b.bond[c] = SR.bondLv[2]; }); save(); };
+  G.reset = function () { rs(); b = fresh(); save(); };
+})();
+
+// ---- 技の名前（2026-11-21 先生と決めた表示名）----
+// 中のしくみ（保存データ・技どうしのつながり）は元の名前（id）のまま。画面に出すときだけ、この名前にする。
+// 魔法は「〇〇法」、ヴォルトは横文字、ほかは雰囲気をそろえる。ナハトは魔法を乗せない純粋な剣の技。
+SR.SKILL_NAMES = {
+  // 魔法
+  '小回復': '治癒法', '中回復': '快癒法', '連環回復': '巡癒法', '気力支援': '活気法', '防護': '防護法', '気力防護': '護気法', '気力障壁': '障壁法',
+  '衝撃': '衝撃法', '衝撃波': '波動法', '重圧': '重圧法', '加速': '加速法', '集中付与': '集中法', '目くらまし': '眩光法', '痺れ針': '麻痺法', '気付け': '覚醒法',
+  // ナハト（刀剣術）
+  '断ち込み': '断ち斬り', '裂き払い': '裂き斬り', 'かばう': '庇いの構え',
+  // ヴォルト（導機術）
+  '連射': 'トリプルショット', '分散連射': 'スプレッドショット', '放電弾': 'スパークバレット', '閃光弾': 'フラッシュバン', '術式妨害': 'ジャミング',
+  '解析': 'アナライズ', '導機照準': 'ロックオン', '星落とし': 'スターフォール',
+  // フレア（黒魔術）：テーマは「自然」。隠されたせいで禁忌と呼ばれただけなので、邪悪な名前にしない
+  '火槍': '日輪の槍', '収束火槍': '溶岩の槍', '火の粉': 'ほたる火', '炎撃': '野火', '集中火力': '噴火', '炎圧': '熱風',
+  '焼き付け': 'くすぶり', '熱波': '陽炎', '灰燼': '野焼き', '業火': '烈日',
+  // セレナ（祈祷術）：テーマは「信仰」
+  '連弾': '清めの刺突', '氷結弾': '凍れる聖水', '氷霧': '霜の聖歌', '深癒': '深き祈り', '癒しの波': '恵みの雨', '蘇生': '目覚めの鐘',
+  // リヒト（大剣術）：テーマは「兵法」
+  '閃光': '陽動', '斬光': '先陣斬り', '立て直し': '布陣の号令', '決死の一閃': '背水の一閃', '決着の一閃': '掃討の一閃',
+  // ナハトの連携技：ナハトの刀（和）に、仲間のテーマ（ヴォルト横文字・フレア自然・セレナ信仰・リヒト兵法）を合わせる
+  '雷光斬り': 'スパーク斬り', '照準一閃': 'ロックオン一閃', '雷鎖断ち': 'チェイン断ち', '迅雷三連': 'トリプル迅雷',
+  '焔纏い斬り': '陽炎斬り', '炎嵐双撃': '野火の双撃', '紅蓮返し': '残り火返し', '灼刃十字': '日輪十字',
+  '氷刃': '聖氷の刃', '守り刃': '加護の太刀', '霜花の舞': '聖霜の舞', '凍結一閃': '浄めの一閃',
+  '光刃': '先駆けの刃', '双剣交差': '挟撃', '陣破り': '陣破り', '光輪大斬': '総攻め',
+  '雷炎の太刀': '雷火の太刀', '白光の守り': '聖陣の守り'
+};
+Object.keys(SR.SKILL_NAMES).forEach(function (id) { if (SR.skills[id]) SR.skills[id].label = SR.SKILL_NAMES[id]; });
+// パッシブの表示名（ヴォルトは技に合わせて横文字）
+SR.PASSIVE_NAMES = { '過熱': '炎天', '火勢': '燎原', '残熱回収': '余熱', '静心': '黙祷', '連撃調整': 'コンボチューン', '照準共有': 'シェアロック', '蓄積照準': 'スタックエイム', '急所観測': 'ウィークポイント', '照準維持': 'ロックキープ', '連撃継続': 'コンボブースト', '集積回路': 'チャージサーキット' };
+SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || SR.PASSIVE_NAMES[id] || id; };
+// パッシブの説明に出てくる技の名前も、新しい名前にする（長い名前から順に）
+(function () {
+  var olds = Object.keys(SR.SKILL_NAMES).concat(Object.keys(SR.PASSIVE_NAMES)).sort(function (a, b) { return b.length - a.length; });
+  Object.keys(SR.passives).forEach(function (p) {
+    var d = SR.passives[p][2], out = '', i = 0;
+    while (i < d.length) {
+      var hit = olds.find(function (o) { return d.substr(i, o.length) === o; });
+      if (hit) { out += SR.SKILL_NAMES[hit] || SR.PASSIVE_NAMES[hit]; i += hit.length; } else { out += d[i]; i++; }
+    }
+    SR.passives[p][2] = out;
+  });
+})();
+
+// ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
+// 戦いの経験値で上がる。上がるとHP・最大ブレイクゲージ・与えるダメージ・ブレイクゲージ削りが少しずつ伸びる（数値は仮）。
+SR.LV_MAX = 99;   // 2026-11-22：Lv51あたりから限界突破（サブクエのパッシブ）
+SR.lvGrowth = { hp: 0, k: 2, dmg: 0, kd: 0.01, spd: 0.5, mp: 2 };   // mp：最大MP+2（Lv1で100・Lv50で198）2026-11-22   // 1レベルごと：最大ブレイクゲージ+2・ブレイクゲージ削り+1%・素早さ+0.5。HPとダメージは下の SR.lvScale で大きくなる
+// 2026-11-22 サニー：同じLv同士の戦いで、1回のダメージがだいたい Lv1→100・Lv10→1000・Lv30→6000・Lv50→9999。
+// HPとダメージ（回復も）を、そのキャラ・敵のLvの倍率で大きくする。同じLv同士なら戦いの長さは変わらず、Lv差があると差が出る。
+SR.lvScalePts = [[1, 0.2], [10, 2], [30, 12], [50, 21]];   // 2026-11-22 サニー：大きな一撃が Lv1:100・Lv10:1000・Lv30:6000・Lv50:9999（限界突破）。ふだんの一撃はその1/5ほど（Lv1:20・Lv10:200・Lv30:1200・Lv50:2100）。Lv50より上は1Lvごとに+0.5
+SR.lvScale = function (lv) {
+  var p = SR.lvScalePts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
+  return p[p.length - 1][1] + (lv - p[p.length - 1][0]) * 0.5;
+};
+// 2026-11-22 サニー：味方のHPは伸びをゆるく（Lv1で500・Lv10で1500・Lv30で5000・Lv50で9999、9999まで）。
+// そのぶん味方が受けるダメージ・回復も同じ割合で小さくして、「何発で倒れるか」は変えない。
+SR.heroHpPts = [[1, 500], [10, 1500], [30, 5000], [50, 9999]];
+SR.HP_CAP = 9999;
+SR.heroHp = function (lv) {
+  var p = SR.heroHpPts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return Math.round(p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]));
+  return SR.HP_CAP;
+};
+// 敵のHPの倍率。こちらの一撃は9999で止まるので、敵のHPはダメージの倍率より少しゆるく伸ばして、戦いの長さをそろえる（試し打ちで合わせた）
+SR.enemyHpPts = [[1, 0.104], [10, 1.07], [30, 6.83], [50, 12.8]];   // 通常の敵（試し打ちで、どのLvでも戦いの長さがそろうように合わせた）
+SR.bossHpPts = [[1, 0.07], [10, 0.635], [30, 4.12], [50, 7.16]];   // ボス・双子の大獣（大きな一撃の伸びがゆるやかなぶん、HPを小さく）
+SR.enemyHpScale = function (lv, boss) {
+  var p = boss ? SR.bossHpPts : SR.enemyHpPts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
+  return p[p.length - 1][1] * (1 + 0.03 * (lv - p[p.length - 1][0])) * (SR.postCapHp || 1);   // Lv51からの敵は、限界突破がある前提でHPが大きい（SR.postCapHp）
+};
+SR.postCapHp = 8;   // Lv51より上の敵のHP（限界突破なしだと、とても長い戦いになる）
+SR.DMG_CAP = 9999;   // 1回のダメージの上限。パッシブ「限界突破」を持つと外れる
+SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れる。1発の技（連撃・全体でない攻撃）の威力1.3倍", lv: 51, single: 1.3 };   // Lv51あたりのサブクエで手に入る（今は開発者設定で試せる）
+// 2026-11-22 サニー：Lv差が効きすぎないように。ダメージの数字は「受ける側のLvの倍率」を基本にして、Lv差は (攻める側÷受ける側の倍率)^0.35 だけ効く
+// 例：Lv3でLv1の敵を攻撃 → 1.47倍。Lv10でLv6のボス → 1.2倍。同じLv同士なら今までと同じ
+SR.LV_GAP_POW = 0.35;
+SR.enemyAtkMul = 1.8;    // 敵の攻撃（2026-11-22 簡単すぎたので上げる）
+SR.softDmg = { knee: 2, slope: 1.2 };   // 2026-11-22 サニー：上限は付けず、大きな一撃の伸びをゆるやかに（ふだんの一撃の2倍から先）。最大でふだんの5倍ほど
+SR.EASY_LV = 10;    // Lv10までは慣れの期間：Lvが足りなくても不利にならない
+SR.enemyAtkMulAt = function (lv) { return lv <= 5 ? 1.4 : lv >= 10 ? SR.enemyAtkMul : 1.4 + (lv - 5) / 5 * (SR.enemyAtkMul - 1.4); };   // 敵の攻撃：Lv5までは1.4倍、Lv10で1.8倍
+SR.normalHpMul = 1.5;    // ボスでない敵のHP（通常戦が2ターンで終わっていたので少し長く）
+SR.limitBreak = (function () {   // 限界突破を持っているか（キャラごと・試し用に開発者設定で切りかえ）
+  var KEY = "sr-battle-lb-v1", d = {};
+  try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return { has: function (id) { return !!d[id]; }, set: function (id, on) { d[id] = !!on; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} } };
+})();
+SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
+// 2026-11-22 サニー：敵の推奨レベル（数値は仮。序盤Lv1〜10・中盤10〜20・終盤20〜のつもり）
+SR.recLv = { normal: 1, swarm: 2, boss: 6, shellSwift: 8, elements: 10, casters: 12, fireResist: 15, twins: 20, aoe: 25 };
+SR.level = (function () {
+  var KEY = 'sr-battle-lv-v1', d;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!d || !d.exp) d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  function need(lv) { return 40 + lv * 20; }   // lv から lv+1 に必要な経験値
+  function info(id) {
+    var e = d.exp[id] || 0, lv = 1;
+    while (lv < SR.LV_MAX && e >= need(lv)) { e -= need(lv); lv++; }
+    return { lv: lv, cur: e, next: lv < SR.LV_MAX ? need(lv) : 0 };
+  }
+  return {
+    info: info,
+    lv: function (id) { return info(id).lv; },
+    add: function (id, n) { var a = info(id).lv; d.exp[id] = (d.exp[id] || 0) + n; save(); return info(id).lv - a; },
+    up: function (id) { var i = info(id); if (i.lv < SR.LV_MAX) { d.exp[id] = (d.exp[id] || 0) + (i.next - i.cur); save(); } },   // 試し用：1つ上げる
+    reset: function () { d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } }; save(); },
+    reload: function () { try { var x = JSON.parse(localStorage.getItem(KEY)); if (x && x.exp) d = x; } catch (e) {} }
+  };
+})();
+(function () { var rs = SR.growth.reset; SR.growth.reset = function () { rs(); SR.level.reset(); }; })();
+
+// ---- 開発者設定で数字を直接さわるための入口（試し用）----
+(function () {
+  var G = SR.growth;
+  G.setGold = function (n) { var d = G.data(); d.gold = Math.max(0, Math.round(n)); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+  G.setExp = function (who, s, v) { var d = G.data(); if (!d.exp[who]) return; d.exp[who][s] = Math.max(0, Math.min(SR.cumExp(3), Math.round(v))); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+  G.setBook = function (s, t) { var d = G.data(); d.books[s] = Math.max(1, Math.min(3, t)); try { localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d)); } catch (e) {} };
+})();
+(function () {
+  var L = SR.level, KEY = 'sr-battle-lv-v1';
+  function need(lv) { return 40 + lv * 20; }
+  L.setLv = function (id, lv) {   // そのLvのちょうど始まりにする
+    lv = Math.max(1, Math.min(SR.LV_MAX, Math.round(lv)));
+    var e = 0; for (var i = 1; i < lv; i++) e += need(i);
+    var d; try { d = JSON.parse(localStorage.getItem(KEY)); } catch (x) {}
+    if (!d || !d.exp) d = { exp: { N: 0, V: 0, F: 0, S: 0, L: 0 } };
+    d.exp[id] = e; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (x) {}
+    L.reload();
+  };
+})();
+
+// ---- お金（2026-11-22 世界設定 §41 レグナス王国の貨幣）----
+// 6種類：銅貨（いちばん小さい）・大銅貨＝銅貨10・銀貨＝大銅貨10・大銀貨＝銀貨10・金貨＝大銀貨10・大金貨＝金貨10。
+// ゲームの中では「銅貨何枚ぶんか」で数え、見せるときに6種類へ分ける。
+SR.COINS = [
+  { id: 'dk', name: '大金貨', v: 1000000, metal: 'gold', big: true },
+  { id: 'k', name: '金貨', v: 100000, metal: 'gold', big: false },
+  { id: 'dg', name: '大銀貨', v: 10000, metal: 'silver', big: true },
+  { id: 'g', name: '銀貨', v: 1000, metal: 'silver', big: false },
+  { id: 'dd', name: '大銅貨', v: 100, metal: 'copper', big: true },
+  { id: 'd', name: '銅貨', v: 10, metal: 'copper', big: false }
+];
+// v は「円の目安」（作者の物価設計用）。ゲームの数え方は銅貨＝1。
+SR.COINS.forEach(function (c) { c.n = c.v / 10; });
+SR.coinSVG = function (c) {
+  var col = { gold: ['#fff1b8', '#f2c94c', '#9a6a10'], silver: ['#ffffff', '#cfd6e6', '#6a7290'], copper: ['#ffd8b8', '#c8753c', '#6a3010'] }[c.metal];
+  var gid = 'cg' + c.id + (SR._coinN = (SR._coinN || 0) + 1);   // 隠れた画面の中の同じ名前を使わないよう、毎回ちがう名前にする
+  return '<svg class="coin' + (c.big ? ' cbig' : '') + '" viewBox="0 0 20 20" aria-hidden="true"><defs><radialGradient id="' + gid + '" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="' + col[0] + '"/><stop offset=".55" stop-color="' + col[1] + '"/><stop offset="1" stop-color="' + col[2] + '"/></radialGradient></defs>' +
+    '<circle cx="10" cy="10" r="8.6" style="fill:url(#' + gid + ');stroke:' + col[2] + ';stroke-width:1"/>' +
+    (c.big ? '<circle cx="10" cy="10" r="6.4" style="fill:none;stroke:' + col[2] + ';stroke-width:.9;opacity:.8"/><path d="M10 6.2l1.1 2.7 2.7 1.1-2.7 1.1L10 13.8l-1.1-2.7L6.2 10l2.7-1.1z" style="fill:' + col[2] + ';stroke:none;opacity:.75"/>'
+      : '<circle cx="10" cy="10" r="3" style="fill:none;stroke:' + col[2] + ';stroke-width:.9;opacity:.7"/>') + '</svg>';
+};
+// 銅貨の枚数を、多い貨幣から順に分ける（0枚の種類は出さない）
+SR.coinSplit = function (n) {
+  n = Math.max(0, Math.floor(n || 0)); var out = [];
+  SR.COINS.forEach(function (c) { var k = Math.floor(n / c.n); if (k > 0) { out.push({ c: c, k: k }); n -= k * c.n; } });
+  return out;
+};
+SR.moneyHTML = function (n) {
+  var s = SR.coinSplit(n); if (!s.length) return '<span class="money"><span class="cn">' + SR.coinSVG(SR.COINS[5]) + '<b>0</b></span></span>';
+  return '<span class="money">' + s.map(function (x) { return '<span class="cn" title="' + x.c.name + '">' + SR.coinSVG(x.c) + '<b>' + x.k + '</b></span>'; }).join('') + '</span>';
+};
+SR.moneyText = function (n) { var s = SR.coinSplit(n); return s.length ? s.map(function (x) { return x.c.name + x.k; }).join('・') : '銅貨0'; };
+// 前の「金貨」の数字（ゲームの中だけの単位）を、銅貨の数え方へ一度だけ直す（×10）
+(function () {
+  try {
+    if (localStorage.getItem('sr-money-v2')) return;
+    var d = SR.growth.data(); d.gold = Math.round((d.gold || 0) * 10); localStorage.setItem('sr-battle-growth-v2', JSON.stringify(d));
+    var cfg = JSON.parse(localStorage.getItem('sr-battle-dev-v1') || 'null');
+    if (cfg) { ['goldNormal', 'goldBoss', 'price2', 'price3'].forEach(function (k) { if (cfg[k] != null) cfg[k] *= 10; }); localStorage.setItem('sr-battle-dev-v1', JSON.stringify(cfg)); Object.assign(SR.growthCfg, cfg); SR.applyGrowthCfg(); }
+    localStorage.setItem('sr-money-v2', '1');
+  } catch (e) {}
+})();
+
+// 2026-11-22 サニー：お金は1つの数字で、右から2けた＝銅（銅貨・大銅貨）、3〜4けた目＝銀（銀貨・大銀貨）、5けた目から＝金（金貨・大金貨）の色で見せる
+SR.moneyHTML = function (n) {
+  n = Math.max(0, Math.floor(n || 0));
+  var s = String(n), cu = s.slice(-2), ag = s.slice(-4, -2), au = s.slice(0, -4);
+  if (s.length < 2) cu = s;
+  return '<span class="money mnum" title="' + SR.moneyText(n) + '">' +
+    (au ? '<b class="au">' + au + '</b>' : '') + (ag ? '<b class="ag">' + ag + '</b>' : '') + '<b class="cu">' + cu + '</b></span>';
+};
+
+// 戦場に立つドット絵（2026-11-22 サニー：戦場はドット絵、カットインは水彩）。RPG本体の絵（4方向×4コマ、左右反転はしない）
+// row 1 ＝左向き（味方は右側に立って左の敵を向く）。fill＝コマの中で人が占める高さ、foot＝足もとの下の余白
+// 2026-11-22：5人とも、構えの絵から作ったドット絵（162マス・96色）。服がなびく8コマ。h＝戦場での高さ
+SR.PIX = {};
+(function () {
+  var at = { cols: 8, rows: 1, row: 0, frames: 8, fps: 7, fill: .953, foot: .006 };
+  var h = { N: 1.8, V: 1.8, F: 1.55, S: 1.8, L: 1.85 };   // フレアは小柄（サニー 2026-11-22）
+  Object.keys(SR.img).forEach(function (id) { SR.PIX[id] = { src: 'img/pix/' + SR.img[id] + '_flutter.png?v=2', atlas: at, h: h[id] }; });
+})();
+// カットインの大きな絵：5人とも構えの絵
+SR.CUTIN = {};
+Object.keys(SR.img).forEach(function (id) { SR.CUTIN[id] = 'img/' + SR.img[id] + '_ready.png?v=3'; });
+// キャラごとのテーマ色（演出の光・魔法陣・カットインの帯など）2026-11-22
+SR.THEME = { N: '#a88cff', V: '#ffd27a', F: '#ff6a4a', S: '#8fc8ff', L: '#e8ecff' };
+// 2026-11-22：敵の絵を、ChatGPTで描いた絵から作ったドット絵（img/enemies/sr-*.png）に。
+// 通常戦A・B・Cは魔獣、ボス3体は星獣（サニー）。姿は試作用の仮。古い素材の名前から置きかえる
+SR.ENEMY_ART = { 'js-golem': 'sr-shell', 'js-bolt': 'sr-beast', 'js-wind': 'sr-swift', 'js-fire': 'sr-ember', 'js-ice': 'sr-frost', 'js-eye': 'sr-caster', 'js-angel': 'sr-healer',
+  'js-wolf': 'sr-pup', 'js-wolfg': 'sr-pup', 'js-troll': 'sr-twin1', 'js-trollb': 'sr-twin2', 'js-tree': 'sr-norma', 'js-mino': 'sr-normb', 'js-smoke': 'sr-normc',
+  'js-prince': 'sr-boss1', 'js-demon': 'sr-bossfire', 'js-lord': 'sr-bossaoe' };
+// 戦場での高さ（ドット絵の高さもこれに合わせて作った：高さ×80マス）
+SR.ENEMY_H = { 'sr-beast': 1.9, 'sr-shell': 2.0, 'sr-swift': 2.1, 'sr-ember': 1.9, 'sr-frost': 1.9, 'sr-caster': 2.0, 'sr-healer': 2.6, 'sr-pup': 1.25, 'sr-twin1': 3.0, 'sr-twin2': 3.0,
+  'sr-norma': 1.9, 'sr-normb': 1.7, 'sr-normc': 1.4, 'sr-boss1': 2.8, 'sr-bossfire': 2.4, 'sr-bossaoe': 3.2 };
+// 2026-11-22 サニー：浮いている敵だけ浮かせる（ほかは地面に立つ）。いまは目玉の術士だけ
+SR.ENEMY_FLOAT = { 'sr-caster': 1 };
+(function () {
+  function sw(o) { if (!o) return; if (o.img && SR.ENEMY_ART[o.img]) o.img = SR.ENEMY_ART[o.img]; if (o.imgs) o.imgs = o.imgs.map(function (k) { return SR.ENEMY_ART[k] || k; }); }
+  Object.keys(SR.enemyTypes || {}).forEach(function (k) { sw(SR.enemyTypes[k]); });
+  Object.keys(SR.encounters || {}).forEach(function (k) { sw(SR.encounters[k]); });
+})();
+// ---- 2026-11-22 補助・弱体・2回続けて動く技（サニー：単体で強すぎる技はやめる。組み合わせで伸びるのはOK）----
+// 数値は仮。どれも1つだけ使っても得は小さく、ほかの技と組むと大きく伸びる
+skill('脆化法', 'common', 4, 16, { kind: 'vuln' });                 // 敵一体：2ターン、受けるダメージ1.25倍
+skill('鈍化法', 'common', 3, 14, { kind: 'slow' });                 // 敵一体：次の番を遅らせる
+skill('残心', 'N', 4, 16, { kind: 'zanshin' });                     // 次の番、刀剣術の攻撃を2回続けて振る（2回目は威力0.7倍）
+skill('オーバークロック', 'V', 6, 34, { kind: 'overclock' });         // 仲間一人を、すぐもう一度動かす。ヴォルト自身の次の番は遅れる
+skill('陽だまりの加護', 'F', 5, 28, { kind: 'might' });               // 前線全員：2ターン、威力1.15倍
+skill('祝福', 'S', 4, 20, { kind: 'bless' });                         // 仲間一人：次の2回の攻撃の威力1.3倍
+skill('封じの聖印', 'S', 4, 18, { kind: 'seal' });                    // 敵一体：2ターン、ブレイクゲージが回復しない
+skill('挟撃の策', 'L', 4, 18, { kind: 'flank' });                     // 敵一体：次に味方の攻撃が当たると、前線のもう一人が追い打ち
+skill('二段構え', 'L', 5, 22, { kind: 'twin' });                      // 次の番、2回続けて動ける（2回目の技はMP2倍）
+// ---- 2026-11-22 終盤の大きな連撃（サニー：上限9999は1発ごと。連撃なら9999×回数を出せる）名前・回数は仮 ----// 低いLvでは、まとめて大技1発と同じくらい。高いLvでは1発ごとに上限に届くので、連撃がいちばん伸びるskill('月影五連', 'N', 7, 46, { kind: 'attack', kd: 6, hp: 34, hits: 5, era: 3 });              // 刀剣術：5回斬るskill('全弾斉射', 'V', 7, 48, { kind: 'attack', kd: 5, hp: 28, hits: 6, era: 3 });              // 導機術：6回撃つskill('焔の五月雨', 'F', 7, 48, { kind: 'attack', kd: 6, hp: 38, hits: 4, fire: true, era: 3 }); // 黒魔術：炎を4回skill('聖槍連突', 'S', 7, 44, { kind: 'attack', kd: 6, hp: 34, hits: 4, era: 3 });              // 祈祷術：細剣で4回突くskill('大剣乱舞', 'L', 7, 48, { kind: 'attack', kd: 10, hp: 52, hits: 3, era: 3 });             // 大剣術：重い3連
+// 低いLvでは、まとめて大技1発と同じくらい。高いLvでは1発ごとに上限に届くので、連撃がいちばん伸びる
+skill('月影五連', 'N', 7, 46, { kind: 'attack', kd: 6, hp: 34, hits: 5, era: 3 });              // 刀剣術：5回斬る
+skill('全弾斉射', 'V', 7, 48, { kind: 'attack', kd: 5, hp: 28, hits: 6, era: 3 });              // 導機術：6回撃つ
+skill('焔の五月雨', 'F', 7, 48, { kind: 'attack', kd: 6, hp: 38, hits: 4, fire: true, era: 3 }); // 黒魔術：炎を4回
+skill('聖槍連突', 'S', 7, 44, { kind: 'attack', kd: 6, hp: 34, hits: 4, era: 3 });              // 祈祷術：細剣で4回突く
+skill('大剣乱舞', 'L', 7, 48, { kind: 'attack', kd: 10, hp: 52, hits: 3, era: 3 });             // 大剣術：重い3連
+SR.ctree.push(
+  { id: '脆化法', sys: '干渉', combo: ['干渉', '観測'], books: ['干渉', '観測'], tier: 2, req: ['衝撃'] },
+  { id: '鈍化法', sys: '循環', combo: ['循環', '干渉'], books: ['循環', '干渉'], tier: 3, req: ['加速'] });
+// 1つで強すぎた技を弱める（試し打ちで使われすぎていた）
+SR.skills['分散連射'].hits = 4;            // 6回→4回
+SR.skills['集中火力'].kd = 48;             // 66→48
+SR.skills['五人の一太刀'].needBroken = true; // ブレイク中の敵がいるときだけ使える（ブレイクのあとの切り札）
+// 新しい技と、直した技の説明（SR.describe に足す）
+(function () {
+  var base = SR.describe, T = {
+    vuln: '敵一体：2ターン、受けるダメージ1.25倍（ほかの攻撃と組むと伸びる）',
+    slow: '敵一体の次の番を遅らせる（順番の帯で後ろへ）',
+    zanshin: '次の番、刀剣術の攻撃を2回続けて振る（2回目は威力0.7倍）',
+    overclock: '仲間一人を、すぐもう一度動かす。ヴォルト自身の次の番は遅れる',
+    might: '前線全員：2ターン、威力1.15倍',
+    bless: '仲間一人：次の2回の攻撃の威力1.3倍',
+    seal: '敵一体：2ターン、ブレイクゲージが回復しない',
+    flank: '敵一体：次に味方の攻撃が当たると、前線のもう一人が追い打ちする',
+    twin: '次の番、2回続けて動ける（2回目の技はMP2倍）',
+    analyze: '敵一体の弱点を調べ、2ターン、その敵へのブレイクゲージ削りを1.3倍にする',
+    ward: '仲間一人に、次の反動・無防備・燃え尽きを打ち消す祈り（2ターン）。今の無防備と、悪い状態を1つ解く',
+    rally: '仲間一人の、反動で減ったHPを戻し、無防備・燃え尽きを解く。ブレイクゲージも25戻す'
+  };
+  SR.describe = function (a) {
+    if (a && T[a.kind]) return T[a.kind];
+    var s = base(a);
+    if (a && a.needBroken) s += '・ブレイク中の敵がいるときだけ使える';
+    return s;
+  };
+})();
+// 新しい技の経験値の体系
+(function () {
+  var base = SR.actionExp;
+  SR.actionExp = function (a) {
+    if (a && !SR.ctreeNode(a.id)) {
+      if (['vuln', 'slow', 'seal', 'flank'].indexOf(a.kind) >= 0) return ['干渉', SR.growthCfg.expSkill];
+      if (['might', 'bless', 'overclock', 'twin', 'zanshin'].indexOf(a.kind) >= 0) return ['循環', SR.growthCfg.expSkill];
+    }
+    return base(a);
+  };
+})();
+SR.skills['分散連射'].kd = 10;   // 2026-11-22 試し打ち2回目：まだ使われすぎ（12→10）
+
+// ---- アイテム（2026-11-22 サニー：まずは戦いで使う回復アイテム。名前・数値は仮）----
+// 使うとその人の番を1回使う。1つの戦いに持っていけるのは、1種類3個まで。
+// 店で買える。素材を集めて自分で作ると安い（現地調達）。素材は戦いに勝つと拾える。
+SR.ITEM_CARRY = 3;
+skill('薬草', 'item', 0, 0, { kind: 'item', item: true, fx: 'hp', v: 0.35, label: '薬草' });        // 仲間一人：最大HPの35%回復
+skill('霊水', 'item', 0, 0, { kind: 'item', item: true, fx: 'mp', v: 35, label: '霊水' });          // 仲間一人：MP35回復
+skill('清め薬', 'item', 0, 0, { kind: 'item', item: true, fx: 'cure', label: '清め薬' });           // 仲間一人：悪い状態（やけど・出血・凍結・暗闇など）を全部治す
+skill('気付け薬', 'item', 0, 0, { kind: 'revive', item: true, amount: 0.3, label: '気付け薬' });     // 倒れた仲間一人：HP30%で起き上がる
+SR.ITEMS = {
+  '薬草': { price: 120, fx: '仲間一人のHPを最大HPの35%回復', recipe: { '野草': 2 }, fee: 0 },
+  '霊水': { price: 200, fx: '仲間一人のMPを35回復', recipe: { '澄んだ水': 1, '光る苔': 1 }, fee: 20 },
+  '清め薬': { price: 150, fx: '仲間一人の悪い状態（やけど・出血・凍結・暗闇など）を全部治す', recipe: { '野草': 1, '白い塩': 1 }, fee: 10 },
+  '気付け薬': { price: 500, fx: '倒れた仲間一人を、HP30%で起こす', recipe: { '苦い根': 2, '澄んだ水': 1 }, fee: 60 }
+};
+SR.MATERIALS = { '野草': '道ばたや森に生える草。薬草のもと', '澄んだ水': '湧き水。霊水や薬に使う', '光る苔': '星の光をためる苔', '白い塩': '清めに使う塩', '苦い根': '気付け薬の苦み' };
+SR.matDrop = { normal: [1, 2], boss: [3, 5] };   // 勝ったときに拾える素材の数（はんい）
+SR.bag = (function () {   // 持ち物（アイテムと素材）。この端末に保存
+  var KEY = 'sr-battle-bag-v1', d;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!d || !d.items) d = { items: { '薬草': 3 }, mats: {} };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  return {
+    items: function () { return d.items; }, mats: function () { return d.mats; },
+    n: function (id) { return d.items[id] || 0; }, m: function (id) { return d.mats[id] || 0; },
+    add: function (id, k) { d.items[id] = Math.max(0, (d.items[id] || 0) + k); save(); },
+    addMat: function (id, k) { d.mats[id] = Math.max(0, (d.mats[id] || 0) + k); save(); },
+    carry: function () { var o = {}; Object.keys(SR.ITEMS).forEach(function (id) { var k = Math.min(SR.ITEM_CARRY, d.items[id] || 0); if (k) o[id] = k; }); return o; },   // 戦いに持っていく分
+    canCraft: function (id) { var r = SR.ITEMS[id].recipe; return Object.keys(r).every(function (m) { return (d.mats[m] || 0) >= r[m]; }) && SR.growth.gold() >= (SR.ITEMS[id].fee || 0); },
+    craft: function (id) { if (!this.canCraft(id)) return false; var I = SR.ITEMS[id]; Object.keys(I.recipe).forEach(function (m) { d.mats[m] -= I.recipe[m]; }); SR.growth.addGold(-(I.fee || 0)); d.items[id] = (d.items[id] || 0) + 1; save(); return true; },
+    buy: function (id) { var p = SR.ITEMS[id].price; if (SR.growth.gold() < p) return false; SR.growth.addGold(-p); d.items[id] = (d.items[id] || 0) + 1; save(); return true; },
+    reset: function () { d = { items: { '薬草': 3 }, mats: {} }; save(); }
+  };
+})();
+(function () {   // 説明・経験値の文
+  var ds = SR.describe; SR.describe = function (a) { if (a && a.item) return SR.ITEMS[a.id].fx + '（1つの戦いに' + SR.ITEM_CARRY + '個まで）'; return ds(a); };
+})();
+(function () { var ae = SR.actionExp; SR.actionExp = function (a) { return a && a.item ? null : ae(a); }; })();   // アイテムでは経験値なし
+
+// ---- 連戦（2026-11-22 サニー：通常戦は連戦。ボス戦はだいたい回復してから戦う）----
+// 通常戦は、前の戦いのHP（割合）・MP・倒れたままを引きつぐ。ボス戦（と双子の大獣）は全回復した状態で始まる。
+// 「休む」で全回復。負けたら町に戻って全回復。
+SR.chainMpRegen = 0.35;   // 通常戦では、番ごとのMP回復が0.35倍（MPを節約しながら連戦する。0にするとさらにきびしい）
+SR.isBossEnc = function (key) { var e = SR.encounters[key]; return !!e && (e.engine !== '集団' || key === 'twins'); };
+SR.party = (function () {
+  var KEY = 'sr-battle-party-v1', d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  function save() { try { if (d) localStorage.setItem(KEY, JSON.stringify(d)); else localStorage.removeItem(KEY); } catch (e) {} }
+  return {
+    carry: function () { return d; },   // null＝全回復
+    keep: function (heroes) { d = {}; heroes.forEach(function (u) { d[u.id] = { hp: Math.max(0, u.hp) / u.maxHp, mp: u.mp, down: u.hp <= 0 }; }); save(); },
+    rest: function () { d = null; save(); },
+    full: function () { return !d; }
+  };
+})();
+
+// ---- コロシアム（2026-11-22 サニー：連戦の選択肢を増やす。MP管理を大切に）----
+// 休めない連戦。HP・MP・倒れたまま・持っていったアイテムの残りを、次の戦いへ引きつぐ。
+// 敵のLvは「5人の平均Lv」から始まり、2戦ごとに1つ上がる。MPの自然回復は通常戦と同じく少ない。
+SR.COLO = {
+  three: { name: '三連戦', note: '通常戦・子獣の群れ・甲殻と疾風', rounds: ['normal', 'swarm', 'shellSwift'], reward: 1500 },
+  five: { name: '五連戦', note: '三連戦のあとに、炎と氷・術士の一団', rounds: ['normal', 'swarm', 'shellSwift', 'elements', 'casters'], reward: 4000 },
+  endless: { name: '勝ち抜き', note: '負けるまで続く。勝つたびに賞金', endless: true, pool: ['normal', 'swarm', 'shellSwift', 'elements', 'casters'], rewardPer: 500 }
+};
+SR.coloBest = (function () {
+  var KEY = 'sr-colo-best-v1', d = {};
+  try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return { get: function (k) { return d[k] || 0; }, put: function (k, n) { if (n > (d[k] || 0)) { d[k] = n; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} return true; } return false; } };
+})();

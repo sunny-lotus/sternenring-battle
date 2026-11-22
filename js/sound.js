@@ -8,29 +8,99 @@ SR.sound = (function () {
   try { var s = JSON.parse(localStorage.getItem(KEY)); if (s) on = Object.assign(on, s); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(on)); } catch (e) {} }
 
-  var TRACKS = { normal: 'audio/seika-no-kenbu_29_loop.wav', boss: 'audio/rinkai-no-yaiba_62_loop.wav' };
-  var bgmEl = null, bgmKind = null;
+  // BGM の繰り返し方（ゲーム音楽/制作メモ/各曲ループ仕様/各曲の繰り返し方_AI引き継ぎ.md）
+  // 星火の剣舞29：ファイルの先頭から末尾までを、すき間なく繰り返す。
+  // 臨界の刃62：初回だけ全体（遅いテーマから）を1回。終わった時刻ちょうどに反復用WAVを始め、それを繰り返す。
+  // つなぎは音声の時計（Web Audio）で予約する。フェードや無音は足さない。
+  var TRACKS = {
+    normal: { first: 'audio/seika-no-kenbu_29_loop.wav' },
+    boss: { first: 'audio/rinkai-no-yaiba_62_loop.wav', repeat: 'audio/rinkai-no-yaiba_62_repeat.wav' },
+    // メニュー：まなびクエストのメニュー曲「光のアルペジオ」（教材作成/manabiquest/音楽 の WAV と「光のアルペジオ_繰り返し方.txt」）。
+    // 1周は (60 / 78 / 4) × 128.16 = 約24.646秒。ファイルの終わりを待たず、その周期で次の周を始め、前の周の余韻を次の頭に重ねる。
+    menu: { first: 'audio/menu-hikari-no-arpeggio.wav', period: 60 / 78 / 4 * 128.16 }
+  };
+  var BGM_VOL = 0.45, bgmKind = null, bgmToken = 0, bgmSrcs = [], bgmGain = null, bgmEl = null, bufs = {};
+  function loadBuf(url) {
+    var c = ac(); if (!c) return Promise.reject();
+    if (!bufs[url]) bufs[url] = fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (ab) {
+      return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); });
+    });
+    return bufs[url];
+  }
+  // 完全な無音（0）だけの頭と末尾を見つける（音のある所は削らない）
+  function edges(b) {
+    var n = b.length, a = 0, z = n, ch = [];
+    for (var c = 0; c < b.numberOfChannels; c++) ch.push(b.getChannelData(c));
+    function silent(i) { for (var c = 0; c < ch.length; c++) if (Math.abs(ch[c][i]) > 1e-6) return false; return true; }
+    var lim = Math.min(n, b.sampleRate);   // 頭は1秒まで
+    while (a < lim && silent(a)) a++;
+    while (z > n / 2 && silent(z - 1)) z--;   // 末尾は曲の後半まで見る
+    return a < z ? [a, z] : [0, n];
+  }
   function playBgm(kind) {
+    // フィールド（STERNENRING_RPG_NEXT）から開いたメニューでは、メニュー曲を流さない（フィールドの曲がそのまま続く。2026-11-22 作者「メニューの音楽に光のアルペジオが残っている」）
+    if (kind === 'menu' && /[?&]field=1(&|$)/.test(location.search)) return;
     bgmKind = kind;
     if (!on.bgm) return;
-    if (bgmEl && bgmEl.dataset.kind === kind) { bgmEl.currentTime = 0; bgmEl.play().catch(function () {}); return; }
     stopBgm(true);
-    bgmEl = new Audio(TRACKS[kind]);
-    bgmEl.dataset.kind = kind; bgmEl.loop = true; bgmEl.volume = 0.45;
-    bgmEl.play().catch(function () {});
+    var tr = TRACKS[kind], c = ac(), my = ++bgmToken;
+    if (!c || !window.fetch) {   // 古い端末：ふつうの再生（全体を繰り返すだけ）
+      bgmEl = new Audio(tr.first); bgmEl.loop = true; bgmEl.volume = BGM_VOL; bgmEl.play().catch(function () {}); return;
+    }
+    bgmGain = c.createGain(); bgmGain.gain.value = BGM_VOL; bgmGain.connect(c.destination);
+    var g = bgmGain, pRep = tr.repeat ? loadBuf(tr.repeat) : null;
+    loadBuf(tr.first).then(function (b1) {
+      if (my !== bgmToken) return;
+      var t0 = c.currentTime + 0.06, s1 = c.createBufferSource();
+      s1.buffer = b1; s1.connect(g);
+      if (tr.period) {   // 決まった周期で、同じ音源を重ねながら置いていく
+        var next = t0, P = tr.period;
+        (function sched() {
+          if (my !== bgmToken) return;
+          while (next < c.currentTime + 30) {   // 30秒先まで予約しておく（画面を切りかえてもとぎれにくい）
+            var s = c.createBufferSource(); s.buffer = b1; s.connect(g); s.start(next); bgmSrcs.push(s);
+            s.onended = function () { var i = bgmSrcs.indexOf(this); if (i >= 0) bgmSrcs.splice(i, 1); };
+            next += P;
+          }
+          setTimeout(sched, 1000);
+        })();
+        return;
+      }
+      if (!pRep) {
+        s1.loop = true; var off = 0;
+        if (tr.trim) { var e = edges(b1); off = e[0] / b1.sampleRate; s1.loopStart = off; s1.loopEnd = e[1] / b1.sampleRate; }
+        s1.start(t0, off); bgmSrcs.push(s1); return;
+      }
+      s1.start(t0); bgmSrcs.push(s1);
+      var tEnd = t0 + b1.length / b1.sampleRate;
+      pRep.then(function (b2) {
+        if (my !== bgmToken) return;
+        var s2 = c.createBufferSource(); s2.buffer = b2; s2.loop = true; s2.connect(g);
+        s2.start(Math.max(tEnd, c.currentTime + 0.02)); bgmSrcs.push(s2);
+      });
+    }).catch(function () {});
   }
   function stopBgm(keepKind) {
+    bgmToken++;
+    bgmSrcs.forEach(function (s) { try { s.stop(); } catch (e) {} }); bgmSrcs = [];
+    if (bgmGain) { try { bgmGain.disconnect(); } catch (e) {} bgmGain = null; }
     if (bgmEl) { bgmEl.pause(); bgmEl = null; }
     if (!keepKind) bgmKind = null;
   }
   function fadeBgm(ms) {
-    var el = bgmEl; if (!el) return;
-    var v0 = el.volume, t0 = performance.now();
-    (function step(now) {
-      var r = Math.min(1, (now - t0) / ms); el.volume = v0 * (1 - r);
-      if (r < 1) requestAnimationFrame(step); else { el.pause(); if (bgmEl === el) bgmEl = null; }
-    })(t0);
+    if (bgmEl) { var el = bgmEl, v0 = el.volume, t0 = performance.now(); (function step(now) { var r = Math.min(1, (now - t0) / ms); el.volume = v0 * (1 - r); if (r < 1) requestAnimationFrame(step); else { el.pause(); if (bgmEl === el) bgmEl = null; } })(t0); return; }
+    if (!bgmGain || !ctx) return;
+    var g = bgmGain, srcs = bgmSrcs, t = ctx.currentTime; bgmToken++; bgmSrcs = []; bgmGain = null;
+    g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
+    setTimeout(function () { srcs.forEach(function (s) { try { s.stop(); } catch (e) {} }); try { g.disconnect(); } catch (e) {} }, ms + 50);
   }
+  // 最初にさわったとき：メニュー画面ならメニュー曲を流し、ふつうの戦いの曲も先に読み込んでおく
+  document.addEventListener('pointerdown', function pre() {
+    document.removeEventListener('pointerdown', pre, true);
+    var t = document.getElementById('title');
+    if (!bgmKind && t && !t.classList.contains('hidden')) playBgm('menu');
+    if (on.bgm) loadBuf(TRACKS.normal.first).catch(function () {});
+  }, true);
 
   // ---- 効果音（合成） ----
   var ctx = null, master = null;
