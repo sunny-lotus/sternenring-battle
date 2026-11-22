@@ -66,7 +66,7 @@ SR.Battle = function (opts) {
   }
   function HF() { var a = heroes.filter(function (v) { return v.pos < 3; }); return a.length ? a.reduce(function (s, v) { return s + (v.hf || 1); }, 0) / a.length : 1; }
   // 2026-11-22 サニー：Lvごとの上限はつけない。かわりに「ふだんの一撃」の何倍にもなる大きな一撃は、伸びがゆるやかになる（足すほど必ず増えるが、跳ね上がりすぎない）。
-  // ふだんの一撃＝100×相手のLvの倍率×Lv差。3倍までは そのまま、その先は 3＋2×log(1＋(倍−3)/3)。最後に9999で止まる（限界突破で外れる）
+  // ふだんの一撃＝100×相手のLvの倍率×Lv差。2倍までは そのまま、その先は 2＋1.2×log(1＋(倍−2)/2)。最後に9999で止まる（限界突破で外れる）
   function softDmg(src, n, dst) {
     if (!src || !src.hero || !dst || !SR.softDmg) return n;
     var T = 100 * (dst.gs || 1) * gapOf(src, dst), x = n / T, k = SR.softDmg;
