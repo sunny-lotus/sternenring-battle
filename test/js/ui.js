@@ -1864,3 +1864,13 @@
 
   drawTitle();
 })();
+// 2026-11-22 サニー：PCだとダメージ表示などの文字が小さい。画面の大きさ（戦闘画面の --u と同じ決め方）に合わせて、文字の倍率 --fs を決める。
+// スマホ横（--u が7.4pxほど）を1倍として、大きな画面ほど大きく（最大1.9倍）。
+(function () {
+  function fsUpd() {
+    var b = document.getElementById('battle'); if (!b) return;
+    var u = Math.min(window.innerWidth * 0.01, window.innerHeight * 0.019);
+    b.style.setProperty('--fs', Math.max(1, Math.min(1.9, u / 7.4)).toFixed(3));
+  }
+  window.addEventListener('resize', fsUpd); fsUpd();
+})();

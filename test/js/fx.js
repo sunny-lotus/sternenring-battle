@@ -11,17 +11,17 @@ window.SR = window.SR || {};
     '@keyframes quake2{0%,100%{translate:0 0}15%{translate:-9px 4px}35%{translate:8px -5px}55%{translate:-6px -3px}75%{translate:5px 4px}}',
     '@keyframes quake3{0%,100%{translate:0 0}10%{translate:-16px 7px}22%{translate:14px -9px}36%{translate:-12px -6px}50%{translate:11px 8px}64%{translate:-8px 4px}80%{translate:6px -4px}}',
     // ---- ダメージの数字 ----
-    '.fxnum{font-weight:900;white-space:nowrap;transform:translate(-50%,-50%);text-shadow:0 3px 0 #000,0 0 8px #000,0 0 2px #000;animation:fxnum 1.15s cubic-bezier(.2,.9,.3,1) forwards;font-size:24px;color:#fff;letter-spacing:.5px}',
-    '.fxnum.t2{font-size:31px;color:#fff3c9}.fxnum.t3{font-size:40px;color:#ffc24a;animation-duration:1.3s}',
-    '.fxnum.t4{font-size:50px;color:#ff8a2a;animation-duration:1.45s;text-shadow:0 3px 0 #000,0 0 14px #ff5a00,0 0 3px #000}',
-    '.fxnum.t5{font-size:62px;color:#ffe066;animation-duration:1.7s;text-shadow:0 4px 0 #6b3b00,0 0 18px #ffb300,0 0 40px #ff8800,0 0 3px #000}',
+    '.fxnum{font-weight:900;white-space:nowrap;transform:translate(-50%,-50%);text-shadow:0 3px 0 #000,0 0 8px #000,0 0 2px #000;animation:fxnum 1.15s cubic-bezier(.2,.9,.3,1) forwards;font-size:calc(var(--fs,1)*24px);color:#fff;letter-spacing:.5px}',
+    '.fxnum.t2{font-size:calc(var(--fs,1)*31px);color:#fff3c9}.fxnum.t3{font-size:calc(var(--fs,1)*40px);color:#ffc24a;animation-duration:1.3s}',
+    '.fxnum.t4{font-size:calc(var(--fs,1)*50px);color:#ff8a2a;animation-duration:1.45s;text-shadow:0 3px 0 #000,0 0 14px #ff5a00,0 0 3px #000}',
+    '.fxnum.t5{font-size:calc(var(--fs,1)*62px);color:#ffe066;animation-duration:1.7s;text-shadow:0 4px 0 #6b3b00,0 0 18px #ffb300,0 0 40px #ff8800,0 0 3px #000}',
     '.fxnum.hurt{color:#ff8d8d}.fxnum.hurt.t3,.fxnum.hurt.t4,.fxnum.hurt.t5{color:#ff4d4d;text-shadow:0 3px 0 #000,0 0 14px #c00000}',
     '.fxnum.best{animation:fxnum 1.9s cubic-bezier(.2,.9,.3,1) forwards;color:#ffe9a8;text-shadow:0 3px 0 #3a2400,0 0 12px rgba(255,214,120,.75)}',   // 2026-11-22 虹色に回るのをやめて、落ち着いた金色に
     '.fxnum small{display:block;font-size:.34em;letter-spacing:2px;text-align:center;margin-bottom:-4px}',
     '@keyframes fxnum{0%{opacity:0;scale:2.6}10%{opacity:1;scale:.86}19%{scale:1.18}28%{scale:1}74%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-46px}}',
     '@keyframes fxhue{to{filter:hue-rotate(360deg)}}',
-    '.fxtotal{font-weight:900;white-space:nowrap;transform:translate(-50%,-50%);font-size:34px;color:#fff;padding:2px 16px;border-top:2px solid #ffd76a;border-bottom:2px solid #ffd76a;background:linear-gradient(90deg,transparent,#000c 20%,#000c 80%,transparent);text-shadow:0 2px 0 #000;animation:fxtotal 1.5s forwards}',
-    '.fxtotal small{font-size:.5em;color:#ffd76a;margin-right:8px}.fxtotal.big{font-size:48px;color:#ffe066}',
+    '.fxtotal{font-weight:900;white-space:nowrap;transform:translate(-50%,-50%);font-size:calc(var(--fs,1)*34px);color:#fff;padding:2px 16px;border-top:2px solid #ffd76a;border-bottom:2px solid #ffd76a;background:linear-gradient(90deg,transparent,#000c 20%,#000c 80%,transparent);text-shadow:0 2px 0 #000;animation:fxtotal 1.5s forwards}',
+    '.fxtotal small{font-size:.5em;color:#ffd76a;margin-right:8px}.fxtotal.big{font-size:calc(var(--fs,1)*48px);color:#ffe066}',
     '@keyframes fxtotal{0%{opacity:0;scale:3 .2}12%{opacity:1;scale:1.12 1.12}20%{scale:1}80%{opacity:1}100%{opacity:0;scale:1.1}}',
     // ---- 光 ----
     '.fxflash{inset:0;background:#fff;animation:fxflash .5s forwards}.fxflash.red{background:#ff2a2a}.fxflash.gold{background:#ffe9a0}.fxflash.long{animation-duration:1.3s}',
@@ -31,8 +31,8 @@ window.SR = window.SR || {};
     '.fxcrack{width:340px;height:340px;transform:translate(-50%,-50%);animation:fxfade 1.1s forwards}',
     '.fxcrack polyline{fill:none;stroke:#fff;stroke-width:3;stroke-linejoin:bevel;stroke-dasharray:260;stroke-dashoffset:260;animation:fxdraw .28s ease-out forwards;filter:drop-shadow(0 0 5px #9fe3ff)}',
     '@keyframes fxdraw{to{stroke-dashoffset:0}}@keyframes fxfade{0%,70%{opacity:1}100%{opacity:0}}',
-    '.fxword{font-weight:900;font-style:italic;white-space:nowrap;transform:translate(-50%,-50%);font-size:58px;letter-spacing:3px;color:#fff;-webkit-text-stroke:2px #1c6dff;text-shadow:0 0 18px #4fc3ff,0 5px 0 #062a66;animation:fxword 1.15s forwards}',
-    '.fxword.gold{-webkit-text-stroke:2px #b86a00;text-shadow:0 0 20px #ffcc33,0 5px 0 #5a3000}.fxword.red{-webkit-text-stroke:2px #a00000;text-shadow:0 0 20px #ff4444,0 5px 0 #400000}.fxword.sm{font-size:34px}',
+    '.fxword{font-weight:900;font-style:italic;white-space:nowrap;transform:translate(-50%,-50%);font-size:calc(var(--fs,1)*58px);letter-spacing:3px;color:#fff;-webkit-text-stroke:2px #1c6dff;text-shadow:0 0 18px #4fc3ff,0 5px 0 #062a66;animation:fxword 1.15s forwards}',
+    '.fxword.gold{-webkit-text-stroke:2px #b86a00;text-shadow:0 0 20px #ffcc33,0 5px 0 #5a3000}.fxword.red{-webkit-text-stroke:2px #a00000;text-shadow:0 0 20px #ff4444,0 5px 0 #400000}.fxword.sm{font-size:calc(var(--fs,1)*34px)}',
     '@keyframes fxword{0%{opacity:0;scale:4;rotate:-8deg}14%{opacity:1;scale:.9;rotate:-4deg}24%{scale:1.1}32%{scale:1}82%{opacity:1}100%{opacity:0;scale:1.25}}',
     '#field.brkmode{background:radial-gradient(ellipse at 50% 30%,#1f4a7a 0%,#122448 50%,#070b1c 100%)}',
     '#field.brkmode .enemy.brk>img.mon,#field.brkmode .enemy.brk>svg{transform:rotate(-9deg) translateY(6px);filter:saturate(.45) brightness(1.25) drop-shadow(0 0 12px #6fd0ff);animation:fxwobble 1.4s ease-in-out infinite}',
@@ -47,7 +47,7 @@ window.SR = window.SR || {};
     '.fxshard.blue{background:linear-gradient(135deg,#fff,#6fd0ff)}',
     '@keyframes fxout{0%{opacity:1;translate:0 0;rotate:0deg}100%{opacity:0;translate:var(--dx) var(--dy);rotate:var(--rt)}}',
     '.fxcut{left:0;right:0;top:34%;height:74px;display:flex;align-items:center;overflow:hidden;background:linear-gradient(180deg,transparent,#000e 14%,#000e 86%,transparent);border-top:2px solid var(--cc,#ffd76a);border-bottom:2px solid var(--cc,#ffd76a);animation:fxcut 1.25s forwards}',
-    '.fxcut b{display:block;white-space:nowrap;font-size:36px;font-style:italic;font-weight:900;letter-spacing:6px;color:#fff;text-shadow:0 0 14px var(--cc,#ffd76a),0 3px 0 #000;animation:fxcutt 1.25s cubic-bezier(.1,.8,.2,1) forwards;padding-left:100%}',
+    '.fxcut b{display:block;white-space:nowrap;font-size:calc(var(--fs,1)*36px);font-style:italic;font-weight:900;letter-spacing:6px;color:#fff;text-shadow:0 0 14px var(--cc,#ffd76a),0 3px 0 #000;animation:fxcutt 1.25s cubic-bezier(.1,.8,.2,1) forwards;padding-left:100%}',
     '.fxcut small{font-size:.5em;letter-spacing:2px;margin-right:14px;color:var(--cc,#ffd76a);font-style:normal}',
     '@keyframes fxcut{0%{scale:1 0;opacity:0}12%{scale:1 1;opacity:1}82%{scale:1 1;opacity:1}100%{scale:1 0;opacity:0}}',
     '@keyframes fxcutt{0%{translate:0 0}22%{translate:-62% 0}78%{translate:-70% 0}100%{translate:-160% 0}}',
@@ -74,7 +74,7 @@ window.SR = window.SR || {};
     '.result .maxhit b{display:inline-block;font-size:1.9em;color:#ffe066;text-shadow:0 0 14px #ffb300,0 3px 0 #5a3000;animation:fxslam .7s cubic-bezier(.2,1.4,.4,1) .15s both}',
     '.result .maxhit .newbest{display:inline-block;animation:fxslam .6s cubic-bezier(.2,1.4,.4,1) .7s both;color:#ffe08a}',
     '@keyframes fxslam{0%{opacity:0;scale:5}60%{opacity:1;scale:.9}100%{scale:1}}',
-    '@media (max-width:640px){.fxnum.t5{font-size:50px}.fxnum.t4{font-size:42px}.fxword{font-size:44px}.fxcut b{font-size:28px}.fxcut{height:60px}.fxtotal.big{font-size:38px}.fxcrack{width:260px;height:260px}}',
+    '@media (max-width:640px){.fxnum.t5{font-size:calc(var(--fs,1)*50px)}.fxnum.t4{font-size:calc(var(--fs,1)*42px)}.fxword{font-size:calc(var(--fs,1)*44px)}.fxcut b{font-size:calc(var(--fs,1)*28px)}.fxcut{height:60px}.fxtotal.big{font-size:calc(var(--fs,1)*38px)}.fxcrack{width:260px;height:260px}}',
     '@media (prefers-reduced-motion:reduce){.quake1,.quake2,.quake3{animation:none}.fxflash{display:none}}'
   ].join('\n');
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
