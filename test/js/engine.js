@@ -55,7 +55,12 @@ SR.Battle = function (opts) {
     if (tune.bossKMul && (isBoss || e.type === 'twin')) { e.k *= tune.bossKMul; e.maxK *= tune.bossKMul; }   // ボス級のブレイクゲージ（ブレイクまでの長さ）
   });
   var S = SR.hpScale || 1;
-  heroes.concat(enemies).forEach(function (u) { u.hp *= S; u.maxHp *= S; if (u.heal) u.heal *= S; });
+  // 2026-11-22 サニー：推奨Lvをそのまま敵のレベルに。Lvの倍率（SR.lvScale）でHP・ダメージ・回復が大きくなる（レベルを使わない編成では、みんなLv1あつかい）
+  enemies.forEach(function (e) { e.lv = kit.growth && SR.recLv ? SR.recLv[opts.encounter] || 1 : 1; });
+  heroes.concat(enemies).forEach(function (u) { u.gs = SR.lvScale ? SR.lvScale(u.lv || 1) : 1; u.limitBreak = !!(u.hero && kit.growth && SR.limitBreak && SR.limitBreak.has(u.id)); });
+  function EG() { return (enemies[0] && enemies[0].gs) || 1; }
+  function capDmg(src, n) { return src && src.limitBreak ? n : Math.min(SR.DMG_CAP || 1e9, n); }
+  heroes.concat(enemies).forEach(function (u) { u.hp = Math.round(u.hp * S * u.gs); u.maxHp = Math.round(u.maxHp * S * u.gs); if (u.heal) u.heal *= S * u.gs; });
   heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
   var breakCut = tune.breakMaxHp || 0;
   function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　MP+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }
@@ -71,7 +76,6 @@ SR.Battle = function (opts) {
     heroes.forEach(function (v) { if (v.pos < 3 && has(v, '勝ち鬨') && once(v, 'cryTurn')) gainMp(v, 8); });
   }
 
-  enemies.forEach(function (e) { e.lv = (SR.recLv && SR.recLv[opts.encounter]) || 1; });   // 2026-11-22 サニー：推奨Lvをそのまま敵のレベルに
   this.heroes = heroes; this.enemies = enemies; this.kit = kit; this.enc = enc; this.isBoss = isBoss;
   this.expLog = {};
   this.t = 0; this.events = []; this.stat = { breaks: 0, allyBreaks: 0, chases: 0, counters: 0, swaps: 0 };
@@ -110,7 +114,7 @@ SR.Battle = function (opts) {
   }
   function hurtBy(u, ratio, why) {
     if (u.hp <= 0) return;
-    var d = Math.max(1, Math.min((SR.statusFx.cap[why] || 999) * S, Math.round(u.maxHp * ratio)));
+    var d = Math.max(1, Math.min((SR.statusFx.cap[why] || 999) * S * (u.gs || 1), Math.round(u.maxHp * ratio)));
     u.hp = Math.max(0, u.hp - d);
     emit(u.name + '　' + why + '　HP-' + d, { target: u.id, dmg: d, kdmg: 0, statusTick: true }, 380);
     if (u.hp === 0) emit(u.name + ' は倒れた', { target: u.id, down: true }, 700);
@@ -171,7 +175,7 @@ SR.Battle = function (opts) {
     if (dst.hero) amount *= 1 - bon(dst, 'guard');   // 守りの型
     if (hasSt(dst, 'freeze')) amount *= SR.statusFx.freeze;
     if (hasSt(src, 'daze')) amount *= SR.statusFx.daze;
-    amount *= S;
+    amount = capDmg(src, amount * S * (src.gs || 1));   // Lvの倍率・上限9999
     if (src.hero && amount > (stat.maxHit || 0)) { stat.maxHit = amount; stat.maxHitBy = src.name; }
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
@@ -350,7 +354,7 @@ SR.Battle = function (opts) {
     if (a.kind === 'heal') {
       (a.allies ? front().filter(function (v) { return v.hp > 0; }) : [target]).forEach(function (v) {
         if (v.hp > 0 && v.exposed > 0) { emit(v.name + 'は無防備で回復を受けつけない', { target: v.id }, 450); return; }
-        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * u.boostMul * (1 + bon(u, 'heal'))); emit(v.name + '　HP+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
+        if (v.hp > 0) { var b = v.hp; v.hp = Math.min(v.maxHp, v.hp + a.amount * S * (u.gs || 1) * u.boostMul * (1 + bon(u, 'heal'))); emit(v.name + '　HP+' + Math.round(v.hp - b), { target: v.id, heal: Math.round(v.hp - b) }, 380); }
       });
       return;
     }
@@ -615,11 +619,11 @@ SR.Battle = function (opts) {
     else if (targets.length) {
       var target = s.id === 'S' ? targets.slice().sort(function (a, b) { return a.hp / a.maxHp - b.hp / b.maxHp; })[0] : targets.slice().sort(function (a, b) { return a.k - b.k; })[0];
       s.mp -= cost;
-      emit(s.name + '（支援）→ ' + target.name + '（' + { N: '次の番まで被ダメージ4%減', V: '次の技の消費-2', F: '次の攻撃4%強化', S: 'HP' + 20 * S + '回復', L: '次の番までブレイクゲージダメージ-2' }[s.id] + '）', { actor: s.id, support: true }, 450);
+      emit(s.name + '（支援）→ ' + target.name + '（' + { N: '次の番まで被ダメージ4%減', V: '次の技の消費-2', F: '次の攻撃4%強化', S: 'HP' + Math.round(20 * S * (s.gs || 1)) + '回復', L: '次の番までブレイクゲージダメージ-2' }[s.id] + '）', { actor: s.id, support: true }, 450);
       if (s.id === 'N') target.supportGuard = true;
       if (s.id === 'V') target.supportEconomy = 2;
       if (s.id === 'F') target.supportPower = true;
-      if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20 * S); if (target.hp - b >= 0.5) emit(target.name + '　HP+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
+      if (s.id === 'S') { var b = target.hp; target.hp = Math.min(target.maxHp, target.hp + 20 * S * (s.gs || 1)); if (target.hp - b >= 0.5) emit(target.name + '　HP+' + Math.round(target.hp - b), { target: target.id, heal: Math.round(target.hp - b) }, 300); }
       if (s.id === 'L') target.supportKGuard = 2;
     }
     if (tune.reserveRegen && !broken(s) && s.hp < s.maxHp) {
@@ -800,7 +804,7 @@ SR.Battle = function (opts) {
     if (e.brkN && tune.foeStack) mul *= 1 + tune.foeStack.dmg * e.brkN;
     if (hasSt(e, 'freeze')) mul *= SR.statusFx.freeze;
     if (e.vuln > 0) mul *= 1.25;   // 脆化法
-    var dmg = hp * mul * S;
+    var dmg = capDmg(u, hp * mul * S * (u.gs || 1));
     return { kd: kd, dmg: dmg, breaks: breaks, kills: dmg >= e.hp, phen: ph };
   }
   function scoreAttack(u, a, e, th) {
@@ -827,7 +831,7 @@ SR.Battle = function (opts) {
   this.smartPick = function (u) {
     var alive = living(); if (!alive.length) return { skill: 'defend' };
     var th = threat(u), team = front().filter(function (v) { return v.hp > 0; });
-    var bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S, hitN = nums.single[1] * S * 2;
+    var bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * EG(), hitN = nums.single[1] * S * 2 * EG();
     var cands = [];
     function add(skill, target, s, why) { cands.push({ skill: skill, target: target, s: s, why: why }); }
     self.options(u).forEach(function (o) {
@@ -846,9 +850,9 @@ SR.Battle = function (opts) {
       }
       if (a.kind === 'heal') {
         var hs = 0, list = a.allies ? team : team;
-        if (a.allies) team.forEach(function (v) { if (v.exposed > 0) return; hs += Math.min(a.amount * S, v.maxHp - v.hp) / v.maxHp * 70; });
+        if (a.allies) team.forEach(function (v) { if (v.exposed > 0) return; hs += Math.min(a.amount * S * (u.gs || 1), v.maxHp - v.hp) / v.maxHp * 70; });
         var low = team.slice().sort(function (x, y) { return x.hp / x.maxHp - y.hp / y.maxHp; })[0];
-        if (!a.allies) { if (low.exposed > 0) return; hs = Math.min(a.amount * S, low.maxHp - low.hp) / low.maxHp * 90; if (low.hp < (th.big ? bigN : hitN)) hs += 45; if (low.hp < low.maxHp * 0.3) hs += 30; }
+        if (!a.allies) { if (low.exposed > 0) return; hs = Math.min(a.amount * S * (u.gs || 1), low.maxHp - low.hp) / low.maxHp * 90; if (low.hp < (th.big ? bigN : hitN)) hs += 45; if (low.hp < low.maxHp * 0.3) hs += 30; }
         else if (team.filter(function (v) { return v.hp < (th.aoe ? bigN : hitN); }).length) hs += 30;
         if (th.big || th.aoe) hs *= 1.25;
         add(o.id, a.allies ? null : low, hs - mpPen - wPen, 'heal');
@@ -912,7 +916,7 @@ SR.Battle = function (opts) {
   // 交代：HPが少なく、自分の次の番より先に攻撃が来るなら、元気な控えと替わる
   this.smartSwap = function (u) {
     if (self.swapped || !tune.status) return null;
-    var th = threat(u), bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S, hitN = nums.single[1] * S * 2;
+    var th = threat(u), bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * EG(), hitN = nums.single[1] * S * 2 * EG();
     if (!th.foes.length || u.hp > (th.big ? bigN : hitN) * 1.05) return null;
     var res = heroes.filter(function (v) { return v.pos >= 3 && v.hp > v.maxHp * 0.6 && !broken(v) && self.canSwap(u.id, v.id); }).sort(function (x, y) { return y.hp - x.hp; })[0];
     return res || null;

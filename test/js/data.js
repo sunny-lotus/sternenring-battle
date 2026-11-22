@@ -663,8 +663,23 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
 
 // ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
 // 戦いの経験値で上がる。上がるとHP・最大ブレイクゲージ・与えるダメージ・ブレイクゲージ削りが少しずつ伸びる（数値は仮）。
-SR.LV_MAX = 50;
-SR.lvGrowth = { hp: 0.04, k: 2, dmg: 0.02, kd: 0.01, spd: 0.5 };   // 1レベルごと：最大HP+4%・最大ブレイクゲージ+2・HPダメージ+2%・ブレイクゲージ削り+1%・素早さ+0.5（2026-11-22 サニー：素早さもLvで伸びる）
+SR.LV_MAX = 99;   // 2026-11-22：Lv51あたりから限界突破（サブクエのパッシブ）
+SR.lvGrowth = { hp: 0, k: 2, dmg: 0, kd: 0.01, spd: 0.5 };   // 1レベルごと：最大ブレイクゲージ+2・ブレイクゲージ削り+1%・素早さ+0.5。HPとダメージは下の SR.lvScale で大きくなる
+// 2026-11-22 サニー：同じLv同士の戦いで、1回のダメージがだいたい Lv1→100・Lv10→1000・Lv30→6000・Lv50→9999。
+// HPとダメージ（回復も）を、そのキャラ・敵のLvの倍率で大きくする。同じLv同士なら戦いの長さは変わらず、Lv差があると差が出る。
+SR.lvScalePts = [[1, 1], [10, 10], [30, 60], [50, 100]];   // Lv50より上は1Lvごとに+2
+SR.lvScale = function (lv) {
+  var p = SR.lvScalePts; lv = Math.max(1, lv || 1);
+  for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
+  return p[p.length - 1][1] + (lv - p[p.length - 1][0]) * 2;
+};
+SR.DMG_CAP = 9999;   // 1回のダメージの上限。パッシブ「限界突破」を持つと外れる
+SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れる", lv: 51 };   // Lv51あたりのサブクエで手に入る（今は開発者設定で試せる）
+SR.limitBreak = (function () {   // 限界突破を持っているか（キャラごと・試し用に開発者設定で切りかえ）
+  var KEY = "sr-battle-lb-v1", d = {};
+  try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return { has: function (id) { return !!d[id]; }, set: function (id, on) { d[id] = !!on; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} } };
+})();
 SR.lvExp = { normal: 30, boss: 120, loseMul: 0.3 };       // 戦いでもらう経験値（全員・控えも）
 // 2026-11-22 サニー：敵の推奨レベル（数値は仮。序盤Lv1〜10・中盤10〜20・終盤20〜のつもり）
 SR.recLv = { normal: 1, swarm: 2, boss: 6, shellSwift: 8, elements: 10, casters: 12, fireResist: 15, twins: 20, aoe: 25 };

@@ -410,8 +410,9 @@
         return '<div class="dvr">' + face(id) + '<span class="dvl">Lv</span><input type="number" min="1" max="' + SR.LV_MAX + '" value="' + i.lv + '" data-dvi="lv" data-id="' + id + '">' +
           '<button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="-1">-1</button><button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="1">+1</button><button class="btn mini" data-nav data-dv="lv" data-id="' + id + '" data-v="10">+10</button>' +
           '<button class="btn mini" data-nav data-dv="lvset" data-id="' + id + '" data-v="1">Lv1に</button><button class="btn mini" data-nav data-dv="lvset" data-id="' + id + '" data-v="' + SR.LV_MAX + '">最大</button>' +
-          '<small>次のLvまで ' + (i.next ? i.next - i.cur : '－') + '</small></div>';
-      }).join('') + '<div class="row"><button class="btn mini" data-nav data-dv="lvall" data-v="1">全員 Lv1 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="10">全員 Lv10 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="' + SR.LV_MAX + '">全員 最大に</button></div>';
+          '<button class="btn mini' + (SR.limitBreak.has(id) ? ' sel' : '') + '" data-nav data-dv="lb" data-id="' + id + '">限界突破 ' + (SR.limitBreak.has(id) ? 'あり' : 'なし') + '</button>' +
+          '<small>次のLvまで ' + (i.next ? i.next - i.cur : '－') + '　ダメージ・HPの倍率 ×' + (Math.round(SR.lvScale(i.lv) * 10) / 10) + '</small></div>';
+      }).join('') + '<div class="small dvnote">同じLv同士で、1回のダメージがだいたい Lv1→100・Lv10→1000・Lv30→6000・Lv50→9999。1回のダメージは9999まで。限界突破（Lv51あたりのサブクエのごほうび）を持つと、上限が外れる。</div><div class="row"><button class="btn mini" data-nav data-dv="lvall" data-v="1">全員 Lv1 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="10">全員 Lv10 に</button><button class="btn mini" data-nav data-dv="lvall" data-v="' + SR.LV_MAX + '">全員 最大に</button></div>';
     } else if (devTab === 'gold') {
       h += '<div class="dvr"><b class="dvn">お金</b>' + SR.moneyHTML(G.gold()) + '</div>' +
         '<div class="dvr"><b class="dvn">銅貨で</b><input type="number" min="0" value="' + G.gold() + '" data-dvi="gold" class="wide"><button class="btn mini" data-nav data-dv="goldset" data-v="0">0にする</button></div>' +
@@ -447,6 +448,7 @@
     else if (a === 'lv') SR.level.setLv(id, SR.level.lv(id) + v);
     else if (a === 'lvset') SR.level.setLv(id, v);
     else if (a === 'lvall') ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { SR.level.setLv(w, v); });
+    else if (a === 'lb') SR.limitBreak.set(id, !SR.limitBreak.has(id));
     else if (a === 'gold') G.setGold(G.gold() + v);
     else if (a === 'goldset') G.setGold(v);
     else if (a === 'exp0') SR.baseSystems.forEach(function (x) { G.setExp(id, x, 0); });
@@ -513,7 +515,7 @@
       var nU = own.filter(function (s) { return G.hasU(u.id, s); }).length;
       var nM = u.id === 'N' ? 0 : SR.ctree.filter(function (n) { return SR.skills[n.id] && G.has(u.id, n.id); }).length;
       var nL = u.id === 'N' ? Object.keys(SR.skills).filter(function (s) { return SR.isLink(s) && G.hasLink(s); }).length : 0;
-      var pas = T.passivesOf(u).map(SR.skillName);
+      var pas = T.passivesOf(u).map(SR.skillName); if (u.limitBreak) pas.push(SR.LIMIT_BREAK.name);
       return '<div class="stc stinfo"><div class="sn">' + u.name + '</div>' +
         '<div class="slv"><em>Lv</em><b>' + (u.lv || 1) + '</b></div><div class="sxp">' + lvBar(u.id) + '</div><div class="sw">' + (w ? w.name + '・' + w.phen : '') + '</div><div class="sk2">' + SR.uniqueName(u.id) + '</div>' +
         '<dl><dt class="hp">HP</dt><dd>' + Math.round(u.maxHp) + '</dd><dt class="k">ブレイクゲージ</dt><dd>' + Math.round(u.maxK) + '</dd><dt class="m">MP</dt><dd>' + Math.round(u.maxMp) + '</dd><dt>素早さ</dt><dd>' + Math.round(u.speed || 0) + '</dd></dl>' +
