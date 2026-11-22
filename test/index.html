@@ -1457,7 +1457,21 @@ svg.coin.cbig{width:18px;height:18px}
 .stc.stinfo .sn{font-size:22px}
 .stc.stinfo dl{font-size:13px}
 /* 2026-11-22 サニー：自己ベストは小さく「NEW RECORD」 */.result .newbest,#battle .result .newbest{display:inline-block;margin-left:10px;padding:0;background:none!important;border:none;box-shadow:none;animation:none;opacity:1;font-family:Cinzel,serif;font-size:13px;font-weight:700;letter-spacing:.18em;color:#ffd27a;text-shadow:0 0 6px rgba(255,210,122,.6);vertical-align:middle}
-/* 2026-11-22 サニー：PCでは結果の文字も画面に合わせて大きく（--fs は ui.js で決める） */#battle.hd .result{zoom:var(--fs,1)}
+/* 2026-11-22 サニー：PCでは結果の文字も画面に合わせて大きく（--fs は ui.js で決める） */#battle.hd #panel .result.rz{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:calc(var(--u)*2.4);align-items:center;width:min(94vw,calc(var(--u)*124));max-height:90vh;overflow:hidden;font-size:calc(var(--u)*1.55);line-height:1.45;padding:calc(var(--u)*1.8) calc(var(--u)*2.6)}
+#battle.hd .result.rz .rL{text-align:center;display:flex;flex-direction:column;gap:calc(var(--u)*.8);align-items:center}
+#battle.hd .result.rz h2{font-size:calc(var(--u)*3.8);margin:0;line-height:1.1}
+#battle.hd .result.rz .maxhit{font-size:calc(var(--u)*1.7);margin:0}
+#battle.hd .result.rz .maxhit b{font-size:calc(var(--u)*3.4)}
+#battle.hd .result.rz .newbest{font-size:calc(var(--u)*1.25)!important;display:block;margin:2px 0 0}
+#battle.hd .result.rz .rst{font-size:calc(var(--u)*1.2);color:#aeb6d8}
+#battle.hd .result.rz .row{margin:0;gap:calc(var(--u)*1)}
+#battle.hd .result.rz .btn{font-size:calc(var(--u)*1.75);padding:calc(var(--u)*.7) calc(var(--u)*1.8)}
+#battle.hd .result.rz .colohead{font-size:calc(var(--u)*1.6);margin:0}
+/* 右：覚えたこと・経験値。ここだけスクロール（スクロールバーは出さない）。下が続くときは下をうすく */
+#battle.hd .result.rz .rR{text-align:left;border-left:1px solid rgba(232,195,114,.35);padding-left:calc(var(--u)*2.2);font-size:calc(var(--u)*1.4);max-height:calc(90vh - var(--u)*4);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - var(--u)*3),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - var(--u)*3),transparent);padding-bottom:calc(var(--u)*3)}
+#battle.hd .result.rz .rR::-webkit-scrollbar{display:none}
+#battle.hd .result.rz .growres{margin:0;font-size:1em;line-height:1.5}
+#battle.hd .result.rz .growres>div{margin:0 0 calc(var(--u)*.25)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1624,14 +1638,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123b"></script>
-<script src="js/icons.js?v=t1123b"></script>
-<script src="js/engine.js?v=t1123b"></script>
-<script src="js/loadout.js?v=t1123b"></script>
-<script src="js/sound.js?v=t1123b"></script>
-<script src="js/fx.js?v=t1123b"></script>
-<script src="js/tree3d.js?v=t1123b"></script>
-<script src="js/ui.js?v=t1123b"></script>
-<script type="module" src="js/stage3d.js?v=t1123b"></script>
+<script src="js/data.js?v=t1123c"></script>
+<script src="js/icons.js?v=t1123c"></script>
+<script src="js/engine.js?v=t1123c"></script>
+<script src="js/loadout.js?v=t1123c"></script>
+<script src="js/sound.js?v=t1123c"></script>
+<script src="js/fx.js?v=t1123c"></script>
+<script src="js/tree3d.js?v=t1123c"></script>
+<script src="js/ui.js?v=t1123c"></script>
+<script type="module" src="js/stage3d.js?v=t1123c"></script>
 </body>
 </html>

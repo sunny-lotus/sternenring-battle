@@ -1215,11 +1215,13 @@
       try { var best = JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {}, key = B.enc.name; if ((s.maxHit || 0) > (best[key] || 0)) { B.bestNew = !!best[key] || s.maxHit > 0; best[key] = Math.round(s.maxHit); localStorage.setItem('sr-battle-best-v1', JSON.stringify(best)); } B.best = best[key] || 0; } catch (e) { B.best = 0; }
     }
     var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">NEW RECORD</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
-    return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh + (B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '') +
-      '<div>' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
+    var gr = B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '';
+    // 2026-11-22 サニー：結果はスクロールしない。左に勝敗・最大ダメージ・ボタン、右に覚えたこと・経験値
+    return '<div class="result rz"><div class="rL"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh +
+      '<div class="rst">' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
       '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
       (colo ? coloRow() : '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
-      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div>') + '</div>';
+      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div>') + '</div>' + (gr ? '<div class="rR">' + gr + '</div>' : '') + '</div>';
   }
   function coloRow() {   // コロシアムの結果：次の戦いへ／終わり
     var CC = SR.COLO[colo.key], tot = CC.endless ? '' : '／' + CC.rounds.length;
