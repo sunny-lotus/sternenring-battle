@@ -320,8 +320,20 @@
       return '<span class="pcu' + (x && x.down ? ' down' : '') + '"><img src="img/' + SR.img[id] + '_face.jpg?v=5" alt=""><i class="hpb"><s style="width:' + Math.round(hp * 100) + '%"></s></i><em>' + (x && x.down ? '倒れている' : 'HP' + Math.round(hp * 100) + '%') + (x ? '・MP' + Math.round(x.mp) : '') + '</em></span>';
     }).join('') + '<button class="btn mini" data-nav data-rest' + (c ? '' : ' disabled') + '>休む（全回復）</button>' +
       '<span class="small">通常戦は連戦（HP・MP・倒れたままを引きつぐ）。ボス戦は回復してから始まる。</span></div>';
+    // 2026-11-22 コロシアム：休めない連戦（いまのHP・MPとは別に、全回復から始まる）
+    if (SR.COLO) h += '<div class="colosel"><b class="pct">コロシアム</b>' + Object.keys(SR.COLO).map(function (k) {
+      var C = SR.COLO[k], bst = SR.coloBest.get(k);
+      return '<button class="btn mini" data-nav data-colo="' + k + '"><b>' + C.name + '</b><span class="small">' + C.note + (bst ? '・記録' + bst + '勝' : '') + '</span></button>';
+    }).join('') + '<span class="small">全回復から始まり、休めない。HP・MP・アイテムの残りを次の戦いへ引きつぐ。敵は平均Lvから強くなっていく。</span></div>';
     box.innerHTML = h;
   }
+  var colo = null;   // コロシアムの途中経過
+  $('title').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-colo]'); if (!b) return;
+    var avg = ['N', 'V', 'F', 'S', 'L'].reduce(function (s, id) { return s + (SR.level ? SR.level.lv(id) : 1); }, 0) / 5;
+    colo = { key: b.getAttribute('data-colo'), round: 0, wins: 0, carry: null, bag: SR.bag ? SR.bag.carry() : null, baseLv: Math.max(1, Math.round(avg)), done: false };
+    SR.sound.se('ok'); start();
+  });
   $('title').addEventListener('click', function (ev) { if (!ev.target.closest('[data-rest]') || !SR.party) return; SR.party.rest(); SR.sound.se('ok'); drawCarry(); nav.refresh(); });
   function drawTitle() {
     drawCarry();
@@ -589,15 +601,24 @@
   function start() {
     var encKey = pick.enc;
     if (encKey === 'random') { var keys = Object.keys(SR.encounters).filter(function (k) { return !SR.encounters[k].random; }); encKey = keys[Math.floor(Math.random() * keys.length)]; }
-    var chainOn = SR.party && !SR.isBossEnc(encKey);   // 通常戦は連戦（HP・MPを引きつぐ）。ボス戦は全回復で始まる
-    if (SR.party && !chainOn) SR.party.rest();
-    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0, bag: SR.bag ? SR.bag.carry() : null, carry: chainOn ? SR.party.carry() : null, mpRegenMul: chainOn ? SR.chainMpRegen : 1 });   // アイテムは1種類3個まで持っていく
+    var coLv;
+    if (colo) {   // 2026-11-22 コロシアム：コースの順に。敵Lvは平均Lv＋2戦ごとに1
+      var CC = SR.COLO[colo.key];
+      encKey = CC.endless ? CC.pool[Math.floor(Math.random() * CC.pool.length)] : CC.rounds[colo.round];
+      coLv = colo.baseLv + Math.floor(colo.round / 2);
+    }
+    var chainOn = !colo && SR.party && !SR.isBossEnc(encKey);   // 通常戦は連戦（HP・MPを引きつぐ）。ボス戦は全回復で始まる
+    if (!colo && SR.party && !chainOn) SR.party.rest();
+    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0,
+      bag: colo ? colo.bag : SR.bag ? SR.bag.carry() : null,   // アイテムは1種類3個まで持っていく（コロシアムは最初に持っていった分を使い回す）
+      carry: colo ? colo.carry : chainOn ? SR.party.carry() : null, mpRegenMul: colo || chainOn ? SR.chainMpRegen : 1, enemyLv: coLv });
     $('title').classList.add('hidden'); $('battle').classList.remove('hidden');
     $('log').innerHTML = ''; lastCmds = null; prevBar = {};
-    logLine(SR.encounters[encKey].name + '／' + SR.tunes[pick.tune].name, 's');
+    var coloTag = colo ? 'コロシアム「' + SR.COLO[colo.key].name + '」' + (colo.round + 1) + '戦目・敵Lv' + coLv + '　' : '';
+    logLine(coloTag + SR.encounters[encKey].name + '／' + SR.tunes[pick.tune].name, 's');
     SR.sound.playBgm(B.isBoss || SR.encounters[encKey].bgm === 'boss' ? 'boss' : 'normal');
     st.mode = 'intro'; st.actor = null; draw();
-    var io = $('intro'), en = SR.encounters[encKey].name;
+    var io = $('intro'), en = (colo ? (colo.round + 1) + '戦目　' : '') + SR.encounters[encKey].name;
     if (io && $('battle').classList.contains('hd')) {
       io.innerHTML = '<div class="lb t"></div><div class="lb b"></div><div class="ln"></div><div class="nm"><small>ENCOUNTER</small><b>' + en + '</b></div><div class="go">BATTLE START</div><div class="fl"></div>';
       io.classList.remove('hidden'); void io.offsetWidth; io.classList.add('on'); $('battle').classList.add('intro-on');
@@ -1197,8 +1218,15 @@
     return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh + (B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '') +
       '<div>' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
       '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
-      '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
-      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div></div>';
+      (colo ? coloRow() : '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
+      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div>') + '</div>';
+  }
+  function coloRow() {   // コロシアムの結果：次の戦いへ／終わり
+    var CC = SR.COLO[colo.key], tot = CC.endless ? '' : '／' + CC.rounds.length;
+    var head = '<div class="colohead">コロシアム「' + CC.name + '」　' + colo.wins + '勝' + tot + (colo.done ? '　終わり' : '') + '　<span class="small">記録 ' + SR.coloBest.get(colo.key) + '勝</span></div>';
+    if (colo.done) return head + '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="title">出撃画面へ戻る</button></div>';
+    return head + '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="coloNext">次の戦いへ（' + (colo.round + 1) + '戦目）</button>' +
+      '<button class="btn" data-nav data-act="title">ここでやめる</button></div>';
   }
 
   // ================= 操作 =================
@@ -1268,6 +1296,7 @@
     else if (act === 'go') run();
     else if (act === 'fast') speed = 0.25;
     else if (act === 'again') start();
+    else if (act === 'coloNext') start();   // コロシアム：次の戦い
     else if (act === 'title') location.reload();
   });
 
@@ -1396,7 +1425,20 @@
           SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
-        if (SR.party) {   // 2026-11-22 連戦：勝ったら今のHP・MPを次へ引きつぐ。負けたら町に戻って全回復
+        if (colo) {   // 2026-11-22 コロシアム：勝てば次の戦いへ（HP・MP・アイテムの残りを引きつぐ）。負けるかコースを終えたら賞金
+          var CC = SR.COLO[colo.key];
+          if (B.outcome === 'win') {
+            colo.wins++; colo.round++;
+            colo.carry = {}; B.heroes.forEach(function (u) { colo.carry[u.id] = { hp: Math.max(0, u.hp) / u.maxHp, mp: u.mp, down: u.hp <= 0 }; });
+            colo.bag = Object.assign({}, B.bag);
+            if (!CC.endless && colo.round >= CC.rounds.length) colo.done = true;
+          } else colo.done = true;
+          if (colo.done) {
+            var prize = CC.endless ? colo.wins * CC.rewardPer : (colo.wins >= CC.rounds.length ? CC.reward : 0);
+            if (prize) { G.addGold(prize); res.learned.push('コロシアムの賞金 ' + SR.moneyText(prize)); }
+            if (SR.coloBest.put(colo.key, colo.wins)) res.learned.push('コロシアム「' + CC.name + '」の記録を更新！ ' + colo.wins + '勝');
+          }
+        } else if (SR.party) {   // 2026-11-22 連戦：勝ったら今のHP・MPを次へ引きつぐ。負けたら町に戻って全回復
           if (B.outcome === 'win') { SR.party.keep(B.heroes); res.learned.push('HP・MPは次の通常戦へ引きつぐ（出撃画面の「休む」で全回復）'); }
           else { SR.party.rest(); res.learned.push('町に戻って休んだ（全回復）'); }
         }

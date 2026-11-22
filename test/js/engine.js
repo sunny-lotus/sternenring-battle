@@ -56,7 +56,7 @@ SR.Battle = function (opts) {
   });
   var S = SR.hpScale || 1;
   // 2026-11-22 サニー：推奨Lvをそのまま敵のレベルに。Lvの倍率（SR.lvScale）でHP・ダメージ・回復が大きくなる（レベルを使わない編成では、みんなLv1あつかい）
-  enemies.forEach(function (e) { e.lv = kit.growth && SR.recLv ? SR.recLv[opts.encounter] || 1 : 1; });
+  enemies.forEach(function (e) { e.lv = opts.enemyLv || (kit.growth && SR.recLv ? SR.recLv[opts.encounter] || 1 : 1); });   // コロシアムは enemyLv で指定
   heroes.concat(enemies).forEach(function (u) { u.gs = SR.lvScale ? SR.lvScale(u.lv || 1) : 1; u.limitBreak = !!(u.hero && kit.growth && SR.limitBreak && SR.limitBreak.has(u.id)); });
   function EG() { return (enemies[0] && enemies[0].gs) || 1; }
   function ETH() {   // 敵の一撃が味方に与える倍率（見込み用）

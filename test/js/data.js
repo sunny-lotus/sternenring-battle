@@ -952,3 +952,17 @@ SR.party = (function () {
     full: function () { return !d; }
   };
 })();
+
+// ---- コロシアム（2026-11-22 サニー：連戦の選択肢を増やす。MP管理を大切に）----
+// 休めない連戦。HP・MP・倒れたまま・持っていったアイテムの残りを、次の戦いへ引きつぐ。
+// 敵のLvは「5人の平均Lv」から始まり、2戦ごとに1つ上がる。MPの自然回復は通常戦と同じく少ない。
+SR.COLO = {
+  three: { name: '三連戦', note: '通常戦・子獣の群れ・甲殻と疾風', rounds: ['normal', 'swarm', 'shellSwift'], reward: 1500 },
+  five: { name: '五連戦', note: '三連戦のあとに、炎と氷・術士の一団', rounds: ['normal', 'swarm', 'shellSwift', 'elements', 'casters'], reward: 4000 },
+  endless: { name: '勝ち抜き', note: '負けるまで続く。勝つたびに賞金', endless: true, pool: ['normal', 'swarm', 'shellSwift', 'elements', 'casters'], rewardPer: 500 }
+};
+SR.coloBest = (function () {
+  var KEY = 'sr-colo-best-v1', d = {};
+  try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return { get: function (k) { return d[k] || 0; }, put: function (k, n) { if (n > (d[k] || 0)) { d[k] = n; try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} return true; } return false; } };
+})();
