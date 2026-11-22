@@ -455,6 +455,15 @@ body.kbd [data-nav].focus{outline:3px solid #7fd4ff;outline-offset:2px}
 .bestd{color:#ffd27a;font-weight:700}
 .reclv{color:#9fe3b0;font-weight:800;border:1px solid currentColor;border-radius:4px;padding:0 5px}
 .reclv.low{color:#ff9a7a}
+/* 2026-11-22 連戦：いまのHP・MP */
+.pcar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px;padding:6px 10px;background:rgba(20,22,52,.75);border:1px solid #3d4680;border-radius:10px}
+.pct{font-family:"Shippori Mincho B1",serif;color:#f6e2a8}
+.pcu{display:flex;align-items:center;gap:5px}
+.pcu img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.pcu .hpb{display:block;width:46px;height:5px;background:#2a2f55;border-radius:3px;overflow:hidden}
+.pcu .hpb s{display:block;height:100%;background:#5fd08a}
+.pcu em{font-style:normal;font-size:11px;color:#c9cfee}
+.pcu.down img{filter:grayscale(1) brightness(.6)}.pcu.down em{color:#ff9a7a}
 .lab .nm .elv{font-style:normal;font-size:.78em;margin-left:.35em;color:#ffd9a0;opacity:.9}
 
 #battle[data-log=shut] #log{display:none}
@@ -1519,6 +1528,7 @@ svg.coin.cbig{width:18px;height:18px}
     <div class="mhead"><button class="btn mback" data-nav data-back data-page="home">戻る</button><h2>出撃</h2><button class="btn primary" id="startBtn" data-nav>たたかう</button></div>
     <div class="mbody">
 
+    <div id="partyCarry"></div>
     <div class="choices" id="encChoices"></div>
     <!-- 2026-11-21 持ち込み構成は使わない（いつも「技の書で覚えた技＋付けたパッシブ」）。パッシブのプリセットは技の書 -->
     <div class="choices hidden" id="kitChoices"></div>
@@ -1609,14 +1619,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1122zu"></script>
-<script src="js/icons.js?v=t1122zu"></script>
-<script src="js/engine.js?v=t1122zu"></script>
-<script src="js/loadout.js?v=t1122zu"></script>
-<script src="js/sound.js?v=t1122zu"></script>
-<script src="js/fx.js?v=t1122zu"></script>
-<script src="js/tree3d.js?v=t1122zu"></script>
-<script src="js/ui.js?v=t1122zu"></script>
-<script type="module" src="js/stage3d.js?v=t1122zu"></script>
+<script src="js/data.js?v=t1122zv"></script>
+<script src="js/icons.js?v=t1122zv"></script>
+<script src="js/engine.js?v=t1122zv"></script>
+<script src="js/loadout.js?v=t1122zv"></script>
+<script src="js/sound.js?v=t1122zv"></script>
+<script src="js/fx.js?v=t1122zv"></script>
+<script src="js/tree3d.js?v=t1122zv"></script>
+<script src="js/ui.js?v=t1122zv"></script>
+<script type="module" src="js/stage3d.js?v=t1122zv"></script>
 </body>
 </html>

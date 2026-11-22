@@ -82,6 +82,16 @@ SR.Battle = function (opts) {
     });
   });
   heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
+  // 2026-11-22 サニー：通常戦は連戦（前の戦いのHP・MP・倒れたままを引きつぐ）。ボス戦は回復してから（ここには来ない）
+  if (opts.carry) {
+    heroes.forEach(function (u) { var c = opts.carry[u.id]; if (!c) return;
+      u.hp = c.down ? 0 : Math.max(1, Math.round(u.maxHp * Math.min(1, c.hp))); u.mp = Math.max(0, Math.min(u.maxMp, Math.round(c.mp))); });
+    var fr = heroes.filter(function (v) { return v.pos < 3; });
+    if (fr.length && fr.every(function (v) { return v.hp <= 0; })) {   // 前線が全員倒れているなら、元気な控えと入れかえて始める
+      heroes.filter(function (v) { return v.pos >= 3 && v.hp > 0; }).sort(function (a, b) { return a.pos - b.pos; }).forEach(function (r, i) { var d = fr[i]; if (!d) return; var p = d.pos; d.pos = r.pos; r.pos = p; });
+    }
+    if (heroes.every(function (v) { return v.hp <= 0; })) heroes.forEach(function (v) { v.hp = v.maxHp; v.mp = v.maxMp; });
+  }
   var breakCut = tune.breakMaxHp || 0;
   function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　MP+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }
   function once(u, key) { if (u[key] === t) return false; u[key] = t; return true; }
@@ -541,7 +551,7 @@ SR.Battle = function (opts) {
     var quick = !!u.quick; u.quick = false;
     // ブレイクゲージ・MP・ブーストの回復（その人の番ごと）
     if (u.hero && !broken(u) && !quick) {
-      if (u.turns > 0) { recover(u, tune.recovery); u.mp = Math.min(u.maxMp, u.mp + (tune.mpRecovery || 0) + (has(u, '静心') ? 5 : 0) + bon(u, 'mp')); }
+      if (u.turns > 0) { recover(u, tune.recovery); u.mp = Math.min(u.maxMp, u.mp + (tune.mpRecovery || 0) * (opts.mpRegenMul == null ? 1 : opts.mpRegenMul) + (has(u, '静心') ? 5 : 0) + bon(u, 'mp')); }
       if (boostCfg && u.turns > 0 && !u.boostLast) u.bp = Math.min(boostCfg.max, u.bp + 1);
       u.boostLast = false;
     }

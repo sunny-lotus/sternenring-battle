@@ -311,7 +311,20 @@
       box.appendChild(b);
     });
   }
+  // 2026-11-22 連戦：いまのHP・MP（次の通常戦へ引きつぐ）と「休む」
+  function drawCarry() {
+    var box = $('partyCarry'); if (!box || !SR.party) return;
+    var c = SR.party.carry(), O = ['N', 'V', 'F', 'S', 'L'];
+    var h = '<div class="pcar"><b class="pct">' + (c ? '連戦中' : '全回復') + '</b>' + O.map(function (id) {
+      var x = c && c[id], hp = x ? (x.down ? 0 : x.hp) : 1;
+      return '<span class="pcu' + (x && x.down ? ' down' : '') + '"><img src="img/' + SR.img[id] + '_face.jpg?v=5" alt=""><i class="hpb"><s style="width:' + Math.round(hp * 100) + '%"></s></i><em>' + (x && x.down ? '倒れている' : 'HP' + Math.round(hp * 100) + '%') + (x ? '・MP' + Math.round(x.mp) : '') + '</em></span>';
+    }).join('') + '<button class="btn mini" data-nav data-rest' + (c ? '' : ' disabled') + '>休む（全回復）</button>' +
+      '<span class="small">通常戦は連戦（HP・MP・倒れたままを引きつぐ）。ボス戦は回復してから始まる。</span></div>';
+    box.innerHTML = h;
+  }
+  $('title').addEventListener('click', function (ev) { if (!ev.target.closest('[data-rest]') || !SR.party) return; SR.party.rest(); SR.sound.se('ok'); drawCarry(); nav.refresh(); });
   function drawTitle() {
+    drawCarry();
     choiceButtons($('encChoices'), SR.encounters, 'enc');
     choiceButtons($('kitChoices'), SR.kits, 'kit');
     choiceButtons($('tuneChoices'), SR.tunes, 'tune');
@@ -576,7 +589,9 @@
   function start() {
     var encKey = pick.enc;
     if (encKey === 'random') { var keys = Object.keys(SR.encounters).filter(function (k) { return !SR.encounters[k].random; }); encKey = keys[Math.floor(Math.random() * keys.length)]; }
-    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0, bag: SR.bag ? SR.bag.carry() : null });   // アイテムは1種類3個まで持っていく
+    var chainOn = SR.party && !SR.isBossEnc(encKey);   // 通常戦は連戦（HP・MPを引きつぐ）。ボス戦は全回復で始まる
+    if (SR.party && !chainOn) SR.party.rest();
+    B = new SR.Battle({ kit: pick.kit, encounter: encKey, tune: pick.tune, seed: (Date.now() & 0xffffffff) >>> 0, bag: SR.bag ? SR.bag.carry() : null, carry: chainOn ? SR.party.carry() : null, mpRegenMul: chainOn ? SR.chainMpRegen : 1 });   // アイテムは1種類3個まで持っていく
     $('title').classList.add('hidden'); $('battle').classList.remove('hidden');
     $('log').innerHTML = ''; lastCmds = null; prevBar = {};
     logLine(SR.encounters[encKey].name + '／' + SR.tunes[pick.tune].name, 's');
@@ -1381,6 +1396,10 @@
           SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
+        if (SR.party) {   // 2026-11-22 連戦：勝ったら今のHP・MPを次へ引きつぐ。負けたら町に戻って全回復
+          if (B.outcome === 'win') { SR.party.keep(B.heroes); res.learned.push('HP・MPは次の通常戦へ引きつぐ（出撃画面の「休む」で全回復）'); }
+          else { SR.party.rest(); res.learned.push('町に戻って休んだ（全回復）'); }
+        }
         if (SR.bag) {   // 2026-11-22 使ったアイテムを持ち物から減らす。勝ったら素材を拾う
           var usedI = Object.keys(B.bagStart || {}).map(function (k) { var n = (B.bagStart[k] || 0) - (B.bag[k] || 0); if (n > 0) SR.bag.add(k, -n); return n > 0 ? k + '×' + n : ''; }).filter(Boolean);
           if (usedI.length) res.learned.push('使ったアイテム：' + usedI.join('・'));

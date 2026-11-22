@@ -935,3 +935,20 @@ SR.bag = (function () {   // 持ち物（アイテムと素材）。この端末
   var ds = SR.describe; SR.describe = function (a) { if (a && a.item) return SR.ITEMS[a.id].fx + '（1つの戦いに' + SR.ITEM_CARRY + '個まで）'; return ds(a); };
 })();
 (function () { var ae = SR.actionExp; SR.actionExp = function (a) { return a && a.item ? null : ae(a); }; })();   // アイテムでは経験値なし
+
+// ---- 連戦（2026-11-22 サニー：通常戦は連戦。ボス戦はだいたい回復してから戦う）----
+// 通常戦は、前の戦いのHP（割合）・MP・倒れたままを引きつぐ。ボス戦（と双子の大獣）は全回復した状態で始まる。
+// 「休む」で全回復。負けたら町に戻って全回復。
+SR.chainMpRegen = 0.35;   // 通常戦では、番ごとのMP回復が0.35倍（MPを節約しながら連戦する。0にするとさらにきびしい）
+SR.isBossEnc = function (key) { var e = SR.encounters[key]; return !!e && (e.engine !== '集団' || key === 'twins'); };
+SR.party = (function () {
+  var KEY = 'sr-battle-party-v1', d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  function save() { try { if (d) localStorage.setItem(KEY, JSON.stringify(d)); else localStorage.removeItem(KEY); } catch (e) {} }
+  return {
+    carry: function () { return d; },   // null＝全回復
+    keep: function (heroes) { d = {}; heroes.forEach(function (u) { d[u.id] = { hp: Math.max(0, u.hp) / u.maxHp, mp: u.mp, down: u.hp <= 0 }; }); save(); },
+    rest: function () { d = null; save(); },
+    full: function () { return !d; }
+  };
+})();
