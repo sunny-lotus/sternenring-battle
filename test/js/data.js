@@ -835,6 +835,8 @@ SR.ENEMY_ART = { 'js-golem': 'sr-shell', 'js-bolt': 'sr-beast', 'js-wind': 'sr-s
 // 戦場での高さ（ドット絵の高さもこれに合わせて作った：高さ×80マス）
 SR.ENEMY_H = { 'sr-beast': 1.9, 'sr-shell': 2.0, 'sr-swift': 2.1, 'sr-ember': 1.9, 'sr-frost': 1.9, 'sr-caster': 2.0, 'sr-healer': 2.6, 'sr-pup': 1.25, 'sr-twin1': 3.0, 'sr-twin2': 3.0,
   'sr-norma': 1.9, 'sr-normb': 1.7, 'sr-normc': 1.4, 'sr-boss1': 2.8, 'sr-bossfire': 2.4, 'sr-bossaoe': 3.2 };
+// 2026-11-22 サニー：浮いている敵だけ浮かせる（ほかは地面に立つ）。いまは目玉の術士だけ
+SR.ENEMY_FLOAT = { 'sr-caster': 1 };
 (function () {
   function sw(o) { if (!o) return; if (o.img && SR.ENEMY_ART[o.img]) o.img = SR.ENEMY_ART[o.img]; if (o.imgs) o.imgs = o.imgs.map(function (k) { return SR.ENEMY_ART[k] || k; }); }
   Object.keys(SR.enemyTypes || {}).forEach(function (k) { sw(SR.enemyTypes[k]); });

@@ -136,7 +136,10 @@ function setup(list) {
     sh.rotation.x = -Math.PI / 2; sh.position.set(p[0], .01, p[1]); sh.scale.set(h * .7, h * .32, 1); scene.add(sh);
     const rn = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: SR._rune, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: u.hero ? 0xffd27a : 0xff5a64, opacity: 0 }));
     rn.rotation.x = -Math.PI / 2; rn.position.set(p[0], .02, p[1]); rn.scale.setScalar(h * 1.15); scene.add(rn);
-    units[u.id] = { m, sh, rn, h, at, yOff: at ? -cell * at.foot : 0, base: p, hero: u.hero, bob: u.hero ? 0 : .8 + Math.random() * .6, hitT: -9, state: {} };
+    // 2026-11-22 サニー：浮いている敵（SR.ENEMY_FLOAT）だけ浮かせて上下させる。地面の敵は地面に立ち、息をするように少しだけ伸び縮み
+    const key = String(u.img || '').split('/').pop().split('.')[0], fl = !u.hero && SR.ENEMY_FLOAT && SR.ENEMY_FLOAT[key];
+    if (fl) sh.scale.multiplyScalar(.7);
+    units[u.id] = { m, sh, rn, h, at, yOff: at ? -cell * at.foot : fl ? h * .14 : 0, base: p, hero: u.hero, bob: fl ? .8 + Math.random() * .6 : 0, breath: !u.hero && !fl ? .8 + Math.random() * .5 : 0, hitT: -9, state: {} };
   });
 }
 function sync(states) {
@@ -423,7 +426,8 @@ function frame() {
   Object.keys(units).forEach((id, i) => {
     const u = units[id], s = u.state || {};
     u.m.quaternion.copy(camera.quaternion);
-    let y = u.bob && !s.down ? Math.sin(t * 1.6 * u.bob + i) * .05 : 0, x = u.base[0];
+    let y = u.bob && !s.down ? Math.sin(t * 1.6 * u.bob + i) * .09 : 0, x = u.base[0];
+    if (u.breath) u.m.scale.y = u.h * (s.down ? 1 : 1 + Math.sin(t * 2 * u.breath + i) * .012);   // 地面の敵：足もとは動かさず、少しだけ伸び縮み
     const dt = t - u.hitT; if (dt < .35) x += Math.sin(dt * 60) * .08 * (1 - dt / .35);
     if (s.brk) { u.m.rotateZ(u.hero ? -.12 : .12); }
     if (s.down) { u.m.material.opacity = .25; u.m.rotateZ(u.hero ? -1.2 : 1.2); y = .05; } else u.m.material.opacity = 1;

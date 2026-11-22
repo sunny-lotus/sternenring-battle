@@ -1379,7 +1379,9 @@
       if (i >= evs.length) playCut = null;
       if (i >= evs.length) { banner.classList.add('hidden'); playMood = null; if (B.outcome) finishTurn(); else done(); return; }
       var ev = evs[i++], f = ev.fx || {};
-      banner.textContent = ev.text; banner.classList.remove('hidden');
+      // 2026-11-22 サニー：上の帯の文字を少なく・色分け。ダメージや回復だけの行は数字で見えるので帯に出さない（ログには残す）
+      var onlyNum = !f.actor && (f.dmg !== undefined || f.heal || f.mheal || f.kheal) && !f.broke && !f.down && !f.stop && !f.big && !f.charge;
+      if (!onlyNum) { banner.innerHTML = bannerHTML(ev); banner.classList.remove('hidden'); }
       logLine(ev.text, ev.fx && ev.fx.enemy ? 'e' : ev.fx && ev.fx.broke ? 'b' : '');
       if (f.actor) { var ua = B.unit(f.actor), sa = f.skill && SR.skills[f.skill]; playCut = ua && ua.hero && sa && (sa.kind === 'attack' || f.skill === 'basic') ? f.actor : null; }
       if (f.actor) { playActor = f.actor; fxs.aura = f.boost ? { id: f.actor, n: Math.min(2, f.boost) } : null; fxs.big = !!f.big; fxs.sum = 0; fxs.n = 0; SR.fx.resetSlot(); }
@@ -1452,8 +1454,20 @@
     if (f.miss) popup(el, 'ミス', 'kd');
     return hold;
   }
+  // 上の帯：「だれ：技 → 相手」を色分け（味方はその人の色・敵は赤・そのほかの知らせは金）
+  function bannerHTML(ev) {
+    var f = ev.fx || {}, t = String(ev.text || '').replace(/（[^（）]{7,}）/g, '').trim(), esc =function (s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var u = f.actor && B.unit(f.actor), m = t.match(/^([^：]+)：(.+?)(?: → (.+))?$/);
+    if (u && m) {
+      var col = u.hero ? (SR.THEME[u.id] || '#f2d48a') : '#ff8a7a';
+      return '<span class="bn-who" style="color:' + col + '">' + esc(m[1]) + '</span><span class="bn-sk' + (u.hero ? '' : ' foe') + '">' + esc(m[2]) + '</span>' + (m[3] ? '<span class="bn-to">▶ ' + esc(m[3]) + '</span>' : '');
+    }
+    var cls = f.broke ? 'brk' : f.stop ? 'stop' : f.big || f.charge ? 'foe' : f.down ? 'down' : 'info';
+    return '<span class="bn-msg ' + cls + '">' + esc(t) + '</span>';
+  }
   function popup(el, text, cls) {
     var s = document.createElement('div'); s.className = 'pop ' + cls; s.textContent = text;
+    if (cls === 'kd') s.innerHTML = '<i>BREAK</i>' + String(text).replace(/^ブレイクゲージ/, '');   // ブレイクゲージのダメージ：水色・別の字体
     var bt = $('battle');
     if (bt && bt.classList.contains('hd')) {   // 2026-11-22：カットインや帯に隠れないよう、いちばん手前の層に（その人の上に重ねた枠の中）
       var L = document.getElementById('fxLayer'); if (!L) { L = document.createElement('div'); L.id = 'fxLayer'; }
