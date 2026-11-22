@@ -547,7 +547,9 @@ SR.Battle = function (opts) {
   heroes.concat(enemies).forEach(function (u, i) { u.at = iv(u) * 0.6 + i * 0.01; u.turns = u.turns || 0; });
   var TICK = ['kProtect', 'protect', 'defend', 'exposed', 'ward', 'recoilLeft', 'openK', 'vuln', 'anaK', 'sealK', 'might'];
 
-  function queue() { return heroes.concat(enemies).filter(function (u) { return u.hp > 0; }); }
+  // 2026-11-22 サニー：前線で倒れた人の番が来たら、控えがかわりに前線へ出て、その番に動く（元気な控えがいるときだけ番に残す）
+  function reserveAlive() { return heroes.filter(function (v) { return v.pos >= 3 && v.hp > 0; }).sort(function (a, b) { return a.pos - b.pos; }); }
+  function queue() { var ra = reserveAlive().length > 0; return heroes.concat(enemies).filter(function (u) { return u.hp > 0 || (ra && u.hero && u.pos < 3); }); }
   function chargeDue(e, turns) { return !e.noCharge && (isBoss ? turns % 3 : (turns + enemies.indexOf(e)) % 3) === 2; }
   function kindOf(u) { return u.hero ? (u.pos < 3 ? 'hero' : 'support') : 'enemy'; }
 
@@ -557,6 +559,10 @@ SR.Battle = function (opts) {
     var list = queue(); if (!list.length) return self.events;
     var u = list.slice().sort(function (a, b) { return a.at - b.at; })[0];
     now = u.at; self.now = now;
+    if (u.hero && u.hp <= 0) {   // 倒れた人の番：控えのいちばん目が前線に出て、この番に動く
+      var rs = reserveAlive()[0];
+      if (rs) { var q = rs.pos; rs.pos = u.pos; u.pos = q; rs.at = u.at; rs.quick = false; self.swapped = null; emit(rs.name + 'が前線に出た！（' + u.name + 'のかわりに）', { actor: rs.id, target: rs.id, stepIn: u.id }, 800); u = rs; }
+    }
     t = ++self.t; self.cur = u; self.curKind = kindOf(u); self.skip = false; self.swapped = null;
     if (u.id === 'N') { chaseCount = 0; counterCount = 0; }
     if (cover && cover.protector === u) cover = null;
@@ -795,7 +801,7 @@ SR.Battle = function (opts) {
         hitE.forEach(function (e) { var r = self.estimate(cu.id, a.id, e.id), s = of(e); if (r && s && !r.brk && a.brave && r.kd >= e.k) { s.at += iv(e) * C.brkDelay; s.brk = true; } });
       }
     }
-    list = [];
+    list = []; var resQ = reserveAlive().slice();
     for (var k = 0; k < n && sim.length; k++) {
       sim.sort(function (a, b) { return a.at - b.at; });
       var s = sim[0], u = s.u, label = '', w = 1;
@@ -810,6 +816,10 @@ SR.Battle = function (opts) {
         if (s.ch === 1) { label = '大技'; s.ch = 0; }
         else if (tune.charge && chargeDue(u, s.tn)) { label = '溜め'; s.ch = 1; }
         else label = u.heal ? '攻撃か回復' : (enc.config.alwaysAoe || u.aoeAll) ? '全体攻撃' : '攻撃';
+      }
+      if (u.hero && u.hp <= 0) {   // 倒れた人の番：控えが出てくる（出てくる人の顔で見せる）
+        var rep = resQ.shift(); if (!rep) { sim.splice(sim.indexOf(s), 1); k--; continue; }
+        list.push({ id: rep.id, name: rep.name, kind: "hero", label: "交代", cur: k === 0 }); s.u = rep; s.at = (k === 0 ? now : s.at) + iv(rep); continue;
       }
       list.push({ id: u.id, name: u.name, kind: kindOf(u), label: label, cur: k === 0 });
       if (k === 0 && pw !== null) w = pw;
