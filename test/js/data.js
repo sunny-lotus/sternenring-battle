@@ -684,7 +684,7 @@ SR.heroHp = function (lv) {
 };
 // 敵のHPの倍率。こちらの一撃は9999で止まるので、敵のHPはダメージの倍率より少しゆるく伸ばして、戦いの長さをそろえる（試し打ちで合わせた）
 SR.enemyHpPts = [[1, 1], [10, 10], [30, 25], [50, 28]];   // 通常の敵
-SR.bossHpPts = [[1, 1], [10, 6.5], [30, 10.5], [50, 12]];   // ボス・双子の大獣（大きな一撃が9999で止まりやすいので、もっとゆるく）
+SR.bossHpPts = [[1, 1], [10, 6.5], [30, 14], [50, 17]];   // ボス・双子の大獣（大きな一撃が9999で止まりやすいので、もっとゆるく）
 SR.enemyHpScale = function (lv, boss) {
   var p = boss ? SR.bossHpPts : SR.enemyHpPts; lv = Math.max(1, lv || 1);
   for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
@@ -832,6 +832,13 @@ skill('祝福', 'S', 4, 20, { kind: 'bless' });                         // 仲�
 skill('封じの聖印', 'S', 4, 18, { kind: 'seal' });                    // 敵一体：2ターン、ブレイクゲージが回復しない
 skill('挟撃の策', 'L', 4, 18, { kind: 'flank' });                     // 敵一体：次に味方の攻撃が当たると、前線のもう一人が追い打ち
 skill('二段構え', 'L', 5, 22, { kind: 'twin' });                      // 次の番、2回続けて動ける（2回目の技はMP2倍）
+// ---- 2026-11-22 終盤の大きな連撃（サニー：上限9999は1発ごと。連撃なら9999×回数を出せる）名前・回数は仮 ----// 低いLvでは、まとめて大技1発と同じくらい。高いLvでは1発ごとに上限に届くので、連撃がいちばん伸びるskill('月影五連', 'N', 7, 46, { kind: 'attack', kd: 6, hp: 34, hits: 5, era: 3 });              // 刀剣術：5回斬るskill('全弾斉射', 'V', 7, 48, { kind: 'attack', kd: 5, hp: 28, hits: 6, era: 3 });              // 導機術：6回撃つskill('焔の五月雨', 'F', 7, 48, { kind: 'attack', kd: 6, hp: 38, hits: 4, fire: true, era: 3 }); // 黒魔術：炎を4回skill('聖槍連突', 'S', 7, 44, { kind: 'attack', kd: 6, hp: 34, hits: 4, era: 3 });              // 祈祷術：細剣で4回突くskill('大剣乱舞', 'L', 7, 48, { kind: 'attack', kd: 10, hp: 52, hits: 3, era: 3 });             // 大剣術：重い3連
+// 低いLvでは、まとめて大技1発と同じくらい。高いLvでは1発ごとに上限に届くので、連撃がいちばん伸びる
+skill('月影五連', 'N', 7, 46, { kind: 'attack', kd: 6, hp: 34, hits: 5, era: 3 });              // 刀剣術：5回斬る
+skill('全弾斉射', 'V', 7, 48, { kind: 'attack', kd: 5, hp: 28, hits: 6, era: 3 });              // 導機術：6回撃つ
+skill('焔の五月雨', 'F', 7, 48, { kind: 'attack', kd: 6, hp: 38, hits: 4, fire: true, era: 3 }); // 黒魔術：炎を4回
+skill('聖槍連突', 'S', 7, 44, { kind: 'attack', kd: 6, hp: 34, hits: 4, era: 3 });              // 祈祷術：細剣で4回突く
+skill('大剣乱舞', 'L', 7, 48, { kind: 'attack', kd: 10, hp: 52, hits: 3, era: 3 });             // 大剣術：重い3連
 SR.ctree.push(
   { id: '脆化法', sys: '干渉', combo: ['干渉', '観測'], books: ['干渉', '観測'], tier: 2, req: ['衝撃'] },
   { id: '鈍化法', sys: '循環', combo: ['循環', '干渉'], books: ['循環', '干渉'], tier: 3, req: ['加速'] });

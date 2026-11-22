@@ -806,12 +806,12 @@ SR.Battle = function (opts) {
     if (e.brkN && tune.foeStack) mul *= 1 + tune.foeStack.dmg * e.brkN;
     if (hasSt(e, 'freeze')) mul *= SR.statusFx.freeze;
     if (e.vuln > 0) mul *= 1.25;   // 脆化法
-    var dmg = capDmg(u, hp * mul * S * (u.gs || 1));
+    var dmg = capDmg(u, hp * mul * S * (u.gs || 1) / hits) * hits;   // 上限9999は1発ごと
     return { kd: kd, dmg: dmg, breaks: breaks, kills: dmg >= e.hp, phen: ph };
   }
   function scoreAttack(u, a, e, th) {
     var r = estimate(u, a, e), s = 0;
-    s += Math.min(r.dmg, e.hp) / e.maxHp * (bossish(e) ? 220 : 90);
+    s += Math.min(r.dmg, e.hp) / e.maxHp * (bossish(e) ? 340 : 90);   // 2026-11-22 ボスへの削りを少し重く見る（高Lvで連撃を選べるように）
     if (!broken(e)) s += Math.min(r.kd, e.k) / e.maxK * 45;
     if (r.breaks) s += 45 + (e.charge ? 70 : 0) + (bossish(e) ? 35 : 0);
     if (r.kills) s += 35 + (e.heal ? 15 : 0) + (e.aoeAll ? 15 : 0);
