@@ -59,9 +59,14 @@ SR.Battle = function (opts) {
   enemies.forEach(function (e) { e.lv = kit.growth && SR.recLv ? SR.recLv[opts.encounter] || 1 : 1; });
   heroes.concat(enemies).forEach(function (u) { u.gs = SR.lvScale ? SR.lvScale(u.lv || 1) : 1; u.limitBreak = !!(u.hero && kit.growth && SR.limitBreak && SR.limitBreak.has(u.id)); });
   function EG() { return (enemies[0] && enemies[0].gs) || 1; }
+  function ETH() {   // 敵の一撃が味方に与える倍率（見込み用）
+    var a = heroes.filter(function (v) { return v.pos < 3; }), eg = EG(), p = SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW;
+    if (!a.length) return eg;
+    return a.reduce(function (s, v) { var g = v.gs || 1; return s + g * Math.pow(eg / g, p) * (v.hf || 1); }, 0) / a.length * (SR.enemyAtkMul || 1);
+  }
   function HF() { var a = heroes.filter(function (v) { return v.pos < 3; }); return a.length ? a.reduce(function (s, v) { return s + (v.hf || 1); }, 0) / a.length : 1; }
   function capDmg(src, n) { return src && src.limitBreak ? n : Math.min(SR.DMG_CAP || 1e9, n); }
-  heroes.concat(enemies).forEach(function (u) { var hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, isBoss || u.type === "twin") : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * u.gs; });
+  heroes.concat(enemies).forEach(function (u) { var bz = isBoss || u.type === "twin", hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, bz) * (bz ? 1 : SR.normalHpMul || 1) : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * u.gs; });
   heroes.forEach(function (u) { var h = Math.min(SR.HP_CAP || 9999, SR.heroHp ? SR.heroHp(u.lv || 1) : u.maxHp); u.hf = h / u.maxHp; u.maxHp = h; u.hp = h; });   // 味方のHPはゆるい伸び。受けるダメージ・回復も hf をかける
   heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
   var breakCut = tune.breakMaxHp || 0;
@@ -177,7 +182,8 @@ SR.Battle = function (opts) {
     if (dst.hero) amount *= 1 - bon(dst, 'guard');   // 守りの型
     if (hasSt(dst, 'freeze')) amount *= SR.statusFx.freeze;
     if (hasSt(src, 'daze')) amount *= SR.statusFx.daze;
-    amount = capDmg(src, amount * S * (src.gs || 1) * (dst.hf || 1));   // Lvの倍率・上限9999
+    var gsD = dst.gs || 1, gap = Math.pow((src.gs || 1) / gsD, SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW);
+    amount = capDmg(src, amount * S * gsD * gap * (dst.hf || 1) * (src.hero ? 1 : SR.enemyAtkMul || 1));   // Lvの倍率（Lv差はゆるく）・上限9999
     if (src.hero && amount > (stat.maxHit || 0)) { stat.maxHit = amount; stat.maxHitBy = src.name; }
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
@@ -452,6 +458,7 @@ SR.Battle = function (opts) {
           if (!comboShown) { comboShown = true; emit('コンボ×' + cn + '！ 威力' + comboMul(cn) + '倍', { target: e.id, combo: cn }, 600); }
         }
         if (u.supportPower) hp *= 1.04;
+        if (u.limitBreak && hits === 1 && !a.all && !a.scatter) hp *= SR.LIMIT_BREAK.single || 1;   // 限界突破：1発の技が重い
         if (u.boostMul > 1 && a.id !== 'basic') { hp *= u.boostMul; if (boostCfg.kd) kd *= 1 + (u.boostMul - 1) * boostCfg.kd; }
         var willBreak = !broken(e) && a.brave && e.k <= kd;
         if (a.breakBonus && willBreak) hp *= a.breakBonus;
@@ -806,7 +813,8 @@ SR.Battle = function (opts) {
     if (e.brkN && tune.foeStack) mul *= 1 + tune.foeStack.dmg * e.brkN;
     if (hasSt(e, 'freeze')) mul *= SR.statusFx.freeze;
     if (e.vuln > 0) mul *= 1.25;   // 脆化法
-    var dmg = capDmg(u, hp * mul * S * (u.gs || 1) / hits) * hits;   // 上限9999は1発ごと
+    if (u.limitBreak && hits === 1 && !a.all && !a.scatter) hp *= SR.LIMIT_BREAK.single || 1;   // 限界突破：1発の技が重い
+    var dmg = capDmg(u, hp * mul * S * (e.gs || 1) * Math.pow((u.gs || 1) / (e.gs || 1), SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW) / hits) * hits;   // 上限9999は1発ごと
     return { kd: kd, dmg: dmg, breaks: breaks, kills: dmg >= e.hp, phen: ph };
   }
   function scoreAttack(u, a, e, th) {
@@ -833,7 +841,7 @@ SR.Battle = function (opts) {
   this.smartPick = function (u) {
     var alive = living(); if (!alive.length) return { skill: 'defend' };
     var th = threat(u), team = front().filter(function (v) { return v.hp > 0; });
-    var bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * EG() * HF(), hitN = nums.single[1] * S * 2 * EG() * HF();
+    var bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * ETH(), hitN = nums.single[1] * S * 2 * ETH();
     var cands = [];
     function add(skill, target, s, why) { cands.push({ skill: skill, target: target, s: s, why: why }); }
     self.options(u).forEach(function (o) {
@@ -918,7 +926,7 @@ SR.Battle = function (opts) {
   // 交代：HPが少なく、自分の次の番より先に攻撃が来るなら、元気な控えと替わる
   this.smartSwap = function (u) {
     if (self.swapped || !tune.status) return null;
-    var th = threat(u), bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * EG() * HF(), hitN = nums.single[1] * S * 2 * EG() * HF();
+    var th = threat(u), bigN = (nums.big ? nums.big[1] : nums.aoe[1]) * S * ETH(), hitN = nums.single[1] * S * 2 * ETH();
     if (!th.foes.length || u.hp > (th.big ? bigN : hitN) * 1.05) return null;
     var res = heroes.filter(function (v) { return v.pos >= 3 && v.hp > v.maxHp * 0.6 && !broken(v) && self.canSwap(u.id, v.id); }).sort(function (x, y) { return y.hp - x.hp; })[0];
     return res || null;

@@ -688,10 +688,16 @@ SR.bossHpPts = [[1, 1], [10, 6.5], [30, 14], [50, 17]];   // ボス・双子の�
 SR.enemyHpScale = function (lv, boss) {
   var p = boss ? SR.bossHpPts : SR.enemyHpPts; lv = Math.max(1, lv || 1);
   for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
-  return p[p.length - 1][1] * (1 + 0.03 * (lv - p[p.length - 1][0]));   // Lv50より上は少しずつ（限界突破の出番）
+  return p[p.length - 1][1] * (1 + 0.03 * (lv - p[p.length - 1][0])) * (SR.postCapHp || 1);   // Lv51からの敵は、限界突破がある前提でHPが大きい（SR.postCapHp）
 };
+SR.postCapHp = 8;   // Lv51より上の敵のHP（限界突破なしだと、とても長い戦いになる）
 SR.DMG_CAP = 9999;   // 1回のダメージの上限。パッシブ「限界突破」を持つと外れる
-SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れる", lv: 51 };   // Lv51あたりのサブクエで手に入る（今は開発者設定で試せる）
+SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れる。1発の技（連撃・全体でない攻撃）の威力1.3倍", lv: 51, single: 1.3 };   // Lv51あたりのサブクエで手に入る（今は開発者設定で試せる）
+// 2026-11-22 サニー：Lv差が効きすぎないように。ダメージの数字は「受ける側のLvの倍率」を基本にして、Lv差は (攻める側÷受ける側の倍率)^0.35 だけ効く
+// 例：Lv3でLv1の敵を攻撃 → 1.47倍。Lv10でLv6のボス → 1.2倍。同じLv同士なら今までと同じ
+SR.LV_GAP_POW = 0.35;
+SR.enemyAtkMul = 1.8;    // 敵の攻撃（2026-11-22 簡単すぎたので上げる）
+SR.normalHpMul = 1.5;    // ボスでない敵のHP（通常戦が2ターンで終わっていたので少し長く）
 SR.limitBreak = (function () {   // 限界突破を持っているか（キャラごと・試し用に開発者設定で切りかえ）
   var KEY = "sr-battle-lb-v1", d = {};
   try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
