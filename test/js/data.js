@@ -694,7 +694,7 @@ SR.heroHp = function (lv) {
 };
 // 敵のHPの倍率。こちらの一撃は9999で止まるので、敵のHPはダメージの倍率より少しゆるく伸ばして、戦いの長さをそろえる（試し打ちで合わせた）
 SR.enemyHpPts = [[1, 1], [10, 10], [30, 25], [50, 28]];   // 通常の敵
-SR.bossHpPts = [[1, 1], [10, 6.5], [30, 14], [50, 17]];   // ボス・双子の大獣（大きな一撃が9999で止まりやすいので、もっとゆるく）
+SR.bossHpPts = [[1, 1], [10, 4.5], [30, 14], [50, 17]];   // ボス・双子の大獣（大きな一撃が9999で止まりやすいので、もっとゆるく）
 SR.enemyHpScale = function (lv, boss) {
   var p = boss ? SR.bossHpPts : SR.enemyHpPts; lv = Math.max(1, lv || 1);
   for (var i = 1; i < p.length; i++) if (lv <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (lv - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
@@ -707,6 +707,9 @@ SR.LIMIT_BREAK = { name: "限界突破", fx: "ダメージの上限9999が外れ
 // 例：Lv3でLv1の敵を攻撃 → 1.47倍。Lv10でLv6のボス → 1.2倍。同じLv同士なら今までと同じ
 SR.LV_GAP_POW = 0.35;
 SR.enemyAtkMul = 1.8;    // 敵の攻撃（2026-11-22 簡単すぎたので上げる）
+SR.hitCapMul = 6;   // 2026-11-22 サニー：低いLvで9999は早すぎ。1発の上限＝相手へのふだんの一撃（100×相手のLvの倍率）の6倍。相手がLv6なら3600、Lv12ごろから9999
+SR.EASY_LV = 10;    // Lv10までは慣れの期間：Lvが足りなくても不利にならない
+SR.enemyAtkMulAt = function (lv) { return lv <= 5 ? 1.4 : lv >= 10 ? SR.enemyAtkMul : 1.4 + (lv - 5) / 5 * (SR.enemyAtkMul - 1.4); };   // 敵の攻撃：Lv5までは1.4倍、Lv10で1.8倍
 SR.normalHpMul = 1.5;    // ボスでない敵のHP（通常戦が2ターンで終わっていたので少し長く）
 SR.limitBreak = (function () {   // 限界突破を持っているか（キャラごと・試し用に開発者設定で切りかえ）
   var KEY = "sr-battle-lb-v1", d = {};

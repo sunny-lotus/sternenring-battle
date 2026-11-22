@@ -62,10 +62,21 @@ SR.Battle = function (opts) {
   function ETH() {   // 敵の一撃が味方に与える倍率（見込み用）
     var a = heroes.filter(function (v) { return v.pos < 3; }), eg = EG(), p = SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW;
     if (!a.length) return eg;
-    return a.reduce(function (s, v) { var g = v.gs || 1; return s + g * Math.pow(eg / g, p) * (v.hf || 1); }, 0) / a.length * (SR.enemyAtkMul || 1);
+    return a.reduce(function (s, v) { var g = v.gs || 1; return s + g * Math.pow(eg / g, p) * (v.hf || 1); }, 0) / a.length * (SR.enemyAtkMulAt ? SR.enemyAtkMulAt((enemies[0] && enemies[0].lv) || 1) : SR.enemyAtkMul || 1);
   }
   function HF() { var a = heroes.filter(function (v) { return v.pos < 3; }); return a.length ? a.reduce(function (s, v) { return s + (v.hf || 1); }, 0) / a.length : 1; }
-  function capDmg(src, n) { return src && src.limitBreak ? n : Math.min(SR.DMG_CAP || 1e9, n); }
+  function capDmg(src, n, dst) {   // 1発の上限：9999。低いLvのうちは「その相手へのふだんの一撃×SR.hitCapMul」まで（相手のLvの倍率で決まる）。限界突破で外れる
+    if (src && src.limitBreak) return n;
+    var cap = SR.DMG_CAP || 1e9; if (src && src.hero && dst && SR.hitCapMul) cap = Math.min(cap, Math.round(SR.hitCapMul * 100 * (dst.gs || 1) * gapOf(src, dst)));
+    return Math.min(cap, n);
+  }
+  function gapOf(src, dst) {   // Lv差の効き目。Lv10までの「慣れの期間」は、Lvが足りなくても不利にならない（上回っているときの有利だけ残す）
+    var g = Math.pow((src.gs || 1) / (dst.gs || 1), SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW), E = SR.EASY_LV || 0;
+    if (src.hero && g < 1 && (dst.lv || 1) <= E) g = 1;
+    if (!src.hero && g > 1 && (src.lv || 1) <= E) g = 1;
+    return g;
+  }
+  function atkMulOf(src) { return src.hero ? 1 : (SR.enemyAtkMulAt ? SR.enemyAtkMulAt(src.lv || 1) : SR.enemyAtkMul || 1); }
   heroes.concat(enemies).forEach(function (u) { var bz = isBoss || u.type === "twin", hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, bz) * (bz ? 1 : SR.normalHpMul || 1) : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * u.gs; });
   heroes.forEach(function (u) { var h = Math.min(SR.HP_CAP || 9999, SR.heroHp ? SR.heroHp(u.lv || 1) : u.maxHp); u.hf = h / u.maxHp; u.maxHp = h; u.hp = h; });   // 味方のHPはゆるい伸び。受けるダメージ・回復も hf をかける
   // 2026-11-22 サニー：MPもLvで伸びる。ステータスのパッシブ（だれでも付けられる）
@@ -206,8 +217,8 @@ SR.Battle = function (opts) {
     if (dst.hero) amount *= 1 - bon(dst, 'guard');   // 守りの型
     if (hasSt(dst, 'freeze')) amount *= SR.statusFx.freeze;
     if (hasSt(src, 'daze')) amount *= SR.statusFx.daze;
-    var gsD = dst.gs || 1, gap = Math.pow((src.gs || 1) / gsD, SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW);
-    amount = capDmg(src, amount * S * gsD * gap * (dst.hf || 1) * (src.hero ? 1 : SR.enemyAtkMul || 1));   // Lvの倍率（Lv差はゆるく）・上限9999
+    var gsD = dst.gs || 1, gap = gapOf(src, dst);
+    amount = capDmg(src, amount * S * gsD * gap * (dst.hf || 1) * atkMulOf(src), dst);   // Lvの倍率（Lv差はゆるく）・上限9999
     if (src.hero && amount > (stat.maxHit || 0)) { stat.maxHit = amount; stat.maxHitBy = src.name; }
     dst.hp = Math.max(0, dst.hp - amount);
     var kLoss = previous - dst.k;
@@ -857,7 +868,7 @@ SR.Battle = function (opts) {
     if (hasSt(e, 'freeze')) mul *= SR.statusFx.freeze;
     if (e.vuln > 0) mul *= 1.25;   // 脆化法
     if (u.limitBreak && hits === 1 && !a.all && !a.scatter) hp *= SR.LIMIT_BREAK.single || 1;   // 限界突破：1発の技が重い
-    var dmg = capDmg(u, hp * mul * S * (e.gs || 1) * Math.pow((u.gs || 1) / (e.gs || 1), SR.LV_GAP_POW == null ? 1 : SR.LV_GAP_POW) / hits) * hits;   // 上限9999は1発ごと
+    var dmg = capDmg(u, hp * mul * S * (e.gs || 1) * gapOf(u, e) / hits, e) * hits;   // 上限9999は1発ごと
     return { kd: kd, dmg: dmg, breaks: breaks, kills: dmg >= e.hp, phen: ph };
   }
   function scoreAttack(u, a, e, th) {

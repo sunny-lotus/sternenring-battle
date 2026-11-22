@@ -1214,7 +1214,7 @@
       B.bestNew = false;
       try { var best = JSON.parse(localStorage.getItem('sr-battle-best-v1')) || {}, key = B.enc.name; if ((s.maxHit || 0) > (best[key] || 0)) { B.bestNew = !!best[key] || s.maxHit > 0; best[key] = Math.round(s.maxHit); localStorage.setItem('sr-battle-best-v1', JSON.stringify(best)); } B.best = best[key] || 0; } catch (e) { B.best = 0; }
     }
-    var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">自己ベスト更新！</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
+    var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">NEW RECORD</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
     return '<div class="result"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh + (B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '') +
       '<div>' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
       '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
@@ -1753,9 +1753,9 @@
       bub('atk', 'skill', 'basic', '攻撃', (st.boost ? (1 + st.boost) + '回攻撃・' : 'ブレイブ攻撃・') + (brave.cost ? 'MP' + brave.cost : '消費なし'), null, brave.ok, true) +
       bub('', 'list', 'unique', SR.uniqueName(u.id), SR.names[u.id] + 'だけの技', nU, nU > 0) +
       (u.id === 'N' ? (nL ? bub('lnk', 'list', 'link', SR.LINK_NAME, '仲間と出す技', nL, nL > 0) : '') : bub('', 'list', 'common', SR.COMMON_NAME, '技の書で覚えた魔法', nC, nC > 0)) +
-      bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) +
+      (Object.keys(B.bagStart || {}).length ? bub('itm', 'list', 'item', 'アイテム', '使うと番を1回使う', Object.keys(B.bag).reduce(function (s, k) { return s + B.bag[k]; }, 0), opts.some(function (o) { return o.skill.item && o.ok; })) : '') +
       (scan ? bub('', 'skill', 'scan', '調べる', '敵の弱点がわかる', null, scan.ok) : '') +
-      (Object.keys(B.bagStart || {}).length ? bub('itm', 'list', 'item', 'アイテム', '使うと番を1回使う', Object.keys(B.bag).reduce(function (s, k) { return s + B.bag[k]; }, 0), opts.some(function (o) { return o.skill.item && o.ok; })) : '') + '</div>';
+      bub('', 'skill', 'defend', '防御', '次の番まで受けるダメージ半分', null, defend.ok) + '</div>';
     return h;
   }
 
