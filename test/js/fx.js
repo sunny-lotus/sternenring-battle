@@ -158,7 +158,7 @@ window.SR = window.SR || {};
       var radii = [0, D * rnd(.1, .14), D * rnd(.3, .38), D * 1.6], P = radii.map(function (r, kk) {
         return ang.map(function (a) { var rr = kk === 0 ? 0 : r * rnd(.85, 1.15); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]; });
       });
-      var wrap = add('fxsh', '', 1700, 0, 0); wrap.style.width = W + 'px'; wrap.style.height = H + 'px';
+      var wrap = add('fxsh', '', 950, 0, 0); wrap.style.width = W + 'px'; wrap.style.height = H + 'px';
       for (k = 0; k < 3; k++) for (i = 0; i < n; i++) {
         var j = (i + 1) % n, poly = k === 0 ? [[cx, cy], P[1][i], P[1][j]] : [P[k][i], P[k + 1][i], P[k + 1][j], P[k][j]];
         var c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.className = 'fxsh-pc';

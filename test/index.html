@@ -1553,7 +1553,7 @@ svg.coin.cbig{width:18px;height:18px}
 #fxLayer .fxst-band b{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--fs,1)*40px);letter-spacing:.3em;padding-left:.3em;color:transparent;background:linear-gradient(180deg,#fffef6 0%,#ffe6a0 55%,#e0a040 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,200,90,.7)) drop-shadow(0 2px 0 rgba(40,20,0,.9))}
 @keyframes fxstband{0%{clip-path:inset(0 100% 0 0)}20%{clip-path:inset(0 0 0 0)}80%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 100%);opacity:.6}}
 @keyframes fxstin{0%{translate:18% 0;opacity:0}24%{translate:0 0;opacity:1}80%{translate:-2% 0;opacity:1}100%{translate:-14% 0;opacity:0}}
-/* 画面が割れる：3Dの画面を写し取った破片が、中心から少しずつ傾き、最後に落ちて消える */#fxLayer .fxsh{background:rgba(2,4,14,.82);animation:fxshbg 1.7s ease-out forwards;overflow:hidden}@keyframes fxshbg{0%{opacity:1}75%{opacity:1}100%{opacity:0}}#fxLayer .fxsh-pc{position:absolute;left:0;top:0;width:100%;height:100%;animation:fxshpc 1.65s cubic-bezier(.2,.8,.3,1) var(--dl,0s) both}@keyframes fxshpc{0%{transform:none;opacity:1}9%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz))}62%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz));opacity:1}100%{transform:perspective(900px) translate(var(--tx),calc(var(--ty) + var(--fy))) rotateX(calc(var(--rx) * 3)) rotateY(var(--ry)) rotate(calc(var(--rz) * 3));opacity:0}}
+/* 画面が割れる：3Dの画面を写し取った破片が、中心から少しずつ傾き、最後に落ちて消える */#fxLayer .fxsh{background:rgba(2,4,14,.82);animation:fxshbg .9s ease-out forwards;overflow:hidden}@keyframes fxshbg{0%{opacity:1}35%{opacity:1}100%{opacity:0}}#fxLayer .fxsh-pc{position:absolute;left:0;top:0;width:100%;height:100%;animation:fxshpc .85s cubic-bezier(.2,.8,.3,1) var(--dl,0s) both}@keyframes fxshpc{0%{transform:none;opacity:1}16%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz))}36%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz));opacity:1}100%{transform:perspective(900px) translate(var(--tx),calc(var(--ty) + var(--fy))) rotateX(calc(var(--rx) * 3)) rotateY(var(--ry)) rotate(calc(var(--rz) * 3));opacity:0}}
 /* 撃破（とどめ）：色が抜ける・一閃・回る光の筋・筆のように現れる「撃破」 */#fxLayer .fxfin-mono{inset:0;-webkit-backdrop-filter:grayscale(1) contrast(1.25) brightness(.85);backdrop-filter:grayscale(1) contrast(1.25) brightness(.85);background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 35%,rgba(0,0,0,.55) 100%);animation:fxfinmono 1s ease-out forwards}@keyframes fxfinmono{0%{opacity:0}10%{opacity:1}65%{opacity:1}100%{opacity:0}}#fxLayer .fxfin-slash{width:0;height:0;transform:rotate(var(--rz))}#fxLayer .fxfin-slash i{position:absolute;left:calc(-150vw);top:-3px;width:300vw;height:6px;background:linear-gradient(90deg,transparent,#fff 45%,#fff 55%,transparent);box-shadow:0 0 18px #fff,0 0 40px #ffd27a;transform-origin:center;animation:fxfinslash .65s cubic-bezier(.2,.9,.2,1) forwards}@keyframes fxfinslash{0%{transform:scaleX(0);opacity:1}30%{transform:scaleX(1);opacity:1;height:6px}100%{transform:scaleX(1);opacity:0;height:1px}}#fxLayer .fxfin-rays{width:calc(var(--fs,1)*720px);height:calc(var(--fs,1)*720px);transform:translate(-50%,-50%);border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,226,150,.55) 0deg 4deg,rgba(255,226,150,0) 4deg 18deg);-webkit-mask-image:radial-gradient(circle,#000 8%,transparent 68%);mask-image:radial-gradient(circle,#000 8%,transparent 68%);mix-blend-mode:screen;animation:fxfinrays 1.6s ease-out forwards}@keyframes fxfinrays{0%{opacity:0;scale:.3;rotate:0deg}18%{opacity:1;scale:1}75%{opacity:.8}100%{opacity:0;scale:1.25;rotate:40deg}}#fxLayer .fxfin-title{transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;text-align:center}#fxLayer .fxfin-title small{font-family:Cinzel,serif;font-weight:700;font-size:calc(var(--fs,1)*14px);letter-spacing:.6em;padding-left:.6em;color:#ffe3a0;text-shadow:0 0 8px rgba(255,190,80,.8),0 1px 0 #000;animation:fxbksub 1.6s ease-out forwards}#fxLayer .fxfin-title b{display:flex;gap:calc(var(--fs,1)*10px);font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--fs,1)*84px);line-height:1.05}#fxLayer .fxfin-title b span{color:transparent;background:linear-gradient(180deg,#fffef4 0%,#ffe7a6 45%,#e9a33c 80%,#9a5a10 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 12px rgba(255,190,70,.75)) drop-shadow(0 4px 0 rgba(30,12,0,.95));animation:fxfinch 1.6s cubic-bezier(.2,.9,.2,1) both}#fxLayer .fxfin-title b span:nth-child(2){animation-delay:.09s}@keyframes fxfinch{0%{opacity:0;clip-path:inset(0 100% 0 0);translate:0 8%;scale:1.25}22%{opacity:1;clip-path:inset(0 0 0 0);translate:0 0;scale:1}82%{opacity:1}100%{opacity:0;scale:1.06}}#fxLayer .fxfin-title .ln{display:block;width:calc(var(--fs,1)*300px);height:2px;margin-top:calc(var(--fs,1)*6px);background:linear-gradient(90deg,transparent,#ffe08a,transparent);box-shadow:0 0 10px #ffc24a;animation:fxbkln 1.6s cubic-bezier(.2,.8,.2,1) forwards;transform-origin:center}
 @media (prefers-reduced-motion:reduce){#fxLayer .fxbk-shard,#fxLayer .fxbk-ring,#fxLayer .fxsh,#fxLayer .fxfin-rays,#fxLayer .fxfin-mono{display:none}}
 </style>
@@ -1722,14 +1722,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123f"></script>
-<script src="js/icons.js?v=t1123f"></script>
-<script src="js/engine.js?v=t1123f"></script>
-<script src="js/loadout.js?v=t1123f"></script>
-<script src="js/sound.js?v=t1123f"></script>
-<script src="js/fx.js?v=t1123f"></script>
-<script src="js/tree3d.js?v=t1123f"></script>
-<script src="js/ui.js?v=t1123f"></script>
-<script type="module" src="js/stage3d.js?v=t1123f"></script>
+<script src="js/data.js?v=t1123g"></script>
+<script src="js/icons.js?v=t1123g"></script>
+<script src="js/engine.js?v=t1123g"></script>
+<script src="js/loadout.js?v=t1123g"></script>
+<script src="js/sound.js?v=t1123g"></script>
+<script src="js/fx.js?v=t1123g"></script>
+<script src="js/tree3d.js?v=t1123g"></script>
+<script src="js/ui.js?v=t1123g"></script>
+<script type="module" src="js/stage3d.js?v=t1123g"></script>
 </body>
 </html>

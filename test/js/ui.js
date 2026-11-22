@@ -650,6 +650,7 @@
     if (!req) { btns.forEach(function (b) { b.style.display = 'none'; }); return; }
     document.addEventListener('click', function (ev) {
       if (!ev.target.closest('[data-fs]')) return;
+      document.querySelectorAll('.sndbox.open').forEach(function (x) { x.classList.remove('open'); });   // 2026-11-22 サニー：全画面を選んだら右上のメニューは閉じる
       if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
       try {
         var p = req.call(de);
