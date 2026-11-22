@@ -147,20 +147,57 @@ window.SR = window.SR || {};
       add('fxtotal' + (big ? ' big' : ''), '<small>' + n + 'ヒット 合計</small>' + Math.round(sum).toLocaleString(), 1500, p.w / 2, Math.max(40, p.y - 70));
       if (big) quake(2);
     },
-    // ブレイク：白く光って、ひびが走る
+    // 2026-11-22 サニー：ブレイクした敵を中心に、画面全体がガラスのように割れて、破片が少しずつ傾く
+    shatter: function (cx, cy) {
+      if (!SR.stage3d || !SR.stage3d.snap) return;
+      var snap = null; try { snap = SR.stage3d.snap(); } catch (e) {}
+      var gl = document.querySelector('#battle canvas'); if (!snap || !gl) return;
+      var L = layer(), lr = L.getBoundingClientRect(), gr = gl.getBoundingClientRect(), W = lr.width, H = lr.height, dpr = Math.min(2, window.devicePixelRatio || 1);
+      var D = Math.max(W, H), n = 11, ang = [], i, k;
+      for (i = 0; i < n; i++) ang.push(Math.PI * 2 * i / n + rnd(-.18, .18));
+      var radii = [0, D * rnd(.1, .14), D * rnd(.3, .38), D * 1.6], P = radii.map(function (r, kk) {
+        return ang.map(function (a) { var rr = kk === 0 ? 0 : r * rnd(.85, 1.15); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]; });
+      });
+      var wrap = add('fxsh', '', 1700, 0, 0); wrap.style.width = W + 'px'; wrap.style.height = H + 'px';
+      for (k = 0; k < 3; k++) for (i = 0; i < n; i++) {
+        var j = (i + 1) % n, poly = k === 0 ? [[cx, cy], P[1][i], P[1][j]] : [P[k][i], P[k + 1][i], P[k + 1][j], P[k][j]];
+        var c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.className = 'fxsh-pc';
+        var g = c.getContext('2d'); g.scale(dpr, dpr);
+        g.beginPath(); poly.forEach(function (q, m) { if (m) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); }); g.closePath(); g.save(); g.clip();
+        g.drawImage(snap, gr.left - lr.left, gr.top - lr.top, gr.width, gr.height);
+        var sh = g.createLinearGradient(cx - D * .3, cy - D * .3, cx + D * .3, cy + D * .3);   // ガラスの照り
+        sh.addColorStop(0, 'rgba(255,255,255,' + rnd(0, .14).toFixed(2) + ')'); sh.addColorStop(1, 'rgba(160,210,255,0)'); g.fillStyle = sh; g.fill();
+        g.restore(); g.lineWidth = 1.6; g.strokeStyle = 'rgba(235,248,255,.9)'; g.shadowColor = '#8fd8ff'; g.shadowBlur = 8; g.stroke();
+        var mx = poly.reduce(function (s, q) { return s + q[0]; }, 0) / poly.length, my = poly.reduce(function (s, q) { return s + q[1]; }, 0) / poly.length;
+        var out = 3 + k * 5, dx = mx - cx, dy = my - cy, dl = Math.hypot(dx, dy) || 1;
+        c.style.transformOrigin = mx + 'px ' + my + 'px';
+        c.style.setProperty('--tx', (dx / dl * out).toFixed(1) + 'px'); c.style.setProperty('--ty', (dy / dl * out).toFixed(1) + 'px');
+        c.style.setProperty('--rz', rnd(-3.5, 3.5).toFixed(2) + 'deg'); c.style.setProperty('--rx', rnd(-9, 9).toFixed(1) + 'deg'); c.style.setProperty('--ry', rnd(-9, 9).toFixed(1) + 'deg');
+        c.style.setProperty('--fy', (40 + k * 40 + rnd(0, 40)).toFixed(0) + 'px'); c.style.setProperty('--dl', (k * .03 + rnd(0, .04)).toFixed(2) + 's');
+        wrap.appendChild(c);
+      }
+    },
+    // ブレイク（2026-11-22 サニー：もっとかっこよく）：まわりが沈み、衝撃の輪・ひび・ガラスの破片。BREAK の文字が中央から開く
     breakHit: function (el, hero) {
       var p = at(el);
       if (hero) { add('fxflash red', '', 400); add('fxword red sm', 'BREAK', 1150, clampX(p.x, p.w, 70), p.y); quake(2); return; }
-      add('fxflash', '', 500);
+      SR.fx.shatter(p.x, p.y);   // 画面が割れる
+      add('fxbk-dim', '', 1300);
+      add('fxbk-core', '', 700, p.x, p.y);
+      add('fxbk-ring', '', 900, p.x, p.y); add('fxbk-ring r2', '', 1100, p.x, p.y);
       var lines = '';
-      for (var i = 0; i < 9; i++) {
-        var a = Math.PI * 2 * i / 9 + rnd(-.25, .25), pts = '170,170', r = 0;
-        for (var j = 0; j < 4; j++) { r += rnd(26, 46); var b = a + rnd(-.45, .45); pts += ' ' + (170 + Math.cos(b) * r).toFixed(0) + ',' + (170 + Math.sin(b) * r).toFixed(0); }
-        lines += '<polyline points="' + pts + '" style="animation-delay:' + (i * 0.015).toFixed(3) + 's"/>';
+      for (var i = 0; i < 11; i++) {
+        var a = Math.PI * 2 * i / 11 + rnd(-.25, .25), pts = '170,170', r = 0;
+        for (var j = 0; j < 4; j++) { r += rnd(24, 44); var b = a + rnd(-.4, .4); pts += ' ' + (170 + Math.cos(b) * r).toFixed(0) + ',' + (170 + Math.sin(b) * r).toFixed(0); }
+        lines += '<polyline points="' + pts + '" style="animation-delay:' + (i * 0.012).toFixed(3) + 's"/>';
       }
-      add('fxcrack', '<svg viewBox="0 0 340 340" width="100%" height="100%">' + lines + '</svg>', 1100, p.x, p.y);
-      add('fxword', 'BREAK!', 1150, p.w / 2, Math.max(60, p.y - 10));
-      burst(p, 14, 'fxshard blue', 190);
+      add('fxcrack bk', '<svg viewBox="0 0 340 340" width="100%" height="100%">' + lines + '</svg>', 1100, p.x, p.y);
+      for (var k = 0; k < 20; k++) {   // ガラスの破片：大きさ・形・回り方を少しずつ変える
+        var ang = rnd(0, Math.PI * 2), d = rnd(110, 260), s = rnd(.6, 1.5);
+        add('fxbk-shard s' + (k % 4), '', 1100, p.x, p.y, { '--dx': Math.cos(ang) * d + 'px', '--dy': Math.sin(ang) * d * .8 + rnd(20, 60) + 'px', '--rt': rnd(-720, 720) + 'deg', '--sc': s.toFixed(2), '--dl': rnd(0, .08).toFixed(2) + 's' });
+      }
+      add('fxbk-title', '<i class="ln"></i><b data-t="BREAK">BREAK</b><i class="ln"></i><small>守りが崩れた　順番が下がる</small>', 1500, p.w / 2, Math.max(70, Math.min(p.h * .42, p.y - 20)));
+      try { if (SR.stage3d && SR.stage3d.hit && el && el.id) SR.stage3d.hit(el.id.replace(/^u-/, ''), 3, '#9fe0ff'); } catch (e) {}
       quake(3);
     },
     // 溜め：光が集まる
@@ -178,11 +215,18 @@ window.SR = window.SR || {};
       add('fxcut', '<b><small>' + name + '</small>大技</b>', 1250, null, null, { '--cc': '#ff4a3a' });
       quake(2);
     },
-    // 大技を止めた：集めた光が砕け散る
+    // 大技を止めた（2026-11-22 サニー：もっとかっこよく）：溜めた赤い光が一点に吸いこまれて、金の光で砕ける。斜めの帯に「大技を止めた」
     stop: function (el) {
       var p = at(el);
-      add('fxflash gold', '', 500); burst(p, 22, 'fxshard', 240);
-      add('fxword gold sm', '大技を止めた！', 1150, p.w / 2, Math.max(60, p.y - 20)); quake(3);
+      add('fxst-dim', '', 1500);
+      add('fxst-implode', '', 450, p.x, p.y);
+      setTimeout(function () {
+        add('fxflash gold', '', 420);
+        add('fxbk-ring gold', '', 900, p.x, p.y); add('fxbk-ring gold r2', '', 1100, p.x, p.y);
+        for (var k = 0; k < 22; k++) { var ang = rnd(0, Math.PI * 2), d = rnd(120, 280); add('fxbk-shard gold s' + (k % 4), '', 1100, p.x, p.y, { '--dx': Math.cos(ang) * d + 'px', '--dy': Math.sin(ang) * d * .8 + rnd(10, 50) + 'px', '--rt': rnd(-720, 720) + 'deg', '--sc': rnd(.5, 1.3).toFixed(2), '--dl': '0s' }); }
+        add('fxst-band', '<div class="in"><small>INTERRUPT</small><b>大技を止めた</b></div>', 1500, null, null);
+        quake(3);
+      }, 330);
     },
     cutin: function (who, name, color) { add('fxcut', '<b><small>' + who + '</small>' + name + '</b>', 1250, null, null, { '--cc': color || '#ffd76a' }); },
     // 終盤の大技

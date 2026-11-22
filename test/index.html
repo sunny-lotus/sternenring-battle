@@ -1514,6 +1514,47 @@ svg.coin.cbig{width:18px;height:18px}
 .result.rz2 .colohead{font-size:calc(var(--u)*1.5);margin:0}
 .result.rz2 .row{margin:0;gap:calc(var(--u)*1)}
 .result.rz2 .btn{font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.6) calc(var(--u)*1.8)}
+/* 2026-11-22 サニー：BREAK と「大技を止めた」をかっこよく（光・輪・ガラスの破片・中央から開く文字） */
+#fxLayer .fxbk-dim{inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(10,20,50,0) 30%,rgba(4,8,24,.72) 100%);animation:fxbkdim 1.3s ease-out forwards}
+@keyframes fxbkdim{0%{opacity:0}12%{opacity:1}70%{opacity:1}100%{opacity:0}}
+#fxLayer .fxbk-core{width:calc(var(--fs,1)*200px);height:calc(var(--fs,1)*200px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(190,236,255,.95) 18%,rgba(90,170,255,.45) 42%,rgba(60,120,255,0) 70%);mix-blend-mode:screen;animation:fxbkcore .7s ease-out forwards}
+@keyframes fxbkcore{0%{opacity:1;scale:.2}25%{opacity:1;scale:1.1}100%{opacity:0;scale:1.6}}
+#fxLayer .fxbk-ring{width:calc(var(--fs,1)*90px);height:calc(var(--fs,1)*90px);transform:translate(-50%,-50%);border-radius:50%;border:2px solid #e8f8ff;box-shadow:0 0 12px #7fd0ff,inset 0 0 12px #7fd0ff;animation:fxbkring .85s cubic-bezier(.15,.7,.3,1) forwards}
+#fxLayer .fxbk-ring.r2{border-width:1px;animation-duration:1.05s;animation-delay:.07s;opacity:0}
+#fxLayer .fxbk-ring.gold{border-color:#fff2c4;box-shadow:0 0 14px #ffc24a,inset 0 0 12px #ffc24a}
+@keyframes fxbkring{0%{opacity:1;scale:.3}100%{opacity:0;scale:4.2;border-width:.5px}}
+#fxLayer .fxcrack.bk polyline{stroke:#f4fcff;stroke-width:2;filter:drop-shadow(0 0 4px #8fd8ff) drop-shadow(0 0 10px #4aa0ff)}
+#fxLayer .fxbk-shard{width:calc(var(--fs,1)*14px);height:calc(var(--fs,1)*22px);transform:translate(-50%,-50%);background:linear-gradient(140deg,rgba(255,255,255,.98),rgba(170,225,255,.85) 45%,rgba(70,140,255,.55));box-shadow:0 0 8px rgba(140,210,255,.9);scale:var(--sc,1);animation:fxbkshard 1.05s cubic-bezier(.15,.65,.35,1) var(--dl,0s) both}
+#fxLayer .fxbk-shard.s0{clip-path:polygon(50% 0,100% 70%,30% 100%)}
+#fxLayer .fxbk-shard.s1{clip-path:polygon(0 10%,100% 0,60% 100%)}
+#fxLayer .fxbk-shard.s2{clip-path:polygon(20% 0,100% 40%,70% 100%,0 70%)}
+#fxLayer .fxbk-shard.s3{clip-path:polygon(40% 0,100% 100%,0 85%)}
+#fxLayer .fxbk-shard.gold{background:linear-gradient(140deg,#fffbe8,#ffd98a 45%,rgba(255,150,40,.6));box-shadow:0 0 8px rgba(255,200,80,.9)}
+@keyframes fxbkshard{0%{opacity:0;translate:0 0;rotate:0deg}8%{opacity:1}100%{opacity:0;translate:var(--dx) var(--dy);rotate:var(--rt)}}
+#fxLayer .fxbk-title{transform:translate(-50%,-50%);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:calc(var(--fs,1)*14px);width:min(92vw,calc(var(--fs,1)*640px));text-align:center}
+#fxLayer .fxbk-title .ln{height:2px;background:linear-gradient(90deg,transparent,#dff4ff 60%,#fff);box-shadow:0 0 8px #7fd0ff;transform-origin:right center;animation:fxbkln 1.45s cubic-bezier(.2,.8,.2,1) forwards}
+#fxLayer .fxbk-title .ln:last-of-type{background:linear-gradient(270deg,transparent,#dff4ff 60%,#fff);transform-origin:left center}
+@keyframes fxbkln{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1)}80%{opacity:1}100%{transform:scaleX(1.15);opacity:0}}
+#fxLayer .fxbk-title b{position:relative;font-family:Cinzel,serif;font-weight:900;font-size:calc(var(--fs,1)*62px);letter-spacing:.22em;padding-left:.22em;line-height:1;color:transparent;background:linear-gradient(180deg,#ffffff 0%,#e6f7ff 45%,#8fd0ff 70%,#4f8fff 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 10px rgba(120,200,255,.85)) drop-shadow(0 3px 0 rgba(0,10,40,.9));animation:fxbkword 1.45s cubic-bezier(.2,.9,.2,1) forwards}
+#fxLayer .fxbk-title b::before,#fxLayer .fxbk-title b::after{content:attr(data-t);position:absolute;left:0;top:0;padding-left:.22em;-webkit-background-clip:border-box;background:none;mix-blend-mode:screen;animation:fxbkghost .45s ease-out forwards}
+#fxLayer .fxbk-title b::before{color:rgba(80,220,255,.8);translate:-6px 0}
+#fxLayer .fxbk-title b::after{color:rgba(255,80,160,.7);translate:6px 0}
+@keyframes fxbkword{0%{clip-path:inset(0 50% 0 50%);letter-spacing:.6em;opacity:1}18%{clip-path:inset(0 0 0 0);letter-spacing:.22em}80%{opacity:1;letter-spacing:.24em}100%{opacity:0;letter-spacing:.34em;clip-path:inset(0 0 0 0)}}
+@keyframes fxbkghost{0%{opacity:1}100%{opacity:0;translate:0 0}}
+#fxLayer .fxbk-title small{grid-column:1/-1;margin-top:calc(var(--fs,1)*6px);font-size:calc(var(--fs,1)*13px);letter-spacing:.3em;color:#cfeaff;text-shadow:0 0 6px #000,0 1px 0 #000;animation:fxbksub 1.45s ease-out forwards}
+@keyframes fxbksub{0%,12%{opacity:0;translate:0 6px}28%{opacity:1;translate:0 0}80%{opacity:1}100%{opacity:0}}
+/* 大技を止めた */
+#fxLayer .fxst-dim{inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(40,8,8,0) 25%,rgba(20,4,6,.7) 100%);animation:fxbkdim 1.5s ease-out forwards}
+#fxLayer .fxst-implode{width:calc(var(--fs,1)*360px);height:calc(var(--fs,1)*360px);transform:translate(-50%,-50%);border-radius:50%;border:3px solid #ff5a40;box-shadow:0 0 24px #ff3a20,inset 0 0 30px rgba(255,60,30,.7);animation:fxstimp .4s cubic-bezier(.6,0,.9,.4) forwards}
+@keyframes fxstimp{0%{opacity:.2;scale:1}60%{opacity:1}100%{opacity:1;scale:.05;border-width:8px}}
+#fxLayer .fxst-band{left:-10%;right:-10%;top:40%;height:calc(var(--fs,1)*84px);transform:translateY(-50%) skewY(-6deg);background:linear-gradient(90deg,rgba(10,8,26,0),rgba(10,8,26,.9) 18%,rgba(10,8,26,.9) 82%,rgba(10,8,26,0));border-top:2px solid #f2d48a;border-bottom:2px solid #f2d48a;box-shadow:0 0 24px rgba(242,212,138,.45);animation:fxstband 1.5s cubic-bezier(.2,.9,.2,1) forwards;display:flex;align-items:center;justify-content:center}
+#fxLayer .fxst-band .in{display:flex;flex-direction:column;align-items:center;transform:skewY(6deg);animation:fxstin 1.5s cubic-bezier(.2,.9,.2,1) forwards}
+#fxLayer .fxst-band small{font-family:Cinzel,serif;font-weight:700;letter-spacing:.5em;padding-left:.5em;font-size:calc(var(--fs,1)*13px);color:#ffd27a}
+#fxLayer .fxst-band b{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--fs,1)*40px);letter-spacing:.3em;padding-left:.3em;color:transparent;background:linear-gradient(180deg,#fffef6 0%,#ffe6a0 55%,#e0a040 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,200,90,.7)) drop-shadow(0 2px 0 rgba(40,20,0,.9))}
+@keyframes fxstband{0%{clip-path:inset(0 100% 0 0)}20%{clip-path:inset(0 0 0 0)}80%{clip-path:inset(0 0 0 0);opacity:1}100%{clip-path:inset(0 0 0 100%);opacity:.6}}
+@keyframes fxstin{0%{translate:18% 0;opacity:0}24%{translate:0 0;opacity:1}80%{translate:-2% 0;opacity:1}100%{translate:-14% 0;opacity:0}}
+/* 画面が割れる：3Dの画面を写し取った破片が、中心から少しずつ傾き、最後に落ちて消える */#fxLayer .fxsh{background:rgba(2,4,14,.82);animation:fxshbg 1.7s ease-out forwards;overflow:hidden}@keyframes fxshbg{0%{opacity:1}75%{opacity:1}100%{opacity:0}}#fxLayer .fxsh-pc{position:absolute;left:0;top:0;width:100%;height:100%;animation:fxshpc 1.65s cubic-bezier(.2,.8,.3,1) var(--dl,0s) both}@keyframes fxshpc{0%{transform:none;opacity:1}9%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz))}62%{transform:perspective(900px) translate(var(--tx),var(--ty)) rotateX(var(--rx)) rotateY(var(--ry)) rotate(var(--rz));opacity:1}100%{transform:perspective(900px) translate(var(--tx),calc(var(--ty) + var(--fy))) rotateX(calc(var(--rx) * 3)) rotateY(var(--ry)) rotate(calc(var(--rz) * 3));opacity:0}}
+@media (prefers-reduced-motion:reduce){#fxLayer .fxbk-shard,#fxLayer .fxbk-ring,#fxLayer .fxsh{display:none}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1680,14 +1721,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123d"></script>
-<script src="js/icons.js?v=t1123d"></script>
-<script src="js/engine.js?v=t1123d"></script>
-<script src="js/loadout.js?v=t1123d"></script>
-<script src="js/sound.js?v=t1123d"></script>
-<script src="js/fx.js?v=t1123d"></script>
-<script src="js/tree3d.js?v=t1123d"></script>
-<script src="js/ui.js?v=t1123d"></script>
-<script type="module" src="js/stage3d.js?v=t1123d"></script>
+<script src="js/data.js?v=t1123e"></script>
+<script src="js/icons.js?v=t1123e"></script>
+<script src="js/engine.js?v=t1123e"></script>
+<script src="js/loadout.js?v=t1123e"></script>
+<script src="js/sound.js?v=t1123e"></script>
+<script src="js/fx.js?v=t1123e"></script>
+<script src="js/tree3d.js?v=t1123e"></script>
+<script src="js/ui.js?v=t1123e"></script>
+<script type="module" src="js/stage3d.js?v=t1123e"></script>
 </body>
 </html>

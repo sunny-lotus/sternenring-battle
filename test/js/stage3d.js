@@ -443,6 +443,14 @@ function frame() {
 }
 function start() { if (!scene) build(); resize(); if (!running) { running = true; frame(); } }
 function stop() { running = false; }
+// 2026-11-22 画面が割れる演出用：いまの3D画面をその場で描いて、2Dのキャンバスに写し取る
+function snap() {
+  if (!composer || !canvas) return null;
+  composer.render();
+  const c = document.createElement("canvas"); c.width = canvas.width; c.height = canvas.height;
+  c.getContext("2d").drawImage(canvas, 0, 0);
+  return c;
+}
 
-SR.stage3d = { setup, sync, hit, cast, intro, drag, resetView, rect, focus, shot, setCamMode, start, stop, resize, onFrame: (cb) => { onFrame = cb; } };
+SR.stage3d = { setup, sync, hit, cast, intro, drag, resetView, rect, focus, shot, setCamMode, start, stop, resize, snap, onFrame: (cb) => { onFrame = cb; } };
 if (SR.stage3dReady) SR.stage3dReady();
