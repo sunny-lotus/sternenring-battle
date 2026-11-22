@@ -1472,6 +1472,48 @@ svg.coin.cbig{width:18px;height:18px}
 #battle.hd .result.rz .rR::-webkit-scrollbar{display:none}
 #battle.hd .result.rz .growres{margin:0;font-size:1em;line-height:1.5}
 #battle.hd .result.rz .growres>div{margin:0 0 calc(var(--u)*.25)}
+/* 2026-11-22 サニー：結果画面（各キャラが並ぶ・経験値バー・ぴろんと出て消える・お金が増える） */
+#battle.hd #panel .result.rz2{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;margin:0;width:min(94vw,calc(var(--u)*118));max-height:94vh;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*1.1);padding:calc(var(--u)*1.6) calc(var(--u)*2.4);font-size:calc(var(--u)*1.45);line-height:1.4;text-align:center}
+.result.rz2 .rtop{display:flex;align-items:baseline;justify-content:center;gap:calc(var(--u)*2);flex-wrap:wrap}
+.result.rz2 h2{font-size:calc(var(--u)*3.6)!important;margin:0!important;line-height:1}
+.result.rz2 .maxhit{font-size:calc(var(--u)*1.6)!important;margin:0!important}
+.result.rz2 .maxhit b{font-size:calc(var(--u)*3)!important}
+.result.rz2 .newbest{font-size:calc(var(--u)*1.15)!important}
+.result.rz2 .rst{flex-basis:100%;font-size:calc(var(--u)*1.1);color:#aeb6d8;margin-top:calc(var(--u)*-.4)}
+.result.rz2 .rcards{display:flex;gap:calc(var(--u)*1.2);justify-content:center;width:100%}
+.result.rz2 .rcard{position:relative;flex:1 1 0;max-width:calc(var(--u)*19);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.25));border:1px solid rgba(232,195,114,.35);border-top:2px solid var(--tc);border-radius:calc(var(--u)*.8);padding:calc(var(--u)*.9) calc(var(--u)*.8) calc(var(--u)*.7);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*.3)}
+.result.rz2 .rcard img{width:calc(var(--u)*5.6);height:calc(var(--u)*5.6);border-radius:50%;object-fit:cover;border:2px solid var(--tc);box-shadow:0 0 calc(var(--u)*1) color-mix(in srgb,var(--tc) 55%,transparent)}
+.result.rz2 .rnm{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:calc(var(--u)*1.45);color:#f6e2a8}
+.result.rz2 .rlv{font-family:Cinzel,serif;font-size:calc(var(--u)*1.15);color:#c9cfee}
+.result.rz2 .rlv b{font-size:1.45em;color:#fff;margin-left:2px}
+.result.rz2 .rcard.up .rlv b{color:#ffd27a;text-shadow:0 0 8px rgba(255,200,80,.8)}
+.result.rz2 .rbar{width:100%;height:calc(var(--u)*.7);background:#1a1e40;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.result.rz2 .rbar i{display:block;height:100%;background:linear-gradient(90deg,#7fd6ff,#ffe08a);box-shadow:0 0 6px rgba(255,224,138,.8)}
+.result.rz2 .rexp{font-family:Cinzel,serif;font-size:calc(var(--u)*1);color:#9fe3b0;letter-spacing:.06em}
+.result.rz2 .rpop{position:absolute;left:50%;bottom:72%;width:0;height:0;pointer-events:none;z-index:3}
+.result.rz2 .rp{position:absolute;left:0;bottom:0;transform:translateX(-50%);white-space:nowrap;font-weight:800;font-size:calc(var(--u)*1.35);padding:calc(var(--u)*.25) calc(var(--u)*.9);border-radius:99px;background:rgba(10,12,34,.92);border:1px solid var(--tc);color:#fff;box-shadow:0 0 calc(var(--u)*1.2) color-mix(in srgb,var(--tc) 60%,transparent);animation:rpop 1.8s cubic-bezier(.2,.9,.3,1) forwards}
+.result.rz2 .rp.lv{font-family:Cinzel,serif;letter-spacing:.12em;color:#ffe08a;border-color:#ffd27a}
+.result.rz2 .rp.lrn{color:#bfe8ff}
+@keyframes rpop{0%{opacity:0;transform:translate(-50%,40%) scale(.6)}14%{opacity:1;transform:translate(-50%,0) scale(1.08)}24%{transform:translate(-50%,0) scale(1)}72%{opacity:1;transform:translate(-50%,-55%)}100%{opacity:0;transform:translate(-50%,-110%)}}
+.result.rz2 .rgain{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*2);flex-wrap:wrap}
+.result.rz2 .rmoney{display:flex;align-items:center;gap:calc(var(--u)*.8)}
+.result.rz2 .rml{font-family:"Shippori Mincho B1",serif;color:#f6e2a8}
+.result.rz2 .rmv{font-size:1.25em;transition:transform .2s}
+.result.rz2 .rmv.count{transform:scale(1.12);filter:drop-shadow(0 0 6px rgba(255,210,122,.8))}
+.result.rz2 .rmd{color:#9fe3b0;font-family:Cinzel,serif;font-weight:700;animation:rfade .5s .6s both}
+.result.rz2 .rchips{display:flex;gap:calc(var(--u)*.7);flex-wrap:wrap;justify-content:center}
+.result.rz2 .rchip{display:inline-flex;align-items:center;gap:calc(var(--u)*.4);padding:calc(var(--u)*.2) calc(var(--u)*.8) calc(var(--u)*.2) calc(var(--u)*.3);border-radius:99px;background:#1c2448;border:1px solid #6fd0a0;color:#e8ecff;font-size:.95em;animation:rchip .55s cubic-bezier(.2,1.5,.4,1) both}
+.result.rz2 .rchip i{display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bff3d4,#3a9a6a);color:#0d2a1c;font-style:normal;font-weight:900;font-size:.85em}
+.result.rz2 .rchip.used{border-color:#7a7fa8;opacity:.85}.result.rz2 .rchip.used i{background:radial-gradient(circle at 35% 30%,#e0e4ff,#6a70a0);color:#1a1d33}
+.result.rz2 .rchip small{margin-left:3px;color:#aeb6d8;font-size:.8em}
+.result.rz2 .rchip:nth-child(1){animation-delay:1.1s}.result.rz2 .rchip:nth-child(2){animation-delay:1.3s}.result.rz2 .rchip:nth-child(3){animation-delay:1.5s}.result.rz2 .rchip:nth-child(4){animation-delay:1.7s}.result.rz2 .rchip:nth-child(n+5){animation-delay:1.9s}
+.result.rz2.done .rchip,.result.rz2.done .rmd{animation:none}
+@keyframes rchip{0%{opacity:0;transform:translateY(60%) scale(.4)}100%{opacity:1;transform:none}}
+@keyframes rfade{from{opacity:0;transform:translateY(40%)}}
+.result.rz2 .rnote{font-size:calc(var(--u)*1.15);color:#c9cfee}
+.result.rz2 .colohead{font-size:calc(var(--u)*1.5);margin:0}
+.result.rz2 .row{margin:0;gap:calc(var(--u)*1)}
+.result.rz2 .btn{font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.6) calc(var(--u)*1.8)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -1638,14 +1680,14 @@ svg.coin.cbig{width:18px;height:18px}
     <div id="log"></div>
   </div>
 </section>
-<script src="js/data.js?v=t1123c"></script>
-<script src="js/icons.js?v=t1123c"></script>
-<script src="js/engine.js?v=t1123c"></script>
-<script src="js/loadout.js?v=t1123c"></script>
-<script src="js/sound.js?v=t1123c"></script>
-<script src="js/fx.js?v=t1123c"></script>
-<script src="js/tree3d.js?v=t1123c"></script>
-<script src="js/ui.js?v=t1123c"></script>
-<script type="module" src="js/stage3d.js?v=t1123c"></script>
+<script src="js/data.js?v=t1123d"></script>
+<script src="js/icons.js?v=t1123d"></script>
+<script src="js/engine.js?v=t1123d"></script>
+<script src="js/loadout.js?v=t1123d"></script>
+<script src="js/sound.js?v=t1123d"></script>
+<script src="js/fx.js?v=t1123d"></script>
+<script src="js/tree3d.js?v=t1123d"></script>
+<script src="js/ui.js?v=t1123d"></script>
+<script type="module" src="js/stage3d.js?v=t1123d"></script>
 </body>
 </html>

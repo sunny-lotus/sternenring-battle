@@ -1216,12 +1216,65 @@
     }
     var mh = s.maxHit ? '<div class="maxhit">最大ダメージ <b>' + Math.round(s.maxHit).toLocaleString() + '</b>（' + s.maxHitBy + '）' + (B.bestNew ? '<span class="newbest">NEW RECORD</span>' : B.best ? '<span class="small">　自己ベスト ' + B.best.toLocaleString() + '</span>' : '') + '</div>' : '';
     var gr = B.grown ? '<div class="growres">' + B.grown.learned.map(function (l) { return '<div class="lrn">' + l + '</div>'; }).join('') + B.grown.lines.map(function (l) { return '<div>経験値　' + l + '</div>'; }).join('') + (B.grown.gold ? '<div>お金 +' + SR.moneyHTML(B.grown.gold) + '</div>' : '') + '</div>' : '';
-    // 2026-11-22 サニー：結果はスクロールしない。左に勝敗・最大ダメージ・ボタン、右に覚えたこと・経験値
-    return '<div class="result rz"><div class="rL"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh +
-      '<div class="rst">' + B.t + '手　ブレイク ' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた ' + (s.stops || 0) + '回）' : '') +
-      '　追撃 ' + s.chases + '回　反撃 ' + s.counters + '回　交代 ' + s.swaps + '回　並べ替え ' + (s.moves || 0) + '回　味方のブレイク ' + s.allyBreaks + '回</div>' +
+    // 2026-11-22 サニー：結果は各キャラが並ぶ形。経験値のバーが伸び、覚えた技・Lvアップが「ぴろん」と出て消える。お金は数字が増え、素材・アイテムは跳ねて出る
+    var g = B.grown, ORD = ['N', 'V', 'F', 'S', 'L'];
+    var cards = g ? ORD.map(function (id) {
+      var b = g.by[id] || {}, f = b.from || { lv: 1, cur: 0, next: 1 };
+      var pct = f.next ? Math.min(100, f.cur / f.next * 100) : 100;
+      return '<div class="rcard" data-rc="' + id + '" style="--tc:' + (SR.THEME[id] || '#f2d48a') + '"><div class="rpop"></div><img src="img/' + SR.img[id] + '_face.jpg?v=5" alt="">' +
+        '<div class="rnm">' + SR.names[id] + '</div><div class="rlv">Lv <b>' + f.lv + '</b></div><div class="rbar"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
+        '<div class="rexp">EXP +' + (g.lx || 0) + '</div></div>';
+    }).join('') : '';
+    var chips = '';
+    if (g) {
+      Object.keys(g.matsGot || {}).forEach(function (k) { chips += '<span class="rchip mat"><i>' + k.charAt(0) + '</i>' + k + '×' + g.matsGot[k] + '</span>'; });
+      Object.keys(g.used || {}).forEach(function (k) { chips += '<span class="rchip used"><i>' + k.charAt(0) + '</i>' + k + '×' + g.used[k] + '<small>使った</small></span>'; });
+    }
+    var money = g && g.goldTo !== g.goldFrom ? '<div class="rmoney"><span class="rml">お金</span><span class="rmv" data-from="' + g.goldFrom + '" data-to="' + g.goldTo + '">' + SR.moneyHTML(g.goldFrom) + '</span><span class="rmd">+' + SR.moneyText(g.goldTo - g.goldFrom) + '</span></div>' : '';
+    var notes = g && g.notes.length ? '<div class="rnote">' + g.notes.join('　') + '</div>' : '';
+    return '<div class="result rz2"><div class="rtop"><h2>' + (win ? '勝利' : '敗北') + '</h2>' + mh +
+      '<div class="rst">' + B.t + '手・ブレイク' + s.breaks + '回' + (B.tune.charge ? '（大技を止めた' + (s.stops || 0) + '回）' : '') + '・追撃' + s.chases + '・反撃' + s.counters + '・交代' + s.swaps + '</div></div>' +
+      (cards ? '<div class="rcards">' + cards + '</div>' : '') +
+      (money || chips ? '<div class="rgain">' + money + (chips ? '<div class="rchips">' + chips + '</div>' : '') + '</div>' : '') + notes +
       (colo ? coloRow() : '<div class="row" style="justify-content:center"><button class="btn primary" data-nav data-act="again">もう一度</button>' +
-      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div>') + '</div>' + (gr ? '<div class="rR">' + gr + '</div>' : '') + '</div>';
+      '<button class="btn" data-nav data-act="title">相手・構成を変える</button></div>') + '</div>';
+  }
+  // 2026-11-22 サニー：結果の演出。経験値バーが伸びる→Lvアップや覚えた技が「ぴろん」と出て消える。お金は数字が増える
+  function animateResult() {
+    var box = document.querySelector('#panel .result.rz2'), g = B && B.grown; if (!box || !g) return;
+    var ORD = ['N', 'V', 'F', 'S', 'L'], pct = function (i) { return i.next ? Math.min(100, i.cur / i.next * 100) : 100; };
+    function finalState() {
+      ORD.forEach(function (id) { var c = box.querySelector('[data-rc="' + id + '"]'), t = g.by[id] && g.by[id].to; if (!c || !t) return; c.querySelector('.rbar i').style.width = pct(t).toFixed(1) + '%'; c.querySelector('.rlv b').textContent = t.lv; if (t.lv > g.by[id].from.lv) c.classList.add('up'); });
+      var mv = box.querySelector('.rmv'); if (mv) mv.innerHTML = SR.moneyHTML(+mv.getAttribute('data-to'));
+      box.classList.add('done');
+    }
+    if (B.resAnimStarted) { finalState(); return; }   // 描き直しのときは、演出せずに最後の形で
+    B.resAnimStarted = true;
+    function pop(card, text, cls) {
+      var p = card.querySelector('.rpop'), d = document.createElement('div'); d.className = 'rp ' + (cls || ''); d.textContent = text; p.appendChild(d);
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 1900);
+    }
+    function se(n) { try { SR.sound.se(n); } catch (e) {} }
+    ORD.forEach(function (id, k) {
+      var c = box.querySelector('[data-rc="' + id + '"]'), b = g.by[id]; if (!c || !b || !b.from || !b.to) return;
+      var bar = c.querySelector('.rbar i'), lvb = c.querySelector('.rlv b'), lv = b.from.lv, t0 = 500 + k * 180, steps = [];
+      for (var L = b.from.lv; L < b.to.lv; L++) steps.push({ w: 100, up: L + 1 });
+      steps.push({ w: pct(b.to) });
+      var t = t0;
+      steps.forEach(function (st) {
+        setTimeout(function () { bar.style.transition = 'width .55s cubic-bezier(.3,.7,.3,1)'; bar.style.width = st.w + '%'; }, t); t += 600;
+        if (st.up) setTimeout(function () { lvb.textContent = st.up; c.classList.add('up'); pop(c, 'LEVEL UP!', 'lv'); se('boost'); bar.style.transition = 'none'; bar.style.width = '0%'; }, t), t += 250;
+      });
+      (b.learn || []).forEach(function (name, j) { setTimeout(function () { pop(c, '「' + name + '」を覚えた', 'lrn'); se('ok'); }, t + j * 700); });
+    });
+    var mv = box.querySelector('.rmv');
+    if (mv) {
+      var a = +mv.getAttribute('data-from'), z = +mv.getAttribute('data-to'), st0 = 0;
+      setTimeout(function () {
+        mv.classList.add('count'); var t1 = performance.now();
+        (function step(now) { var q = Math.min(1, (now - t1) / 900); mv.innerHTML = SR.moneyHTML(Math.round(a + (z - a) * (1 - Math.pow(1 - q, 3)))); if (q < 1) requestAnimationFrame(step); else { mv.classList.remove('count'); se('tick'); } })(t1);
+      }, 700);
+    }
   }
   function coloRow() {   // コロシアムの結果：次の戦いへ／終わり
     var CC = SR.COLO[colo.key], tot = CC.endless ? '' : '／' + CC.rounds.length;
@@ -1417,14 +1470,15 @@
       SR.sound.fadeBgm(900); SR.sound.se(B.outcome === 'win' ? 'win' : 'lose'); st.mode = 'result'; logLine(B.outcome === 'win' ? '勝利！' : '全員倒れてしまった…', 't');
       if (!B.grown) {   // 経験値・重点・お金（勝ちは全部、負けは半分）
         var G = SR.growth, GC = SR.growthCfg, mult = B.outcome === 'win' ? 1 : GC.loseMul, big = B.isBoss || B.enemies.some(function (e) { return e.type === 'twin'; });
-        var before = {}, res = { lines: [], learned: [], gold: 0 };
+        var before = {}, res = { lines: [], learned: [], gold: 0, by: {}, goldFrom: G.gold(), notes: [] };   // by：キャラごとの結果（結果画面の演出用）
+        ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { res.by[w] = { learn: [] }; });
         ['V', 'F', 'S', 'L'].forEach(function (w) { before[w] = SR.ctree.filter(function (n) { return G.has(w, n.id); }).map(function (n) { return n.id; }); });
         ['V', 'F', 'S', 'L'].forEach(function (w) {
           var lg = Object.assign({}, B.expLog[w] || {}), f = G.focus(w), parts = [];
           lg[f] = (lg[f] || 0) + (big ? GC.focusBoss : GC.focusNormal);
           Object.keys(lg).forEach(function (s) { var got = G.addExp(w, s, Math.round(lg[s] * mult)); if (got > 0) parts.push(s + '+' + got + (s === f ? '（重点）' : '')); });
           if (parts.length) res.lines.push(SR.names[w] + '：' + parts.join('　'));
-          SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); });
+          SR.ctree.forEach(function (n) { if (G.has(w, n.id) && before[w].indexOf(n.id) < 0) { res.learned.push(SR.names[w] + 'は「' + SR.skillName(n.id) + '」を覚えた！'); res.by[w].learn.push(SR.skillName(n.id)); } });
         });
         if (B.outcome === 'win') { res.gold = big ? GC.goldBoss : GC.goldNormal; G.addGold(res.gold); }
         if (colo) {   // 2026-11-22 コロシアム：勝てば次の戦いへ（HP・MP・アイテムの残りを引きつぐ）。負けるかコースを終えたら賞金
@@ -1437,29 +1491,30 @@
           } else colo.done = true;
           if (colo.done) {
             var prize = CC.endless ? colo.wins * CC.rewardPer : (colo.wins >= CC.rounds.length ? CC.reward : 0);
-            if (prize) { G.addGold(prize); res.learned.push('コロシアムの賞金 ' + SR.moneyText(prize)); }
-            if (SR.coloBest.put(colo.key, colo.wins)) res.learned.push('コロシアム「' + CC.name + '」の記録を更新！ ' + colo.wins + '勝');
+            if (prize) { G.addGold(prize); res.learned.push('コロシアムの賞金 ' + SR.moneyText(prize)); res.prize = prize; }
+            if (SR.coloBest.put(colo.key, colo.wins)) { res.learned.push('コロシアム「' + CC.name + '」の記録を更新！ ' + colo.wins + '勝'); res.notes.push('記録更新！ ' + colo.wins + '勝'); }
           }
         } else if (SR.party) {   // 2026-11-22 連戦：勝ったら今のHP・MPを次へ引きつぐ。負けたら町に戻って全回復
-          if (B.outcome === 'win') { SR.party.keep(B.heroes); res.learned.push('HP・MPは次の通常戦へ引きつぐ（出撃画面の「休む」で全回復）'); }
-          else { SR.party.rest(); res.learned.push('町に戻って休んだ（全回復）'); }
+          if (B.outcome === 'win') { SR.party.keep(B.heroes); res.learned.push('HP・MPは次の通常戦へ引きつぐ（出撃画面の「休む」で全回復）'); res.notes.push('HP・MPは次の通常戦へ引きつぐ'); }
+          else { SR.party.rest(); res.learned.push('町に戻って休んだ（全回復）'); res.notes.push('町に戻って休んだ（全回復）'); }
         }
         if (SR.bag) {   // 2026-11-22 使ったアイテムを持ち物から減らす。勝ったら素材を拾う
-          var usedI = Object.keys(B.bagStart || {}).map(function (k) { var n = (B.bagStart[k] || 0) - (B.bag[k] || 0); if (n > 0) SR.bag.add(k, -n); return n > 0 ? k + '×' + n : ''; }).filter(Boolean);
+          res.used = {}; var usedI = Object.keys(B.bagStart || {}).map(function (k) { var n = (B.bagStart[k] || 0) - (B.bag[k] || 0); if (n > 0) { SR.bag.add(k, -n); res.used[k] = n; } return n > 0 ? k + '×' + n : ''; }).filter(Boolean);
           if (usedI.length) res.learned.push('使ったアイテム：' + usedI.join('・'));
           if (B.outcome === 'win') {
             var rg = big ? SR.matDrop.boss : SR.matDrop.normal, cnt = rg[0] + Math.floor(Math.random() * (rg[1] - rg[0] + 1)), MK = Object.keys(SR.MATERIALS), got = {};
             for (var mi = 0; mi < cnt; mi++) { var mk = MK[Math.floor(Math.random() * MK.length)]; got[mk] = (got[mk] || 0) + 1; SR.bag.addMat(mk, 1); }
-            res.mats = Object.keys(got).map(function (k) { return k + '×' + got[k]; });
+            res.mats = Object.keys(got).map(function (k) { return k + '×' + got[k]; }); res.matsGot = got;
             res.learned.push('素材を拾った：' + res.mats.join('・'));
           }
         }
         if (SR.level) {   // レベルの経験値（全員・控えも）
           var lx = Math.round((big ? SR.lvExp.boss : SR.lvExp.normal) * (B.outcome === 'win' ? 1 : SR.lvExp.loseMul));
           res.lines.unshift('レベル経験値　全員+' + lx);
-          ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { if (SR.level.add(w, lx)) res.learned.unshift(SR.names[w] + 'は Lv' + SR.level.lv(w) + ' になった！'); });
+          res.lx = lx;
+          ['N', 'V', 'F', 'S', 'L'].forEach(function (w) { var b0 = SR.level.info(w); res.by[w].from = b0; if (SR.level.add(w, lx)) res.learned.unshift(SR.names[w] + 'は Lv' + SR.level.lv(w) + ' になった！'); res.by[w].to = SR.level.info(w); });
         }
-        B.grown = res;
+        res.goldTo = G.gold(); B.grown = res;
         res.lines.forEach(function (l) { logLine('経験値　' + l, 's'); });
         res.learned.forEach(function (l) { logLine(l, 's'); });
         if (res.gold) logLine('お金+' + SR.moneyText(res.gold), 's');
@@ -1774,6 +1829,7 @@
     else if (m === 'play') h = '<div class="hdrow"><button class="btn" data-nav data-act="fast">早送り</button>' + (st.auto ? '<button class="btn" data-nav data-act="autoOff">自動をやめる</button>' : '') + '</div>';
     else if (m === 'result') h = resultHTML();
     p.innerHTML = h;
+    if (m === 'result') animateResult();   // 2026-11-22 結果の演出
     nav.refresh();
   }
   // ================= キーボード・コントローラー =================
