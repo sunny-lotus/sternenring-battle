@@ -68,6 +68,19 @@ SR.Battle = function (opts) {
   function capDmg(src, n) { return src && src.limitBreak ? n : Math.min(SR.DMG_CAP || 1e9, n); }
   heroes.concat(enemies).forEach(function (u) { var bz = isBoss || u.type === "twin", hs = !u.hero && SR.enemyHpScale ? SR.enemyHpScale(u.lv || 1, bz) * (bz ? 1 : SR.normalHpMul || 1) : u.gs; u.hp = Math.round(u.hp * S * hs); u.maxHp = Math.round(u.maxHp * S * hs); if (u.heal) u.heal *= S * u.gs; });
   heroes.forEach(function (u) { var h = Math.min(SR.HP_CAP || 9999, SR.heroHp ? SR.heroHp(u.lv || 1) : u.maxHp); u.hf = h / u.maxHp; u.maxHp = h; u.hp = h; });   // 味方のHPはゆるい伸び。受けるダメージ・回復も hf をかける
+  // 2026-11-22 サニー：MPもLvで伸びる。ステータスのパッシブ（だれでも付けられる）
+  heroes.forEach(function (u) {
+    u.maxMp = C.maxMp + Math.round(((u.lv || 1) - 1) * (SR.lvGrowth.mp || 0)); u.mp = u.maxMp;
+    var P = SR.statPassive || {}; u.bonus = Object.assign({}, u.bonus);
+    u.abilities.forEach(function (s) { var p = P[s]; if (!p) return;
+      if (p.hp) { u.maxHp = Math.round(u.maxHp * (1 + p.hp)); u.hp = u.maxHp; }
+      if (p.mp) { u.maxMp += p.mp; u.mp = u.maxMp; }
+      if (p.spd) u.speed += p.spd;
+      if (p.k) { u.maxK += p.k; u.k = u.maxK; }
+      if (p.dmg) u.bonus.hp = (u.bonus.hp || 0) + p.dmg;
+      if (p.guard) u.bonus.guard = (u.bonus.guard || 0) + p.guard;
+    });
+  });
   heroes.concat(enemies).forEach(function (u) { u.baseMaxHp = u.maxHp; u.baseMaxK = u.maxK; u.brkN = 0; });
   var breakCut = tune.breakMaxHp || 0;
   function gainMp(u, n) { if (!u.hero || u.hp <= 0 || n <= 0) return; var b = u.mp; u.mp = Math.min(u.maxMp, u.mp + n); if (u.mp - b >= 1) emit(u.name + '　MP+' + Math.round(u.mp - b), { target: u.id, mheal: Math.round(u.mp - b) }, 320); }

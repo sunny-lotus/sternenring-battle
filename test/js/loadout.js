@@ -14,7 +14,7 @@ SR.loadout = (function () {
       var o = SR.skills[s].owner;
       return o === id || (id !== 'N' && o === 'common') || (id === 'N' && o === 'link');
     });
-    var pas = Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === id; });
+    var pas = Object.keys(SR.passives).filter(function (s) { return SR.pasOwner(s, id); });
     return { act: act, pas: pas };
   }
   function used(list) { return list.reduce(function (n, s) { return n + (SR.passives[s] ? apOf(s) : 0); }, 0); }
@@ -29,7 +29,7 @@ SR.loadout = (function () {
   // パッシブ以外を外し、上限を超えた分は後ろから外す
   function prune(set) {
     ids.forEach(function (id) {
-      set[id] = (set[id] || []).filter(function (s) { return SR.passives[s] && SR.passives[s][0] === id && SR.canLearn(null, id, s); });
+      set[id] = (set[id] || []).filter(function (s) { return SR.passives[s] && SR.pasOwner(s, id) && SR.canLearn(null, id, s); });
       while (used(set[id]) > cap()) set[id].pop();
     });
   }

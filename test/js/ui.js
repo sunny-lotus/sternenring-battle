@@ -164,8 +164,8 @@
       var L0 = SR.loadout, mine0 = (lo.set && lo.set[id]) || [], cap0 = L0.cap(), used0 = L0.used(mine0);
       h += '<div class="bk-full"><div class="row"><span class="small">付けているコスト <b>' + used0 + '</b> / ' + cap0 + '（序盤' + SR.passiveCap[1] + '・中盤' + SR.passiveCap[2] + '・終盤' + SR.passiveCap[3] + '）</span>' +
         '<span class="small">プリセット：</span>' + ['standard', 'counter', 'chase'].map(function (k) { return '<button class="btn mini" data-nav data-lo="tpl" data-id="' + k + '">' + SR.kits[k].name + '</button>'; }).join('') + '</div><div class="bk-grid">' +
-        Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === id; }).map(function (s) {
-          var start = (SR.passiveStart[id] || []).indexOf(s) >= 0, got = G.hasP(id, s), on = mine0.indexOf(s) >= 0, ap = SR.passives[s][1], over = !on && used0 + ap > cap0;
+        Object.keys(SR.passives).filter(function (s) { return SR.pasOwner(s, id); }).map(function (s) {
+          var start = (SR.passiveStart[id] || []).indexOf(s) >= 0 || !!(SR.statPassive && SR.statPassive[s]), got = G.hasP(id, s), on = mine0.indexOf(s) >= 0, ap = SR.passives[s][1], over = !on && used0 + ap > cap0;
           return '<div class="node' + (on ? ' got' : got ? ' can' : ' lock') + '" data-tip="' + s + '" data-tipwho="' + id + '"><b>' + SR.skillName(s) + '</b><span class="small">コスト' + ap + (start ? '・最初から' : got ? '・覚えた（試し）' : '・イベントで覚える') + '</span>' +
             (got ? '<button class="btn mini' + (on ? '' : ' primary') + '" data-nav data-lo="tog" data-id="' + s + '"' + (over ? ' disabled' : '') + '>' + (on ? '外す' : over ? 'コストが足りない' : '付ける') + '</button>' +
               (start ? '' : '<button class="btn mini" data-nav data-lo="pas" data-id="' + s + '">覚えていないことにする</button>')

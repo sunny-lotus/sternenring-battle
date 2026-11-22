@@ -260,6 +260,8 @@ SR.uniqueStart = {
   L: ['破陣剣', '守勢の号令', '決着の一閃'],
 };
 // 最初から覚えているパッシブ。ほかはユニーク技と同じく、サブクエスト・イベントで覚える
+SR.statPassive = { '頑健': { hp: 0.1 }, '魔力の器': { mp: 20 }, '俊足': { spd: 5 }, '剛力': { dmg: 0.08 }, '不屈': { k: 15 }, '堅守': { guard: 0.06 } };
+SR.pasOwner = function (s, id) { var o = SR.passives[s] && SR.passives[s][0]; return o === id || (o === 'all' && !!id); };   // そのキャラが付けられるパッシブか
 SR.passiveStart = { N: ['追撃の冴え', '勝ち鬨'], V: ['照準共有', '集積回路'], F: ['残熱回収'], S: ['静心'], L: ['陣頭指揮'] };
 // 育ち具合（この端末に保存）
 SR.growth = (function () {
@@ -301,7 +303,7 @@ SR.growth = (function () {
       if (n.combo) return n.combo.every(function (s) { return api.fill(who, s) >= n.h; });
       return api.fill(who, n.sys) >= n.h;
     },
-    hasP: function (who, id) { return (SR.passiveStart[who] || []).indexOf(id) >= 0 || ((g.pas && g.pas[who]) || []).indexOf(id) >= 0; },
+    hasP: function (who, id) { return !!(SR.statPassive && SR.statPassive[id]) || (SR.passiveStart[who] || []).indexOf(id) >= 0 || ((g.pas && g.pas[who]) || []).indexOf(id) >= 0; },
     togglePas: function (who, id) {
       if ((SR.passiveStart[who] || []).indexOf(id) >= 0) return;
       if (!g.pas) g.pas = {}; var l = g.pas[who] || (g.pas[who] = []), i = l.indexOf(id);
@@ -322,7 +324,7 @@ SR.growth = (function () {
       g.era = 3; SR.baseSystems.forEach(function (s) { g.books[s] = 3; });
       ['V', 'F', 'S', 'L'].forEach(function (w) { SR.baseSystems.forEach(function (s) { g.exp[w][s] = SR.cumExp(3); }); });
       Object.keys(SR.uniqueStart).forEach(function (w) { g.uniq[w] = Object.keys(SR.skills).filter(function (s) { return SR.skills[s].owner === w; }); });
-      g.pas = {}; Object.keys(SR.uniqueStart).forEach(function (w) { g.pas[w] = Object.keys(SR.passives).filter(function (s) { return SR.passives[s][0] === w; }); });
+      g.pas = {}; Object.keys(SR.uniqueStart).forEach(function (w) { g.pas[w] = Object.keys(SR.passives).filter(function (s) { return SR.pasOwner(s, w); }); });
       save();
     },
     toggleU: function (who, id) {
@@ -403,6 +405,13 @@ SR.passives = {
   '集積回路': ['V', 3, 'ブレイクさせるとMP12回復（1ターンに1回）'],
   '静心': ['S', 4, '毎ターンのMP回復+5'],
   '陣頭指揮': ['L', 5, 'ブレイクさせると前線の仲間のMP8回復（1ターンに1回）'],
+  // 2026-11-22 サニー：ステータスのパッシブ（だれでも付けられる。名前・数値は仮）
+  '頑健': ['all', 3, '最大HP+10%'],
+  '魔力の器': ['all', 3, '最大MP+20'],
+  '俊足': ['all', 3, '素早さ+5'],
+  '剛力': ['all', 4, '与えるダメージ+8%'],
+  '不屈': ['all', 3, '最大ブレイクゲージ+15'],
+  '堅守': ['all', 3, '受けるダメージ-6%'],
 };
 
 // 持ち込み構成（five-trial.cjs の kits）
@@ -664,7 +673,7 @@ SR.skillName = function (id) { var a = SR.skills[id]; return (a && a.label) || S
 // ---- レベル（2026-11-22 サニー：レベルの概念を入れる）----
 // 戦いの経験値で上がる。上がるとHP・最大ブレイクゲージ・与えるダメージ・ブレイクゲージ削りが少しずつ伸びる（数値は仮）。
 SR.LV_MAX = 99;   // 2026-11-22：Lv51あたりから限界突破（サブクエのパッシブ）
-SR.lvGrowth = { hp: 0, k: 2, dmg: 0, kd: 0.01, spd: 0.5 };   // 1レベルごと：最大ブレイクゲージ+2・ブレイクゲージ削り+1%・素早さ+0.5。HPとダメージは下の SR.lvScale で大きくなる
+SR.lvGrowth = { hp: 0, k: 2, dmg: 0, kd: 0.01, spd: 0.5, mp: 2 };   // mp：最大MP+2（Lv1で100・Lv50で198）2026-11-22   // 1レベルごと：最大ブレイクゲージ+2・ブレイクゲージ削り+1%・素早さ+0.5。HPとダメージは下の SR.lvScale で大きくなる
 // 2026-11-22 サニー：同じLv同士の戦いで、1回のダメージがだいたい Lv1→100・Lv10→1000・Lv30→6000・Lv50→9999。
 // HPとダメージ（回復も）を、そのキャラ・敵のLvの倍率で大きくする。同じLv同士なら戦いの長さは変わらず、Lv差があると差が出る。
 SR.lvScalePts = [[1, 1], [10, 10], [30, 60], [50, 100]];   // Lv50より上は1Lvごとに+2
